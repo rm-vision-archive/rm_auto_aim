@@ -1,16 +1,19 @@
+// Copyright 2022 Chen Jun
+
 #include "rm_auto_aim/rm_auto_aim.hpp"
 
 #include <cv_bridge/cv_bridge.h>
 
-// STD
+#include <memory>
 #include <string>
 
 namespace rm_auto_aim
 {
-
 RmAutoAimNode::RmAutoAimNode(const rclcpp::NodeOptions & options) : Node("RmAutoAimNode", options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting RmAutoAimNode!");
+
+  detector_ = std::make_unique<ArmorDetector>(*this);
 
   img_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
     "/camera/color/image_raw", rclcpp::SensorDataQoS(),
@@ -22,6 +25,8 @@ RmAutoAimNode::~RmAutoAimNode() = default;
 void RmAutoAimNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg)
 {
   auto image = cv_bridge::toCvShare(msg, "rgb8")->image;
+
+  auto result = detector_->detectArmors(image);
 }
 
 }  // namespace rm_auto_aim

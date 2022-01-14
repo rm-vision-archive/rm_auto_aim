@@ -26,6 +26,7 @@ ament_auto_find_build_dependencies()
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
   src/rm_auto_aim.cpp
+  src/armor_detector.cpp
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
@@ -39,7 +40,16 @@ rclcpp_components_register_node(${PROJECT_NAME}
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  list(APPEND AMENT_LINT_AUTO_EXCLUDE
+    ament_cmake_copyright
+    ament_cmake_cpplint
+    ament_cmake_uncrustify
+  )
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest)
+  ament_add_gtest(test_armor_detector test/test_armor_detector.cpp)
+  target_link_libraries(test_armor_detector ${PROJECT_NAME})
 endif()
 
 #############

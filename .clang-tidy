@@ -53,4 +53,3 @@ CheckOptions:
     value:           UPPER_CASE
   - key:             readability-identifier-naming.GlobalVariableCase
     value:           UPPER_CASE
-...
