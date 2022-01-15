@@ -9,7 +9,8 @@
 
 namespace rm_auto_aim
 {
-RmAutoAimNode::RmAutoAimNode(const rclcpp::NodeOptions & options) : Node("RmAutoAimNode", options)
+RmAutoAimNode::RmAutoAimNode(const rclcpp::NodeOptions & options)
+: Node("RmAutoAimNode", options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting RmAutoAimNode!");
 

@@ -5,6 +5,7 @@
 // OpenCV
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
+#include <opencv2/imgcodecs.hpp>
 
 // ROS
 #include <rclcpp/node.hpp>
@@ -21,6 +22,14 @@ TEST(ArmorDetectorTest, PreprocessTest)
   auto node = rclcpp::Node::make_shared("test_node", options);
   auto detector = rm_auto_aim::ArmorDetector(*node);
 
-  cv::Mat test_mat(1280, 1080, CV_8UC3, cv::Scalar(1, 1, 1));
-  detector.preprocessImage(test_mat);
+  auto test_mat = cv::Mat(1080, 1280, CV_8UC3, cv::Scalar(1, 1, 1));
+  // auto test_mat = cv::imread("/tmp/test.png");
+
+  detector.detect_color = rm_auto_aim::ArmorDetector::RED;
+  auto r_result = detector.preprocessImage(test_mat);
+  EXPECT_EQ(cv::imwrite("/tmp/test_r.png", r_result), true);
+
+  detector.detect_color = rm_auto_aim::ArmorDetector::BULE;
+  auto b_result = detector.preprocessImage(test_mat);
+  EXPECT_EQ(cv::imwrite("/tmp/test_b.png", b_result), true);
 }
