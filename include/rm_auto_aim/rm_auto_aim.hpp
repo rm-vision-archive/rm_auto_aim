@@ -3,10 +3,13 @@
 #ifndef RM_AUTO_AIM__RM_AUTO_AIM_HPP_
 #define RM_AUTO_AIM__RM_AUTO_AIM_HPP_
 
-#include <memory>
+// ROS
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
+
+// STD
+#include <memory>
 
 #include "rm_auto_aim/armor_detector.hpp"
 
