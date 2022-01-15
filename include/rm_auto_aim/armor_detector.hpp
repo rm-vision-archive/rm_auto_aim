@@ -20,16 +20,21 @@ public:
 
   std::vector<Armor> detectArmors(const cv::Mat & img);
   cv::Mat preprocessImage(const cv::Mat & img);
+  std::vector<Light> findLights(const cv::Mat & binary_img);
 
   enum DetectColor { RED, BULE } detect_color;
   struct PreprocessParams
   {
     double hmin, hmax, vmin, vmax;
   } r_params, b_params;
+  struct LightParams
+  {
+    // TODO(chenjun): need to add
+  } light_params;
 
 private:
-  std::vector<Light> findLights(const cv::Mat & binary_img);
   std::vector<Armor> matchArmors(const std::vector<Light> & lights);
+  bool isLight(const Light & light);
 
   rclcpp::Node & node_;
   std::vector<Light> lights_;
