@@ -6,11 +6,20 @@
 #include <opencv2/core.hpp>
 #include <opencv2/core/types.hpp>
 #include <rclcpp/node.hpp>
+
+// STD
+#include <cmath>
 #include <vector>
 
 namespace rm_auto_aim
 {
-using Light = cv::RotatedRect;
+class Light : public cv::RotatedRect
+{
+public:
+  explicit Light(cv::RotatedRect box);
+  cv::Point2f top, bottom;
+};
+
 using Armor = cv::Point[4];
 
 class ArmorDetector
@@ -21,6 +30,7 @@ public:
   std::vector<Armor> detectArmors(const cv::Mat & img);
   cv::Mat preprocessImage(const cv::Mat & img);
   std::vector<Light> findLights(const cv::Mat & binary_img);
+  std::vector<Armor> matchLights(const std::vector<Light> & lights);
 
   enum DetectColor { RED, BULE } detect_color;
   struct PreprocessParams
@@ -33,8 +43,7 @@ public:
   } light_params;
 
 private:
-  std::vector<Armor> matchArmors(const std::vector<Light> & lights);
-  bool isLight(const Light & light);
+  bool isLight(const cv::RotatedRect & rect);
 
   rclcpp::Node & node_;
   std::vector<Light> lights_;

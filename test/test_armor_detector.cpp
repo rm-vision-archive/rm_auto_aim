@@ -49,11 +49,13 @@ TEST(ArmorDetectorTest, FindLightsTest)
   auto b_lights = detector.findLights(B_BINARY);
 
   // draw lights
-  // for (const auto & light : r_lights) {
-  //   cv::ellipse(ORIGIN_MAT, light, cv::Scalar(0, 255, 0), 2);
-  // }
-  // for (const auto & light : b_lights) {
-  //   cv::ellipse(ORIGIN_MAT, light, cv::Scalar(0, 255, 0), 2);
-  // }
-  // EXPECT_EQ(cv::imwrite("/tmp/test_lights.png", ORIGIN_MAT), true);
+  for (const auto & light : r_lights) {
+    cv::ellipse(ORIGIN_MAT, light, cv::Scalar(0, 128, 255), 2);
+    cv::circle(ORIGIN_MAT, light.bottom, 2, cv::Scalar(0, 255, 0), -1);
+  }
+  for (const auto & light : b_lights) {
+    cv::ellipse(ORIGIN_MAT, light, cv::Scalar(255, 0, 128), 2);
+    cv::circle(ORIGIN_MAT, light.bottom, 2, cv::Scalar(0, 255, 0), -1);
+  }
+  EXPECT_EQ(cv::imwrite("/tmp/test_lights.png", ORIGIN_MAT), true);
 }
