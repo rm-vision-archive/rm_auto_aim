@@ -3,11 +3,11 @@
 #include "rm_auto_aim/armor_detector.hpp"
 
 // ROS
-#include <opencv2/core/types.hpp>
 #include <rclcpp/logging.hpp>
 
 // OpenCV
 #include <opencv2/core.hpp>
+#include <opencv2/core/types.hpp>
 #include <opencv2/imgproc.hpp>
 
 // STD
@@ -24,6 +24,8 @@ Light::Light(cv::RotatedRect box) : cv::RotatedRect(box)
   } else {
     top = (p[0] + p[3]) / 2, bottom = (p[1] + p[2]) / 2;
   }
+
+  length = box.size.height;
 }
 
 ArmorDetector::ArmorDetector(rclcpp::Node & node) : node_(node)
@@ -107,15 +109,60 @@ bool ArmorDetector::isLight(const cv::RotatedRect & rect)
 {
   // TODO(chenjun): need more judgement
   // The ratio of light is about 1/4 (width / height)
-  auto ratio = rect.size.aspectRatio();
-  bool ratio_fits = 0.2 < ratio && ratio < 0.55;
+  float ratio = rect.size.aspectRatio();
+  bool ratio_fits = 0.2f < ratio && ratio < 0.55f;
 
   // The angle of light is smaller than 30 degree.
   // The rotation angle in a clockwise direction.
-  auto angle = rect.angle;
-  bool angle_fits = angle < 30 || angle > 150;
+  float angle = rect.angle;
+  bool angle_fits = angle < 30.0f || angle > 150.0f;
 
   return ratio_fits && angle_fits;
+}
+
+std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
+{
+  auto start_time = node_.now();
+
+  std::vector<Armor> armors;
+
+  // Loop all the pairing of lights
+  for (auto light = lights.begin(); light != lights.end(); light++) {
+    for (auto sec_light = light + 1; sec_light != lights.end(); sec_light++) {
+      if (isArmor(*light, *sec_light)) {
+        armors.emplace_back(Armor(*light, *sec_light));
+      }
+    }
+  }
+
+  auto matchlights_time = (node_.now() - start_time).seconds();
+  RCLCPP_DEBUG_STREAM(node_.get_logger(), "findLights used: " << matchlights_time * 1000.0 << "ms");
+
+  return armors;
+}
+
+bool ArmorDetector::isArmor(const Light & light_1, const Light & light_2)
+{
+  // TODO(chenjun): need more judgement
+  // FIXME(chenjun): this following data is only for test!!!
+  float ratio = light_1.length < light_2.length ? light_1.length / light_2.length
+                                                : light_2.length / light_1.length;
+  bool ratio_fits = ratio > 0.7f;
+
+  float center_distance = cv::norm(light_1.center - light_2.center);
+  float center_length_ratio = center_distance / (light_1.length + light_2.length);
+  bool distance_fits = 0.5f < center_length_ratio && center_length_ratio < 1.8f;
+
+  return ratio_fits && distance_fits;
+}
+
+Armor::Armor(const Light & l1, const Light & l2)
+{
+  if (l1.center.x < l2.center.x) {
+    left_light = l1, right_light = l2;
+  } else {
+    left_light = l2, right_light = l1;
+  }
 }
 
 }  // namespace rm_auto_aim

@@ -16,11 +16,19 @@ namespace rm_auto_aim
 class Light : public cv::RotatedRect
 {
 public:
+  using RotatedRect::RotatedRect;
   explicit Light(cv::RotatedRect box);
+
   cv::Point2f top, bottom;
+  float length;
 };
 
-using Armor = cv::Point[4];
+struct Armor
+{
+  Armor(const Light & l1, const Light & l2);
+
+  Light left_light, right_light;
+};
 
 class ArmorDetector
 {
@@ -44,6 +52,7 @@ public:
 
 private:
   bool isLight(const cv::RotatedRect & rect);
+  bool isArmor(const Light & light_1, const Light & light_2);
 
   rclcpp::Node & node_;
   std::vector<Light> lights_;
