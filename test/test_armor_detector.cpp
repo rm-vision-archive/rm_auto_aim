@@ -34,7 +34,7 @@ TEST(ArmorDetectorTest, PreprocessTest)
 {
   ORIGIN_MAT = cv::Mat(1080, 1280, CV_8UC3, cv::Scalar(1, 1, 1));
 
-  // TODO(chenjun): only for testing locally
+  // XXX(chenjun): only for testing locally
   // ORIGIN_MAT = cv::imread("/tmp/test.png");
 
   DETECTOR->detect_color = rm_auto_aim::ArmorDetector::RED;
@@ -54,11 +54,12 @@ TEST(ArmorDetectorTest, FindLightsTest)
   // Draw lights
   for (const auto & light : R_LIGHTS) {
     cv::ellipse(ORIGIN_MAT, light, cv::Scalar(0, 128, 255), 2);
-    cv::circle(ORIGIN_MAT, light.bottom, 2, cv::Scalar(0, 255, 0), -1);
+    // Draw bottom point of the light
+    // cv::circle(ORIGIN_MAT, light.bottom, 2, cv::Scalar(0, 255, 0), -1);
   }
   for (const auto & light : B_LIGHTS) {
     cv::ellipse(ORIGIN_MAT, light, cv::Scalar(255, 0, 128), 2);
-    cv::circle(ORIGIN_MAT, light.bottom, 2, cv::Scalar(0, 255, 0), -1);
+    // cv::circle(ORIGIN_MAT, light.bottom, 2, cv::Scalar(0, 255, 0), -1);
   }
   EXPECT_EQ(cv::imwrite("/tmp/test_lights.png", ORIGIN_MAT), true);
 }

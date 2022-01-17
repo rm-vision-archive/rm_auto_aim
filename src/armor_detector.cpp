@@ -11,6 +11,7 @@
 #include <opencv2/imgproc.hpp>
 
 // STD
+#include <cmath>
 #include <vector>
 
 namespace rm_auto_aim
@@ -82,7 +83,7 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & binary_img)
   using cv::Point;
   using cv::Vec4i;
   using std::vector;
-  vector<vector<cv::Point> > contours;
+  vector<vector<cv::Point>> contours;
   vector<Vec4i> hierarchy;
   cv::findContours(binary_img, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
@@ -91,7 +92,9 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & binary_img)
     // There should be at least 5 points to fit the ellipse.
     // If the size of the contour is less than 5,
     // then it should not be considered as light anyway
-    if (!contour.empty() && contour.size() < 5) continue;
+    if (!contour.empty() && contour.size() < 5) {
+      continue;
+    }
 
     auto r_rect = cv::fitEllipse(contour);
     if (isLight(r_rect)) {
@@ -107,17 +110,17 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & binary_img)
 
 bool ArmorDetector::isLight(const cv::RotatedRect & rect)
 {
-  // TODO(chenjun): need more judgement
+  // TODO(chenjun): may need more judgement
   // The ratio of light is about 1/4 (width / height)
   float ratio = rect.size.aspectRatio();
-  bool ratio_fits = 0.2f < ratio && ratio < 0.55f;
+  if (!(0.2f < ratio && ratio < 0.55f)) {
+    return false;
+  }
 
   // The angle of light is smaller than 30 degree.
   // The rotation angle in a clockwise direction.
   float angle = rect.angle;
-  bool angle_fits = angle < 30.0f || angle > 150.0f;
-
-  return ratio_fits && angle_fits;
+  return angle < 30.0f || angle > 150.0f;
 }
 
 std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
@@ -145,15 +148,24 @@ bool ArmorDetector::isArmor(const Light & light_1, const Light & light_2)
 {
   // TODO(chenjun): need more judgement
   // FIXME(chenjun): this following data is only for test!!!
+  // Ratio of the length of 2 lights
   float ratio = light_1.length < light_2.length ? light_1.length / light_2.length
                                                 : light_2.length / light_1.length;
-  bool ratio_fits = ratio > 0.7f;
+  if (!(ratio > 0.7f)) {
+    return false;
+  }
 
+  // Distance between the center of 2 lights
   float center_distance = cv::norm(light_1.center - light_2.center);
   float center_length_ratio = center_distance / (light_1.length + light_2.length);
-  bool distance_fits = 0.5f < center_length_ratio && center_length_ratio < 1.8f;
+  if (!(0.5f < center_length_ratio && center_length_ratio < 1.8f)) {
+    return false;
+  }
 
-  return ratio_fits && distance_fits;
+  // Angle of light center connection
+  cv::Point2f diff = light_1.center - light_2.center;
+  float angle = std::abs(std::atan(diff.y / diff.x)) / CV_PI * 180;
+  return angle < 30;
 }
 
 Armor::Armor(const Light & l1, const Light & l2)
