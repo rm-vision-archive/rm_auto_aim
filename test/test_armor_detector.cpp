@@ -8,9 +8,6 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
-// ROS
-#include <rclcpp/node.hpp>
-
 // STD
 #include <cstdlib>
 #include <memory>
@@ -85,8 +82,7 @@ int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   rclcpp::init(argc, argv);
-  rclcpp::NodeOptions options;
-  auto node = rclcpp::Node::make_shared("test_node", options);
-  DETECTOR = std::make_unique<rm_auto_aim::ArmorDetector>(*node);
+  bool debug = true;
+  DETECTOR = std::make_unique<rm_auto_aim::ArmorDetector>(debug);
   return RUN_ALL_TESTS();
 }

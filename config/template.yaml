@@ -1,3 +1,0 @@
-/template_node:
-  ros__parameters:
-    use_sim_time: false

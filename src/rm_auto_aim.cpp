@@ -13,7 +13,9 @@ RmAutoAimNode::RmAutoAimNode(const rclcpp::NodeOptions & options) : Node("RmAuto
 {
   RCLCPP_INFO(this->get_logger(), "Starting RmAutoAimNode!");
 
-  detector_ = std::make_unique<ArmorDetector>(*this);
+  bool debug = this->declare_parameter("debug", true);
+
+  detector_ = std::make_unique<ArmorDetector>(debug);
 
   img_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
     "/camera/color/image_raw", rclcpp::SensorDataQoS(),
@@ -26,7 +28,33 @@ void RmAutoAimNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
 {
   auto image = cv_bridge::toCvShare(msg, "rgb8")->image;
 
-  auto result = detector_->detectArmors(image);
+  auto start_time = this->now();
+
+  // origin_img->preprocessImage->binary_img
+  auto binary_img = detector_->preprocessImage(image);
+  auto preprocess_time = this->now();
+  RCLCPP_DEBUG_STREAM(
+    this->get_logger(),
+    "preprocessImage used: " << (preprocess_time - start_time).seconds() * 1000.0 << "ms");
+
+  // binary_image->findLights->lights
+  auto lights = detector_->findLights(binary_img);
+  auto findlights_time = this->now();
+  RCLCPP_DEBUG_STREAM(
+    this->get_logger(),
+    "findLights used: " << (findlights_time - preprocess_time).seconds() * 1000.0 << "ms");
+
+  // lights->matchLights->armors
+  auto armors = detector_->matchLights(lights);
+  auto matchlights_time = this->now();
+  RCLCPP_DEBUG_STREAM(
+    this->get_logger(),
+    "matchLights used: " << (matchlights_time - findlights_time).seconds() * 1000.0 << "ms");
+
+  auto final_time = this->now();
+  RCLCPP_DEBUG_STREAM(
+    this->get_logger(),
+    "detectArmors used: " << (final_time - start_time).seconds() * 1000.0 << "ms");
 }
 
 }  // namespace rm_auto_aim

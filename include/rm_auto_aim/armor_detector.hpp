@@ -33,30 +33,39 @@ struct Armor
 class ArmorDetector
 {
 public:
-  explicit ArmorDetector(rclcpp::Node & node);
-
-  std::vector<Armor> detectArmors(const cv::Mat & img);
-  cv::Mat preprocessImage(const cv::Mat & img);
-  std::vector<Light> findLights(const cv::Mat & binary_img);
-  std::vector<Armor> matchLights(const std::vector<Light> & lights);
+  explicit ArmorDetector(const bool & debug);
 
   enum DetectColor { RED, BULE } detect_color;
   struct PreprocessParams
   {
     double hmin, hmax, vmin, vmax;
-  } r_params, b_params;
+  } r, b;
   struct LightParams
   {
-    // TODO(chenjun): need to add
-  } light_params;
+    // width / height
+    float min_ratio;
+    float max_ratio;
+    // vertical angle
+    float max_angle;
+  } l;
+  struct ArmorParams
+  {
+    float min_light_ratio;
+    float min_center_ratio;
+    float max_center_ratio;
+    // horizontal angle
+    float max_angle;
+  } a;
+
+  cv::Mat preprocessImage(const cv::Mat & img);
+  std::vector<Light> findLights(const cv::Mat & binary_img);
+  std::vector<Armor> matchLights(const std::vector<Light> & lights);
 
 private:
   bool isLight(const cv::RotatedRect & rect);
   bool isArmor(const Light & light_1, const Light & light_2);
 
-  rclcpp::Node & node_;
-  std::vector<Light> lights_;
-  std::vector<Armor> armors_;
+  bool debug_;
 };
 
 }  // namespace rm_auto_aim
