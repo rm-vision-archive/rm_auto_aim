@@ -4,6 +4,7 @@
 #define RM_AUTO_AIM__RM_AUTO_AIM_HPP_
 
 // ROS
+#include <rclcpp/publisher.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -29,6 +30,7 @@ private:
 
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr img_sub_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr final_img_pub_;
 
   std::unique_ptr<ArmorDetector> detector_;
 };

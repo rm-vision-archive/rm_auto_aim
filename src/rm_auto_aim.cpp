@@ -4,6 +4,9 @@
 
 #include <cv_bridge/cv_bridge.h>
 
+#include <rclcpp/qos.hpp>
+
+// std
 #include <memory>
 #include <string>
 
@@ -17,9 +20,12 @@ RmAutoAimNode::RmAutoAimNode(const rclcpp::NodeOptions & options) : Node("RmAuto
 
   detector_ = std::make_unique<ArmorDetector>(debug);
 
+  auto qos = debug ? rclcpp::QoS(10) : rclcpp::SensorDataQoS();
   img_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-    "/camera/color/image_raw", rclcpp::SensorDataQoS(),
+    "/camera/color/image_raw", qos,
     std::bind(&RmAutoAimNode::imageCallback, this, std::placeholders::_1));
+
+  final_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("debug/final_image", 10);
 }
 
 RmAutoAimNode::~RmAutoAimNode() = default;
@@ -55,6 +61,21 @@ void RmAutoAimNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
   RCLCPP_DEBUG_STREAM(
     this->get_logger(),
     "detectArmors used: " << (final_time - start_time).seconds() * 1000.0 << "ms");
+
+  // TODO(chenjun): test
+  // Draw lights
+  auto color = detector_->detect_color == ArmorDetector::DetectColor::RED ? cv::Scalar(0, 128, 255)
+                                                                          : cv::Scalar(255, 0, 128);
+  for (const auto & light : lights) {
+    cv::ellipse(image, light, color, 2);
+  }
+  // Draw armors
+  for (const auto & armor : armors) {
+    cv::line(image, armor.left_light.top, armor.right_light.bottom, cv::Scalar(0, 255, 0));
+    cv::line(image, armor.left_light.bottom, armor.right_light.top, cv::Scalar(0, 255, 0));
+  }
+  auto final_image_msg = cv_bridge::CvImage(msg->header, "bgr8", image).toImageMsg();
+  final_img_pub_->publish(*final_image_msg);
 }
 
 }  // namespace rm_auto_aim

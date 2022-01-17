@@ -35,7 +35,7 @@ Armor::Armor(const Light & l1, const Light & l2)
   }
 }
 
-ArmorDetector::ArmorDetector(const bool & debug) : debug_(debug)
+ArmorDetector::ArmorDetector(const bool & debug) : detect_color(BULE), debug_(debug)
 {
   // TODO(chenjun): Dynamic configure the following params
   r = {.hmin = 150, .hmax = 25, .vmin = 120, .vmax = 220};
