@@ -42,7 +42,7 @@ Or better, use `rosdep`:
 
 #### Building
 
-To build from source, clone the latest version from this repository into your catkin workspace and compile the package using
+To build from source, clone the latest version from this repository into your colcon workspace and compile the package using
 
 	cd ros2_ws/src
 	git clone https://github.com/chenjunnn/rm_auto_aim.git
@@ -110,9 +110,9 @@ Config file armordetector/config/armor_detector.yaml
 
 ## Nodes
 
-### rm_auto_aim
+### armor_detector
 
-Reads temperature measurements and computed the average.
+Detector armors, retrun the armors position in image (2d) and world (3d) with their numbers.
 
 
 #### Subscribed Topics
