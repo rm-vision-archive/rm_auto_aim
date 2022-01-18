@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a node of Robomaster auto-aim task using OpenCV and ROS2.
+This is a package of Robomaster auto-aim task using OpenCV and ROS2.
 
 **Keywords:** Robomaster, auto-aim, OpenCV, ROS2
 
@@ -80,15 +80,15 @@ Run the tests with
 
 ## Usage
 
-Run the main node with
+Run the armor_detector node with
 
-	ros2 launch rm_auto_aim rm_auto_aim.launch.py
+	ros2 launch armor_detector armor_detector.launch.py
 
 ## Config files
 
-Config file config/rm_auto_aim.yaml
+Config file armordetector/config/armor_detector.yaml
 
-* **rm_auto_aim.yaml** <!--Shortly explain the content of this config file-->
+* **armor_detector.yaml** <!--Shortly explain the content of this config file-->
 
 <!-- Config file folder/set 2
 
