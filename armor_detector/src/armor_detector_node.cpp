@@ -9,6 +9,7 @@
 // std
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace rm_auto_aim
 {
@@ -17,28 +18,35 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting ArmorDetectorNode!");
 
-  bool debug = this->declare_parameter("debug", true);
+  debug_ = this->declare_parameter("debug", true);
 
-  detector_ = std::make_unique<ArmorDetector>(debug);
+  detector_ = std::make_unique<ArmorDetector>();
 
-  auto qos = debug ? rclcpp::QoS(10) : rclcpp::SensorDataQoS();
+  auto qos = debug_ ? rclcpp::QoS(10) : rclcpp::SensorDataQoS();
   img_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
     "/camera/color/image_raw", qos,
     std::bind(&ArmorDetectorNode::imageCallback, this, std::placeholders::_1));
 
-  final_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("debug/final_image", 10);
+  if (debug_) {
+    lights_data_pub_ =
+      this->create_publisher<auto_aim_interfaces::msg::LightDataArray>("debug/lights", 10);
+    armors_data_pub_ =
+      this->create_publisher<auto_aim_interfaces::msg::ArmorDataArray>("debug/armors", 10);
+    binary_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("debug/binary_image", 10);
+    final_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("debug/final_image", 10);
+  }
 }
 
 ArmorDetectorNode::~ArmorDetectorNode() = default;
 
 void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg)
 {
-  auto image = cv_bridge::toCvShare(msg, "rgb8")->image;
+  auto img = cv_bridge::toCvShare(msg, "rgb8")->image;
 
   auto start_time = this->now();
 
   // origin_img->preprocessImage->binary_img
-  auto binary_img = detector_->preprocessImage(image);
+  auto binary_img = detector_->preprocessImage(img);
   auto preprocess_time = this->now();
   RCLCPP_DEBUG_STREAM(
     this->get_logger(),
@@ -63,20 +71,33 @@ void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstShared
     this->get_logger(),
     "detectArmors used: " << (final_time - start_time).seconds() * 1000.0 << "ms");
 
-  // TODO(chenjun): test
-  // Draw lights
+  if (debug_) {
+    // Publish debug information
+    binary_img_pub_->publish(*cv_bridge::CvImage(msg->header, "mono8", binary_img).toImageMsg());
+
+    lights_data_pub_->publish(detector_->lights_data);
+    armors_data_pub_->publish(detector_->armors_data);
+
+    drawLightsAndArmors(img, lights, armors);
+    final_img_pub_->publish(*cv_bridge::CvImage(msg->header, "bgr8", img).toImageMsg());
+  }
+}
+
+void ArmorDetectorNode::drawLightsAndArmors(
+  cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors)
+{
+  // Draw Lights
   auto color = detector_->detect_color == ArmorDetector::DetectColor::RED ? cv::Scalar(0, 128, 255)
                                                                           : cv::Scalar(255, 0, 128);
   for (const auto & light : lights) {
-    cv::ellipse(image, light, color, 2);
+    cv::ellipse(img, light, color, 2);
   }
+
   // Draw armors
   for (const auto & armor : armors) {
-    cv::line(image, armor.left_light.top, armor.right_light.bottom, cv::Scalar(0, 255, 0));
-    cv::line(image, armor.left_light.bottom, armor.right_light.top, cv::Scalar(0, 255, 0));
+    cv::line(img, armor.left_light.top, armor.right_light.bottom, cv::Scalar(0, 255, 0));
+    cv::line(img, armor.left_light.bottom, armor.right_light.top, cv::Scalar(0, 255, 0));
   }
-  auto final_image_msg = cv_bridge::CvImage(msg->header, "bgr8", image).toImageMsg();
-  final_img_pub_->publish(*final_image_msg);
 }
 
 }  // namespace rm_auto_aim

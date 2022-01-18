@@ -11,6 +11,7 @@
 
 // STD
 #include <memory>
+#include <vector>
 
 #include "armor_detector/armor_detector.hpp"
 
@@ -27,11 +28,19 @@ public:
 
 private:
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg);
+  void drawLightsAndArmors(
+    cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
 
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr img_sub_;
+
+  // Debug info publisher
+  rclcpp::Publisher<auto_aim_interfaces::msg::LightDataArray>::SharedPtr lights_data_pub_;
+  rclcpp::Publisher<auto_aim_interfaces::msg::ArmorDataArray>::SharedPtr armors_data_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr binary_img_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr final_img_pub_;
 
+  bool debug_;
   std::unique_ptr<ArmorDetector> detector_;
 };
 

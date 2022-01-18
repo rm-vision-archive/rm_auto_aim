@@ -1,1 +1,1 @@
-LightData[] lights_data
+LightData[] data

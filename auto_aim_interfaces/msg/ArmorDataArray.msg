@@ -1,1 +1,1 @@
-ArmorData[] armors_data
+ArmorData[] data

@@ -81,7 +81,6 @@ TEST(ArmorDetectorTest, MatchLightsTest)
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  bool debug = true;
-  DETECTOR = std::make_unique<rm_auto_aim::ArmorDetector>(debug);
+  DETECTOR = std::make_unique<rm_auto_aim::ArmorDetector>();
   return RUN_ALL_TESTS();
 }
