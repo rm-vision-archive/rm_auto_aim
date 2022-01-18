@@ -1,0 +1,1 @@
+ArmorData[] armors_data
