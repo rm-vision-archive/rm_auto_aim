@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(rm_auto_aim)
+project(armor_detector)
 
 ## Use C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -25,12 +25,12 @@ ament_auto_find_build_dependencies()
 ###########
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
-  src/rm_auto_aim.cpp
+  src/armor_detector_node.cpp
   src/armor_detector.cpp
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN ${PROJECT_NAME}::RmAutoAimNode
+  PLUGIN ${PROJECT_NAME}::ArmorDetectorNode
   EXECUTABLE ${PROJECT_NAME}_node
 )
 

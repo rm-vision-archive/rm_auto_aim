@@ -1,0 +1,3 @@
+/armor_detector:
+  ros__parameters:
+    debug: false

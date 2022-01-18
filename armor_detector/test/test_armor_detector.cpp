@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 
-#include "rm_auto_aim/armor_detector.hpp"
+#include "armor_detector/armor_detector.hpp"
 
 std::unique_ptr<rm_auto_aim::ArmorDetector> DETECTOR;
 
@@ -32,7 +32,7 @@ TEST(ArmorDetectorTest, PreprocessTest)
   ORIGIN_MAT = cv::Mat(1080, 1280, CV_8UC3, cv::Scalar(1, 1, 1));
 
   // XXX(chenjun): only for testing locally
-  // ORIGIN_MAT = cv::imread("/tmp/test.png");
+  ORIGIN_MAT = cv::imread("/tmp/test.png");
 
   DETECTOR->detect_color = rm_auto_aim::ArmorDetector::RED;
   R_BINARY = DETECTOR->preprocessImage(ORIGIN_MAT);

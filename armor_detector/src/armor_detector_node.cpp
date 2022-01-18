@@ -1,6 +1,6 @@
 // Copyright 2022 Chen Jun
 
-#include "rm_auto_aim/rm_auto_aim.hpp"
+#include "armor_detector/armor_detector_node.hpp"
 
 #include <cv_bridge/cv_bridge.h>
 
@@ -12,9 +12,10 @@
 
 namespace rm_auto_aim
 {
-RmAutoAimNode::RmAutoAimNode(const rclcpp::NodeOptions & options) : Node("RmAutoAimNode", options)
+ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
+: Node("ArmorDetectorNode", options)
 {
-  RCLCPP_INFO(this->get_logger(), "Starting RmAutoAimNode!");
+  RCLCPP_INFO(this->get_logger(), "Starting ArmorDetectorNode!");
 
   bool debug = this->declare_parameter("debug", true);
 
@@ -23,14 +24,14 @@ RmAutoAimNode::RmAutoAimNode(const rclcpp::NodeOptions & options) : Node("RmAuto
   auto qos = debug ? rclcpp::QoS(10) : rclcpp::SensorDataQoS();
   img_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
     "/camera/color/image_raw", qos,
-    std::bind(&RmAutoAimNode::imageCallback, this, std::placeholders::_1));
+    std::bind(&ArmorDetectorNode::imageCallback, this, std::placeholders::_1));
 
   final_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("debug/final_image", 10);
 }
 
-RmAutoAimNode::~RmAutoAimNode() = default;
+ArmorDetectorNode::~ArmorDetectorNode() = default;
 
-void RmAutoAimNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg)
+void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg)
 {
   auto image = cv_bridge::toCvShare(msg, "rgb8")->image;
 
@@ -85,4 +86,4 @@ void RmAutoAimNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr 
 // Register the component with class_loader.
 // This acts as a sort of entry point, allowing the component to be discoverable when its library
 // is being loaded into a running process.
-RCLCPP_COMPONENTS_REGISTER_NODE(rm_auto_aim::RmAutoAimNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(rm_auto_aim::ArmorDetectorNode)

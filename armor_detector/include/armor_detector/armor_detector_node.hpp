@@ -1,7 +1,7 @@
 // Copyright 2022 Chen Jun
 
-#ifndef RM_AUTO_AIM__RM_AUTO_AIM_HPP_
-#define RM_AUTO_AIM__RM_AUTO_AIM_HPP_
+#ifndef ARMOR_DETECTOR__ARMOR_DETECTOR_NODE_HPP_
+#define ARMOR_DETECTOR__ARMOR_DETECTOR_NODE_HPP_
 
 // ROS
 #include <rclcpp/publisher.hpp>
@@ -12,18 +12,18 @@
 // STD
 #include <memory>
 
-#include "rm_auto_aim/armor_detector.hpp"
+#include "armor_detector/armor_detector.hpp"
 
 namespace rm_auto_aim
 {
 /*!
  * Main class for the node to handle the ROS interfacing.
  */
-class RmAutoAimNode : public rclcpp::Node
+class ArmorDetectorNode : public rclcpp::Node
 {
 public:
-  explicit RmAutoAimNode(const rclcpp::NodeOptions & options);
-  ~RmAutoAimNode() override;
+  explicit ArmorDetectorNode(const rclcpp::NodeOptions & options);
+  ~ArmorDetectorNode() override;
 
 private:
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg);
@@ -37,4 +37,4 @@ private:
 
 }  // namespace rm_auto_aim
 
-#endif  // RM_AUTO_AIM__RM_AUTO_AIM_HPP_
+#endif  // ARMOR_DETECTOR__ARMOR_DETECTOR_NODE_HPP_

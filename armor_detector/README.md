@@ -72,7 +72,7 @@ Now, create a catkin workspace, clone the package, build it, done!
 	source devel/setup.bash
 	roslaunch rm_auto_aim rm_auto_aim.launch -->
 
-### Unit Tests
+### Tests
 
 Run the tests with
 

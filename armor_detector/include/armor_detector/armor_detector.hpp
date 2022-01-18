@@ -1,7 +1,7 @@
 // Copyright 2022 Chen Jun
 
-#ifndef RM_AUTO_AIM__ARMOR_DETECTOR_HPP_
-#define RM_AUTO_AIM__ARMOR_DETECTOR_HPP_
+#ifndef ARMOR_DETECTOR__ARMOR_DETECTOR_HPP_
+#define ARMOR_DETECTOR__ARMOR_DETECTOR_HPP_
 
 #include <opencv2/core.hpp>
 #include <opencv2/core/types.hpp>
@@ -70,4 +70,4 @@ private:
 
 }  // namespace rm_auto_aim
 
-#endif  // RM_AUTO_AIM__ARMOR_DETECTOR_HPP_
+#endif  // ARMOR_DETECTOR__ARMOR_DETECTOR_HPP_

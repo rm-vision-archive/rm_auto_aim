@@ -7,12 +7,12 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     config = os.path.join(
-        get_package_share_directory('rm_auto_aim'), 'config', 'default.yaml')
+        get_package_share_directory('armor_detector'), 'config', 'armor_detector.yaml')
 
-    rm_auto_aim_node = Node(
-        name='rm_auto_aim_node',
-        package='rm_auto_aim',
-        executable='rm_auto_aim_node',
+    armor_detector = Node(
+        name='armor_detector',
+        package='armor_detector',
+        executable='armor_detector_node',
         namespace='',
         output='screen',
         parameters=[config],
@@ -20,4 +20,4 @@ def generate_launch_description():
         # arguments=['--ros-args', '--log-level', 'DEBUG'],
     )
 
-    return LaunchDescription([rm_auto_aim_node])
+    return LaunchDescription([armor_detector])

@@ -1,6 +1,6 @@
 // Copyright 2022 Chen Jun
 
-#include "rm_auto_aim/armor_detector.hpp"
+#include "armor_detector/armor_detector.hpp"
 
 // OpenCV
 #include <opencv2/core.hpp>

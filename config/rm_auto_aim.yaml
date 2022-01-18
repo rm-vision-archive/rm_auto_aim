@@ -1,3 +1,0 @@
-/rm_auto_aim_node:
-  ros__parameters:
-    debug: true
