@@ -38,8 +38,8 @@ Armor::Armor(const Light & l1, const Light & l2)
 ArmorDetector::ArmorDetector(const bool & debug) : detect_color(BULE), debug_(debug)
 {
   // TODO(chenjun): Dynamic configure the following params
-  r = {.hmin = 150, .hmax = 25, .vmin = 120, .vmax = 220};
-  b = {.hmin = 75, .hmax = 125, .vmin = 160, .vmax = 255};
+  r = {.hmin = 150, .hmax = 25, .lmin = 140, .smin = 100};
+  b = {.hmin = 75, .hmax = 120, .lmin = 150, .smin = 160};
 
   l = {.min_ratio = 0.2f, .max_ratio = 0.55f, .max_angle = 30.f};
 
@@ -50,17 +50,17 @@ ArmorDetector::ArmorDetector(const bool & debug) : detect_color(BULE), debug_(de
 cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
 {
   cv::Mat hsv_img;
-  cv::cvtColor(img, hsv_img, cv::COLOR_BGR2HSV);
+  cv::cvtColor(img, hsv_img, cv::COLOR_BGR2HLS);
 
   cv::Mat binary_img;
   if (detect_color == RED) {
     cv::Mat red_img_1, red_img_2;
-    cv::inRange(hsv_img, cv::Scalar(r.hmin, 1, r.vmin), cv::Scalar(179, 255, r.vmax), red_img_1);
-    cv::inRange(hsv_img, cv::Scalar(0, 1, r.vmin), cv::Scalar(r.hmax, 255, r.vmax), red_img_2);
+    cv::inRange(hsv_img, cv::Scalar(r.hmin, r.lmin, r.smin), cv::Scalar(179, 255, 255), red_img_1);
+    cv::inRange(hsv_img, cv::Scalar(0, r.lmin, r.smin), cv::Scalar(r.hmax, 255, 255), red_img_2);
     binary_img = red_img_1 + red_img_2;
   } else if (detect_color == BULE) {
     cv::inRange(
-      hsv_img, cv::Scalar(b.hmin, 1, b.vmin), cv::Scalar(b.hmax, 255, b.vmax), binary_img);
+      hsv_img, cv::Scalar(b.hmin, b.lmin, b.smin), cv::Scalar(b.hmax, 255, 255), binary_img);
   }
 
   return binary_img;

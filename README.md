@@ -72,9 +72,9 @@ Now, create a catkin workspace, clone the package, build it, done!
 	source devel/setup.bash
 	roslaunch rm_auto_aim rm_auto_aim.launch -->
 
-### Tests
+### Linters and Tests
 
-Run the tests with
+Run the linters and tests with
 
 	colcon test --event-handlers console_cohesion+ --packages-up-to rm_auto_aim
 

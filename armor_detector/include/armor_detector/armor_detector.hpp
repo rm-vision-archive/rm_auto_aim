@@ -38,7 +38,7 @@ public:
   enum DetectColor { RED, BULE } detect_color;
   struct PreprocessParams
   {
-    double hmin, hmax, vmin, vmax;
+    double hmin, hmax, lmin, smin;
   } r, b;
   struct LightParams
   {

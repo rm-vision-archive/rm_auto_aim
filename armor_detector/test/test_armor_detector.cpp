@@ -32,7 +32,7 @@ TEST(ArmorDetectorTest, PreprocessTest)
   IMAGE = cv::Mat(1080, 1280, CV_8UC3, cv::Scalar(1, 1, 1));
 
   // XXX(chenjun): this line only for testing locally
-  // ORIGIN_MAT = cv::imread("/tmp/test.png");
+  // IMAGE = cv::imread("/tmp/rs_r_b.png");
 
   DETECTOR->detect_color = rm_auto_aim::ArmorDetector::RED;
   R_BINARY = DETECTOR->preprocessImage(IMAGE);
