@@ -18,12 +18,12 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting ArmorDetectorNode!");
 
-  debug_ = this->declare_parameter("debug", true);
-
+  DetectColor default_color = this->declare_parameter("detect_color", 0) ? RED : BULE;
   std::string transport =
     this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
+  debug_ = this->declare_parameter("debug", true);
 
-  detector_ = std::make_unique<ArmorDetector>();
+  detector_ = std::make_unique<ArmorDetector>(default_color);
 
   img_sub_ = image_transport::create_subscription(
     this, "/camera/color/image_raw",
@@ -82,10 +82,8 @@ void ArmorDetectorNode::drawLightsAndArmors(
   cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors)
 {
   // Draw Lights
-  auto color = detector_->detect_color == ArmorDetector::DetectColor::RED ? cv::Scalar(0, 128, 255)
-                                                                          : cv::Scalar(255, 0, 128);
   for (const auto & light : lights) {
-    cv::ellipse(img, light, color, 2);
+    cv::ellipse(img, light, cv::Scalar(255, 0, 255), 2);
   }
 
   // Draw armors

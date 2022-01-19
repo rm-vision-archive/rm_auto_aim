@@ -16,6 +16,7 @@
 
 namespace rm_auto_aim
 {
+enum DetectColor { RED, BULE };
 class Light : public cv::RotatedRect
 {
 public:
@@ -36,9 +37,10 @@ struct Armor
 class ArmorDetector
 {
 public:
-  ArmorDetector();
+  explicit ArmorDetector(const DetectColor & color);
 
-  enum DetectColor { RED, BULE } detect_color;
+  DetectColor detect_color;
+
   struct PreprocessParams
   {
     double hmin, hmax, lmin, smin;

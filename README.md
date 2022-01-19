@@ -119,8 +119,13 @@ Detector armors, retrun the armors position in image (2d) and world (3d) with th
 
 * **`/camera/color/image_raw`** ([sensor_msgs/msg/Image])
 
-
 #### Published Topics
+
+* **`/debug/lights`** ([auto_aim_interfaces/msg/LightDataArray])
+
+* **`/debug/armors`** ([auto_aim_interfaces/msg/ArmorDataArray])
+
+* **`/debug/binary_image`** ([sensor_msgs/msg/Image])
 
 * **`/debug/final_image`** ([sensor_msgs/msg/Image])
 
@@ -134,6 +139,14 @@ Detector armors, retrun the armors position in image (2d) and world (3d) with th
 
 
 #### Parameters
+
+* **`detect_color`** (int, default: 0)
+
+	Default detect color, 0 means Red and 1 means Blue.
+
+* **`subscribe_compressed`** (bool, default: true)
+
+	Subscribe to **compressedImage** or raw **Image**.
 
 * **`debug`** (bool, default: true)
 

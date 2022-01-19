@@ -34,11 +34,11 @@ TEST(ArmorDetectorTest, PreprocessTest)
   // XXX(chenjun): this line only for testing locally
   // IMAGE = cv::imread("/tmp/rs_r_b.png");
 
-  DETECTOR->detect_color = rm_auto_aim::ArmorDetector::RED;
+  DETECTOR->detect_color = rm_auto_aim::RED;
   R_BINARY = DETECTOR->preprocessImage(IMAGE);
   EXPECT_EQ(cv::imwrite("/tmp/test_r.png", R_BINARY), true);
 
-  DETECTOR->detect_color = rm_auto_aim::ArmorDetector::BULE;
+  DETECTOR->detect_color = rm_auto_aim::BULE;
   B_BINARY = DETECTOR->preprocessImage(IMAGE);
   EXPECT_EQ(cv::imwrite("/tmp/test_b.png", B_BINARY), true);
 }
@@ -81,6 +81,6 @@ TEST(ArmorDetectorTest, MatchLightsTest)
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  DETECTOR = std::make_unique<rm_auto_aim::ArmorDetector>();
+  DETECTOR = std::make_unique<rm_auto_aim::ArmorDetector>(rm_auto_aim::RED);
   return RUN_ALL_TESTS();
 }
