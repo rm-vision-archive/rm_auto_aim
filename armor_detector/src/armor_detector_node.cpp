@@ -4,6 +4,7 @@
 
 #include <cv_bridge/cv_bridge.h>
 
+#include <opencv2/imgproc.hpp>
 #include <rclcpp/qos.hpp>
 
 // std
@@ -18,7 +19,7 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting ArmorDetectorNode!");
 
-  DetectColor default_color = this->declare_parameter("detect_color", 0) ? RED : BULE;
+  DetectColor default_color = this->declare_parameter("detect_color", 0) == 0 ? RED : BULE;
   std::string transport =
     this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
   debug_ = this->declare_parameter("debug", true);
@@ -45,36 +46,33 @@ ArmorDetectorNode::~ArmorDetectorNode() = default;
 void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg)
 {
   auto img = cv_bridge::toCvShare(msg, "rgb8")->image;
+  cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
 
   auto start_time = this->now();
 
-  // origin_img->preprocessImage->binary_img
   auto binary_img = detector_->preprocessImage(img);
   auto preprocess_time = this->now();
   RCLCPP_DEBUG_STREAM(
     this->get_logger(),
     "preprocessImage used: " << (preprocess_time - start_time).seconds() * 1000.0 << "ms");
 
-  // binary_image->findLights->lights
   auto lights = detector_->findLights(binary_img);
 
-  // lights->matchLights->armors
   auto armors = detector_->matchLights(lights);
 
-  auto final_time = this->now();
-  RCLCPP_DEBUG_STREAM(
-    this->get_logger(),
-    "detectArmors used: " << (final_time - start_time).seconds() * 1000.0 << "ms");
-
   if (debug_) {
-    // Publish debug information
+    auto final_time = this->now();
+    RCLCPP_INFO_STREAM(
+      this->get_logger(),
+      "detectArmors used: " << (final_time - start_time).seconds() * 1000.0 << "ms");
+
     binary_img_pub_->publish(*cv_bridge::CvImage(msg->header, "mono8", binary_img).toImageMsg());
 
     lights_data_pub_->publish(detector_->lights_data);
     armors_data_pub_->publish(detector_->armors_data);
 
     drawLightsAndArmors(img, lights, armors);
-    final_img_pub_->publish(*cv_bridge::CvImage(msg->header, "rgb8", img).toImageMsg());
+    final_img_pub_->publish(*cv_bridge::CvImage(msg->header, "bgr8", img).toImageMsg());
   }
 }
 
