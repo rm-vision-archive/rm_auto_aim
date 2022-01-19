@@ -44,10 +44,10 @@ ArmorDetector::ArmorDetector(const DetectColor & color) : detect_color(color)
   r = {.hmin = 150, .hmax = 25, .lmin = 140, .smin = 100};
   b = {.hmin = 75, .hmax = 120, .lmin = 150, .smin = 160};
 
-  l = {.min_ratio = 0.2f, .max_ratio = 0.55f, .max_angle = 30.f};
+  l = {.min_ratio = 0.1f, .max_ratio = 0.4f, .max_angle = 40.f};
 
   a = {
-    .min_light_ratio = 0.7f, .min_center_ratio = 0.5f, .max_center_ratio = 1.8f, .max_angle = 30};
+    .min_light_ratio = 0.6f, .min_center_ratio = 0.4f, .max_center_ratio = 1.6f, .max_angle = 30};
 }
 
 cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
