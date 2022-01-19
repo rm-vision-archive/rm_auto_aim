@@ -20,12 +20,15 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
 
   debug_ = this->declare_parameter("debug", true);
 
+  std::string transport =
+    this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
+
   detector_ = std::make_unique<ArmorDetector>();
 
-  auto qos = debug_ ? rclcpp::QoS(10) : rclcpp::SensorDataQoS();
-  img_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-    "/camera/color/image_raw", qos,
-    std::bind(&ArmorDetectorNode::imageCallback, this, std::placeholders::_1));
+  img_sub_ = image_transport::create_subscription(
+    this, "/camera/color/image_raw",
+    std::bind(&ArmorDetectorNode::imageCallback, this, std::placeholders::_1), transport,
+    rmw_qos_profile_sensor_data);
 
   if (debug_) {
     lights_data_pub_ =
@@ -54,17 +57,9 @@ void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstShared
 
   // binary_image->findLights->lights
   auto lights = detector_->findLights(binary_img);
-  auto findlights_time = this->now();
-  RCLCPP_DEBUG_STREAM(
-    this->get_logger(),
-    "findLights used: " << (findlights_time - preprocess_time).seconds() * 1000.0 << "ms");
 
   // lights->matchLights->armors
   auto armors = detector_->matchLights(lights);
-  auto matchlights_time = this->now();
-  RCLCPP_DEBUG_STREAM(
-    this->get_logger(),
-    "matchLights used: " << (matchlights_time - findlights_time).seconds() * 1000.0 << "ms");
 
   auto final_time = this->now();
   RCLCPP_DEBUG_STREAM(
@@ -79,7 +74,7 @@ void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstShared
     armors_data_pub_->publish(detector_->armors_data);
 
     drawLightsAndArmors(img, lights, armors);
-    final_img_pub_->publish(*cv_bridge::CvImage(msg->header, "bgr8", img).toImageMsg());
+    final_img_pub_->publish(*cv_bridge::CvImage(msg->header, "rgb8", img).toImageMsg());
   }
 }
 

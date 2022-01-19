@@ -4,6 +4,7 @@
 #define ARMOR_DETECTOR__ARMOR_DETECTOR_NODE_HPP_
 
 // ROS
+#include <image_transport/image_transport.hpp>
 #include <rclcpp/publisher.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
@@ -32,7 +33,7 @@ private:
     cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
 
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr img_sub_;
+  image_transport::Subscriber img_sub_;
 
   // Debug info publisher
   rclcpp::Publisher<auto_aim_interfaces::msg::LightDataArray>::SharedPtr lights_data_pub_;
