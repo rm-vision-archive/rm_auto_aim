@@ -4,6 +4,7 @@
 
 #include <cv_bridge/cv_bridge.h>
 
+#include <image_transport/image_transport.hpp>
 #include <opencv2/imgproc.hpp>
 #include <rclcpp/qos.hpp>
 
@@ -36,8 +37,8 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
       this->create_publisher<auto_aim_interfaces::msg::LightDataArray>("debug/lights", 10);
     armors_data_pub_ =
       this->create_publisher<auto_aim_interfaces::msg::ArmorDataArray>("debug/armors", 10);
-    binary_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("debug/binary_image", 10);
-    final_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("debug/final_image", 10);
+    binary_img_pub_ = image_transport::create_publisher(this, "debug/binary_img");
+    final_img_pub_ = image_transport::create_publisher(this, "debug/final_img");
   }
 }
 
@@ -66,13 +67,13 @@ void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstShared
       this->get_logger(),
       "detectArmors used: " << (final_time - start_time).seconds() * 1000.0 << "ms");
 
-    binary_img_pub_->publish(*cv_bridge::CvImage(msg->header, "mono8", binary_img).toImageMsg());
+    binary_img_pub_.publish(*cv_bridge::CvImage(msg->header, "mono8", binary_img).toImageMsg());
 
     lights_data_pub_->publish(detector_->lights_data);
     armors_data_pub_->publish(detector_->armors_data);
 
     drawLightsAndArmors(img, lights, armors);
-    final_img_pub_->publish(*cv_bridge::CvImage(msg->header, "bgr8", img).toImageMsg());
+    final_img_pub_.publish(*cv_bridge::CvImage(msg->header, "bgr8", img).toImageMsg());
   }
 }
 

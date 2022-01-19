@@ -5,6 +5,7 @@
 
 // ROS
 #include <image_transport/image_transport.hpp>
+#include <image_transport/publisher.hpp>
 #include <rclcpp/publisher.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
@@ -38,8 +39,8 @@ private:
   // Debug info publisher
   rclcpp::Publisher<auto_aim_interfaces::msg::LightDataArray>::SharedPtr lights_data_pub_;
   rclcpp::Publisher<auto_aim_interfaces::msg::ArmorDataArray>::SharedPtr armors_data_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr binary_img_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr final_img_pub_;
+  image_transport::Publisher binary_img_pub_;
+  image_transport::Publisher final_img_pub_;
 
   bool debug_;
   std::unique_ptr<ArmorDetector> detector_;
