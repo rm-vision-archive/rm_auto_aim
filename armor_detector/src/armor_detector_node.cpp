@@ -43,8 +43,9 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
     // Synchronize color and depth image
     color_img_sub_filter_.subscribe(
       this, "/camera/color/image_raw", transport, rmw_qos_profile_sensor_data);
+    // Use "raw" because https://github.com/ros-perception/image_common/issues/222
     depth_img_sub_filter_.subscribe(
-      this, "/camera/aligned_depth_to_color/image_raw", transport, rmw_qos_profile_sensor_data);
+      this, "/camera/aligned_depth_to_color/image_raw", "raw", rmw_qos_profile_sensor_data);
     sync_ = std::make_unique<ColorDepthSync>(color_img_sub_filter_, depth_img_sub_filter_, 5);
     sync_->registerCallback(std::bind(&ArmorDetectorNode::colorDepthCallback, this, _1, _2));
 
