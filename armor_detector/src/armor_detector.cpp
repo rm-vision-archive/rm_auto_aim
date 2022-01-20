@@ -44,10 +44,10 @@ ArmorDetector::ArmorDetector(const DetectColor & color) : detect_color(color)
   r = {.hmin = 150, .hmax = 25, .lmin = 140, .smin = 100};
   b = {.hmin = 75, .hmax = 120, .lmin = 150, .smin = 160};
 
-  l = {.min_ratio = 0.1f, .max_ratio = 0.4f, .max_angle = 40.f};
+  l = {.min_ratio = 0.1f, .max_ratio = 0.55f, .max_angle = 40.f};
 
   a = {
-    .min_light_ratio = 0.6f, .min_center_ratio = 0.4f, .max_center_ratio = 1.6f, .max_angle = 30};
+    .min_light_ratio = 0.6f, .min_center_ratio = 0.4f, .max_center_ratio = 1.6f, .max_angle = 35};
 }
 
 cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
@@ -65,6 +65,13 @@ cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
     cv::inRange(
       hsv_img, cv::Scalar(b.hmin, b.lmin, b.smin), cv::Scalar(b.hmax, 255, 255), binary_img);
   }
+
+  // Remove horizontal noise
+  auto element_open = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1, 4));
+  cv::morphologyEx(binary_img, binary_img, cv::MORPH_OPEN, element_open);
+  // Closing holes in the lights
+  auto element_close = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4, 1));
+  cv::morphologyEx(binary_img, binary_img, cv::MORPH_CLOSE, element_close);
 
   return binary_img;
 }

@@ -87,8 +87,8 @@ void ArmorDetectorNode::drawLightsAndArmors(
 
   // Draw armors
   for (const auto & armor : armors) {
-    cv::line(img, armor.left_light.top, armor.right_light.bottom, cv::Scalar(0, 255, 0));
-    cv::line(img, armor.left_light.bottom, armor.right_light.top, cv::Scalar(0, 255, 0));
+    cv::line(img, armor.left_light.top, armor.right_light.bottom, cv::Scalar(0, 255, 0), 2);
+    cv::line(img, armor.left_light.bottom, armor.right_light.top, cv::Scalar(0, 255, 0), 2);
   }
 }
 
