@@ -32,6 +32,7 @@ struct Armor
   Armor(const Light & l1, const Light & l2);
 
   Light left_light, right_light;
+  cv::Point2f center;
 };
 
 class ArmorDetector

@@ -37,6 +37,7 @@ Armor::Armor(const Light & l1, const Light & l2)
   } else {
     left_light = l2, right_light = l1;
   }
+  center = (left_light.center + right_light.center) / 2;
 }
 
 ArmorDetector::ArmorDetector(const DetectColor & color) : detect_color(color)
