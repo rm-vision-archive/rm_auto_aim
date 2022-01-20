@@ -11,8 +11,8 @@
 #include <cmath>
 #include <vector>
 
-#include "auto_aim_interfaces/msg/armor_data_array.hpp"
-#include "auto_aim_interfaces/msg/light_data_array.hpp"
+#include "auto_aim_interfaces/msg/debug_armors.hpp"
+#include "auto_aim_interfaces/msg/debug_lights.hpp"
 
 namespace rm_auto_aim
 {
@@ -62,8 +62,8 @@ public:
     float max_angle;
   } a;
 
-  auto_aim_interfaces::msg::ArmorDataArray armors_data;
-  auto_aim_interfaces::msg::LightDataArray lights_data;
+  auto_aim_interfaces::msg::DebugLights debug_lights;
+  auto_aim_interfaces::msg::DebugArmors debug_armors;
 
   cv::Mat preprocessImage(const cv::Mat & img);
   std::vector<Light> findLights(const cv::Mat & binary_img);

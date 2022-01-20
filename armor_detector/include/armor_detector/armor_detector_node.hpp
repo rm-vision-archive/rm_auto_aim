@@ -37,8 +37,8 @@ private:
   image_transport::Subscriber img_sub_;
 
   // Debug info publisher
-  rclcpp::Publisher<auto_aim_interfaces::msg::LightDataArray>::SharedPtr lights_data_pub_;
-  rclcpp::Publisher<auto_aim_interfaces::msg::ArmorDataArray>::SharedPtr armors_data_pub_;
+  rclcpp::Publisher<auto_aim_interfaces::msg::DebugLights>::SharedPtr lights_data_pub_;
+  rclcpp::Publisher<auto_aim_interfaces::msg::DebugArmors>::SharedPtr armors_data_pub_;
   image_transport::Publisher binary_img_pub_;
   image_transport::Publisher final_img_pub_;
 

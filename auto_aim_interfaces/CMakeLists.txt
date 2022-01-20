@@ -10,10 +10,10 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/LightData.msg"
-  "msg/LightDataArray.msg"
-  "msg/ArmorData.msg"
-  "msg/ArmorDataArray.msg"
+  "msg/DebugLight.msg"
+  "msg/DebugLights.msg"
+  "msg/DebugArmor.msg"
+  "msg/DebugArmors.msg"
 )
 
 ament_package()

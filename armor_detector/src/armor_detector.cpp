@@ -2,8 +2,8 @@
 
 #include "armor_detector/armor_detector.hpp"
 
-#include <auto_aim_interfaces/msg/armor_data.hpp>
-#include <auto_aim_interfaces/msg/light_data.hpp>
+#include <auto_aim_interfaces/msg/debug_armor.hpp>
+#include <auto_aim_interfaces/msg/debug_light.hpp>
 
 // OpenCV
 #include <opencv2/core.hpp>
@@ -79,7 +79,7 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & binary_img)
   cv::findContours(binary_img, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
   vector<Light> lights;
-  this->lights_data.data.clear();
+  this->debug_lights.data.clear();
   for (const auto & contour : contours) {
     // There should be at least 5 points to fit the ellipse.
     // If the size of the contour is less than 5,
@@ -112,11 +112,11 @@ bool ArmorDetector::isLight(const cv::RotatedRect & rect)
   bool is_light = ratio_ok && angle_ok;
 
   // Fill in debug information
-  auto_aim_interfaces::msg::LightData light_data;
+  auto_aim_interfaces::msg::DebugLight light_data;
   light_data.ratio = ratio;
   light_data.angle = angle;
   light_data.is_light = is_light;
-  this->lights_data.data.emplace_back(light_data);
+  this->debug_lights.data.emplace_back(light_data);
 
   return is_light;
 }
@@ -124,7 +124,7 @@ bool ArmorDetector::isLight(const cv::RotatedRect & rect)
 std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
 {
   std::vector<Armor> armors;
-  this->armors_data.data.clear();
+  this->debug_armors.data.clear();
 
   // Loop all the pairing of lights
   for (auto light = lights.begin(); light != lights.end(); light++) {
@@ -161,12 +161,12 @@ bool ArmorDetector::isArmor(const Light & light_1, const Light & light_2)
   bool is_armor = light_ratio_ok && center_ratio_ok && angle_ok;
 
   // Fill in debug information
-  auto_aim_interfaces::msg::ArmorData armor_data;
+  auto_aim_interfaces::msg::DebugArmor armor_data;
   armor_data.light_ratio = light_length_ratio;
   armor_data.center_ratio = center_length_ratio;
   armor_data.angle = angle;
   armor_data.is_armor = is_armor;
-  this->armors_data.data.emplace_back(armor_data);
+  this->debug_armors.data.emplace_back(armor_data);
 
   return is_armor;
 }
