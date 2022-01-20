@@ -17,7 +17,7 @@ public:
   explicit DepthProcessor(const std::array<double, 9> & camera_matrix);
   virtual ~DepthProcessor() = default;
 
-  // transfrom 2d to 3d
+  // Get 3d position
   geometry_msgs::msg::Point getPosition(
     const cv::Mat & depth_image, const cv::Point2f & image_point);
 

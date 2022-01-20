@@ -2,5 +2,6 @@
   ros__parameters:
     # 0-Red 1-BLUE
     detect_color: 1
+    use_depth: true
     subscribe_compressed: true
     debug: true

@@ -34,7 +34,7 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   if (use_depth) {
     // Init depth_processor
     cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-      "/camera/aligned_depth_to_color/image_raw", rclcpp::SensorDataQoS(),
+      "/camera/aligned_depth_to_color/camera_info", rclcpp::SensorDataQoS(),
       [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr camera_info) {
         depth_processor_ = std::make_unique<DepthProcessor>(camera_info->k);
         cam_info_sub_.reset();

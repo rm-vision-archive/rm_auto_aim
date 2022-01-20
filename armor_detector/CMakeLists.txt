@@ -50,6 +50,9 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest)
   ament_add_gtest(test_armor_detector test/test_armor_detector.cpp)
   target_link_libraries(test_armor_detector ${PROJECT_NAME})
+
+  ament_add_gtest(test_node test/test_node.cpp)
+  target_link_libraries(test_node ${PROJECT_NAME})
 endif()
 
 #############
