@@ -71,6 +71,8 @@ public:
 
 private:
   bool isLight(const cv::RotatedRect & rect);
+  bool containLight(
+    const Light & light_1, const Light & light_2, const std::vector<Light> & lights);
   bool isArmor(const Light & light_1, const Light & light_2);
 };
 

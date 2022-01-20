@@ -11,6 +11,7 @@
 #include <opencv2/imgproc.hpp>
 
 // STD
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -69,7 +70,7 @@ cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
   // Remove horizontal noise
   auto element_open = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1, 4));
   cv::morphologyEx(binary_img, binary_img, cv::MORPH_OPEN, element_open);
-  // Closing holes in the lights
+  // Closing gaps in the lights
   auto element_close = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4, 1));
   cv::morphologyEx(binary_img, binary_img, cv::MORPH_CLOSE, element_close);
 
@@ -107,11 +108,10 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & binary_img)
 bool ArmorDetector::isLight(const cv::RotatedRect & rect)
 {
   // TODO(chenjun): may need more judgement
-  // The ratio of light is about 1/4 (width / height)
+  // The ratio of light (width / height)
   float ratio = rect.size.aspectRatio();
   bool ratio_ok = l.min_ratio < ratio && ratio < l.max_ratio;
 
-  // The angle of light is smaller than 30 degree.
   // The rotation angle in a clockwise direction.
   float angle = rect.angle;
   bool angle_ok = angle < l.max_angle || angle > (180.f - l.max_angle);
@@ -136,6 +136,10 @@ std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
   // Loop all the pairing of lights
   for (auto light = lights.begin(); light != lights.end(); light++) {
     for (auto sec_light = light + 1; sec_light != lights.end(); sec_light++) {
+      if (containLight(*light, *sec_light, lights)) {
+        continue;
+      }
+
       if (isArmor(*light, *sec_light)) {
         armors.emplace_back(Armor(*light, *sec_light));
       }
@@ -145,10 +149,35 @@ std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
   return armors;
 }
 
+// Check if there is another light in the quadrilateral formed by the 2 lights
+bool ArmorDetector::containLight(
+  const Light & light_1, const Light & light_2, const std::vector<Light> & lights)
+{
+  // Y-axis is positive downward
+  float top = std::min(light_1.top.y, light_2.top.y);
+  float bottom = std::max(light_1.bottom.y, light_2.bottom.y);
+  float left = std::min(light_1.center.x, light_2.center.x);
+  float right = std::max(light_1.center.x, light_2.center.x);
+
+  for (const auto & test_light : lights) {
+    if (test_light.center == light_1.center || test_light.center == light_2.center) {
+      continue;
+    }
+
+    if (
+      (left < test_light.center.x && test_light.center.x < right) &&
+      ((top < test_light.top.y && test_light.top.y < bottom) ||
+       (top < test_light.center.y && test_light.center.y < bottom) ||
+       (top < test_light.bottom.y && test_light.bottom.y < bottom))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 bool ArmorDetector::isArmor(const Light & light_1, const Light & light_2)
 {
-  // TODO(chenjun): need more judgement
-  // FIXME(chenjun): this following data is only for test!!!
   // Ratio of the length of 2 lights
   float light_length_ratio = light_1.length < light_2.length ? light_1.length / light_2.length
                                                              : light_2.length / light_1.length;
