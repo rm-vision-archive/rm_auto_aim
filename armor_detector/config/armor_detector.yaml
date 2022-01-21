@@ -1,7 +1,7 @@
 /armor_detector:
   ros__parameters:
     # 0-Red 1-BLUE
-    detect_color: 1
-    use_depth: false
-    subscribe_compressed: true
+    detect_color: 0
+    use_depth: true
+    subscribe_compressed: false
     debug: true

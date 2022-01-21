@@ -34,7 +34,7 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   if (use_depth) {
     // Init depth_processor
     cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-      "/camera/aligned_depth_to_color/camera_info", rclcpp::SensorDataQoS(),
+      "/camera/aligned_depth_to_color/camera_info", 10,
       [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr camera_info) {
         depth_processor_ = std::make_unique<DepthProcessor>(camera_info->k);
         cam_info_sub_.reset();
@@ -46,7 +46,8 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
     // Use "raw" because https://github.com/ros-perception/image_common/issues/222
     depth_img_sub_filter_.subscribe(
       this, "/camera/aligned_depth_to_color/image_raw", "raw", rmw_qos_profile_sensor_data);
-    sync_ = std::make_unique<ColorDepthSync>(color_img_sub_filter_, depth_img_sub_filter_, 5);
+    sync_ = std::make_unique<ColorDepthSync>(
+      SyncPolicy(10), color_img_sub_filter_, depth_img_sub_filter_);
     sync_->registerCallback(std::bind(&ArmorDetectorNode::colorDepthCallback, this, _1, _2));
 
   } else {
@@ -88,18 +89,18 @@ void ArmorDetectorNode::colorDepthCallback(
   auto armors = detectArmors(color_msg);
 
   if (depth_processor_ != nullptr) {
-    auto depth_img = cv_bridge::toCvShare(depth_msg, "mono16")->image;
+    auto depth_img = cv_bridge::toCvShare(depth_msg, "16UC1")->image;
     geometry_msgs::msg::Point p;
 
-    marker_.header = color_msg->header;
+    marker_.header = depth_msg->header;
     marker_.points.clear();
 
     for (const auto & armor : armors) {
       p = depth_processor_->getPosition(depth_img, armor.center);
-      marker_.points.emplace_back(p);
+      if (p.z != 0) marker_.points.emplace_back(p);
     }
 
-    marker_pub_->publish(marker_);
+    if (!armors.empty()) marker_pub_->publish(marker_);
   }
 }
 

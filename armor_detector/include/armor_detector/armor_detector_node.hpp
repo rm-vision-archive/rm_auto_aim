@@ -4,7 +4,8 @@
 #define ARMOR_DETECTOR__ARMOR_DETECTOR_NODE_HPP_
 
 // ROS
-#include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/synchronizer.h>
 
 #include <image_transport/image_transport.hpp>
 #include <image_transport/publisher.hpp>
@@ -24,8 +25,9 @@
 
 namespace rm_auto_aim
 {
-using ColorDepthSync =
-  message_filters::TimeSynchronizer<sensor_msgs::msg::Image, sensor_msgs::msg::Image>;
+using SyncPolicy =
+  message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image>;
+using ColorDepthSync = message_filters::Synchronizer<SyncPolicy>;
 /*!
  * Main class for the node to handle the ROS interfacing.
  */
