@@ -57,11 +57,20 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
 
   if (debug_) {
     lights_data_pub_ =
-      this->create_publisher<auto_aim_interfaces::msg::DebugLights>("debug/lights", 10);
+      this->create_publisher<auto_aim_interfaces::msg::DebugLights>("/debug/lights", 10);
     armors_data_pub_ =
-      this->create_publisher<auto_aim_interfaces::msg::DebugArmors>("debug/armors", 10);
-    binary_img_pub_ = image_transport::create_publisher(this, "debug/binary_img");
-    final_img_pub_ = image_transport::create_publisher(this, "debug/final_img");
+      this->create_publisher<auto_aim_interfaces::msg::DebugArmors>("/debug/armors", 10);
+    binary_img_pub_ = image_transport::create_publisher(this, "/debug/binary_img");
+    final_img_pub_ = image_transport::create_publisher(this, "/debug/final_img");
+
+    // Visualization marker
+    marker_.ns = "armors";
+    marker_.type = visualization_msgs::msg::Marker::SPHERE_LIST;
+    marker_.action = visualization_msgs::msg::Marker::ADD;
+    marker_.scale.x = marker_.scale.y = marker_.scale.z = 0.2;
+    marker_.color.a = 1.0;
+    marker_.color.r = 1.0;
+    marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("/debug/marker", 10);
   }
 }
 
@@ -81,9 +90,16 @@ void ArmorDetectorNode::colorDepthCallback(
   if (depth_processor_ != nullptr) {
     auto depth_img = cv_bridge::toCvShare(depth_msg, "mono16")->image;
     geometry_msgs::msg::Point p;
+
+    marker_.header = color_msg->header;
+    marker_.points.clear();
+
     for (const auto & armor : armors) {
       p = depth_processor_->getPosition(depth_img, armor.center);
+      marker_.points.emplace_back(p);
     }
+
+    marker_pub_->publish(marker_);
   }
 }
 

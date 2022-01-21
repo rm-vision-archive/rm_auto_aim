@@ -13,6 +13,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 // STD
 #include <memory>
@@ -51,11 +52,15 @@ private:
   image_transport::SubscriberFilter depth_img_sub_filter_;
   std::unique_ptr<ColorDepthSync> sync_;
 
-  // Debug info publisher
+  // Debug information publishers
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugLights>::SharedPtr lights_data_pub_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugArmors>::SharedPtr armors_data_pub_;
   image_transport::Publisher binary_img_pub_;
   image_transport::Publisher final_img_pub_;
+
+  // Visualization marker
+  visualization_msgs::msg::Marker marker_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
 
   bool debug_;
   std::unique_ptr<ArmorDetector> detector_;
