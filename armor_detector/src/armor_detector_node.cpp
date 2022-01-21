@@ -23,14 +23,14 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting ArmorDetectorNode!");
 
+  // Detector
   DetectColor default_color = this->declare_parameter("detect_color", 0) == 0 ? RED : BULE;
-  std::string transport =
-    this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
-  bool use_depth = this->declare_parameter("use_depth", true);
-  debug_ = this->declare_parameter("debug", true);
-
   detector_ = std::make_unique<ArmorDetector>(default_color);
 
+  // Subscriptions
+  bool use_depth = this->declare_parameter("use_depth", true);
+  std::string transport =
+    this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
   if (use_depth) {
     // Init depth_processor
     cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
@@ -56,22 +56,29 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
       transport, rmw_qos_profile_sensor_data);
   }
 
+  // Armors Publisher
+  armors_pub_ = this->create_publisher<auto_aim_interfaces::msg::Armors>(
+    "/detector/armors", rclcpp::SensorDataQoS());
+
+  // Debug Publishers
+  debug_ = this->declare_parameter("debug", true);
   if (debug_) {
     lights_data_pub_ =
-      this->create_publisher<auto_aim_interfaces::msg::DebugLights>("/debug/lights", 10);
+      this->create_publisher<auto_aim_interfaces::msg::DebugLights>("/detector/debug/lights", 10);
     armors_data_pub_ =
-      this->create_publisher<auto_aim_interfaces::msg::DebugArmors>("/debug/armors", 10);
-    binary_img_pub_ = image_transport::create_publisher(this, "/debug/binary_img");
-    final_img_pub_ = image_transport::create_publisher(this, "/debug/final_img");
+      this->create_publisher<auto_aim_interfaces::msg::DebugArmors>("/detector/debug/armors", 10);
+    binary_img_pub_ = image_transport::create_publisher(this, "/detector/debug/binary_img");
+    final_img_pub_ = image_transport::create_publisher(this, "/detector/debug/final_img");
 
     // Visualization marker
     marker_.ns = "armors";
     marker_.type = visualization_msgs::msg::Marker::SPHERE_LIST;
     marker_.action = visualization_msgs::msg::Marker::ADD;
-    marker_.scale.x = marker_.scale.y = marker_.scale.z = 0.2;
+    marker_.scale.x = marker_.scale.y = marker_.scale.z = 0.1;
     marker_.color.a = 1.0;
     marker_.color.r = 1.0;
-    marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("/debug/marker", 10);
+    marker_pub_ =
+      this->create_publisher<visualization_msgs::msg::Marker>("/detector/debug/marker", 10);
   }
 }
 
@@ -90,17 +97,30 @@ void ArmorDetectorNode::colorDepthCallback(
 
   if (depth_processor_ != nullptr) {
     auto depth_img = cv_bridge::toCvShare(depth_msg, "16UC1")->image;
-    geometry_msgs::msg::Point p;
 
+    armors_msg_.header = depth_msg->header;
+    armors_msg_.armors.clear();
     marker_.header = depth_msg->header;
     marker_.points.clear();
 
+    auto_aim_interfaces::msg::Armor armor_msg;
     for (const auto & armor : armors) {
-      p = depth_processor_->getPosition(depth_img, armor.center);
-      if (p.z != 0) marker_.points.emplace_back(p);
+      armor_msg.position = depth_processor_->getPosition(depth_img, armor.center);
+      armor_msg.distance_to_image_center =
+        depth_processor_->calculateDistanceToCenter(armor.center);
+
+      // If z < 0.4m, the depth would turn to zero
+      if (armor_msg.position.z != 0) {
+        armors_msg_.armors.emplace_back(armor_msg);
+        marker_.points.emplace_back(armor_msg.position);
+      }
     }
 
-    if (!armors.empty()) marker_pub_->publish(marker_);
+    // Publishing detected armors
+    if (!armors_msg_.armors.empty()) {
+      armors_pub_->publish(armors_msg_);
+      if (debug_) marker_pub_->publish(marker_);
+    }
   }
 }
 

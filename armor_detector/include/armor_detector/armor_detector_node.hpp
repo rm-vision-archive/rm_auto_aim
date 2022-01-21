@@ -22,6 +22,7 @@
 
 #include "armor_detector/armor_detector.hpp"
 #include "armor_detector/depth_processor.hpp"
+#include "auto_aim_interfaces/msg/armors.hpp"
 
 namespace rm_auto_aim
 {
@@ -46,15 +47,25 @@ private:
   void drawLightsAndArmors(
     cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
 
+  std::unique_ptr<ArmorDetector> detector_;
+
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
+
+  // Color image subscription if use only color image
   image_transport::Subscriber img_sub_;
 
   // Synchronize color and depth image if use depth
   image_transport::SubscriberFilter color_img_sub_filter_;
   image_transport::SubscriberFilter depth_img_sub_filter_;
   std::unique_ptr<ColorDepthSync> sync_;
+  std::unique_ptr<DepthProcessor> depth_processor_;
+
+  // Detected armors publisher
+  auto_aim_interfaces::msg::Armors armors_msg_;
+  rclcpp::Publisher<auto_aim_interfaces::msg::Armors>::SharedPtr armors_pub_;
 
   // Debug information publishers
+  bool debug_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugLights>::SharedPtr lights_data_pub_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugArmors>::SharedPtr armors_data_pub_;
   image_transport::Publisher binary_img_pub_;
@@ -63,10 +74,6 @@ private:
   // Visualization marker
   visualization_msgs::msg::Marker marker_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
-
-  bool debug_;
-  std::unique_ptr<ArmorDetector> detector_;
-  std::unique_ptr<DepthProcessor> depth_processor_;
 };
 
 }  // namespace rm_auto_aim

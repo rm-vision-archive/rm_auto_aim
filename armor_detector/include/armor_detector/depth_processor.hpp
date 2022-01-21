@@ -21,6 +21,9 @@ public:
   geometry_msgs::msg::Point getPosition(
     const cv::Mat & depth_image, const cv::Point2f & image_point);
 
+  // Calculate the distance between armor center and image center
+  float calculateDistanceToCenter(const cv::Point2f & image_point);
+
 private:
   // Intrinsic camera matrix
   double fx_;

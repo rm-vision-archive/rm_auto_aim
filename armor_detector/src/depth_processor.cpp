@@ -25,4 +25,9 @@ geometry_msgs::msg::Point DepthProcessor::getPosition(
   return p;
 }
 
+float DepthProcessor::calculateDistanceToCenter(const cv::Point2f & image_point)
+{
+  return cv::norm(image_point - cv::Point2f(cx_, cy_));
+}
+
 }  // namespace rm_auto_aim
