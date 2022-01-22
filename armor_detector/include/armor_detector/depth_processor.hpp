@@ -15,7 +15,6 @@ class DepthProcessor
 {
 public:
   explicit DepthProcessor(const std::array<double, 9> & camera_matrix);
-  virtual ~DepthProcessor() = default;
 
   // Get 3d position
   geometry_msgs::msg::Point getPosition(
