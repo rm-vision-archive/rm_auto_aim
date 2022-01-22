@@ -59,6 +59,16 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   armors_pub_ = this->create_publisher<auto_aim_interfaces::msg::Armors>(
     "/detector/armors", rclcpp::SensorDataQoS());
 
+  // Visualization Marker Publisher
+  marker_.ns = "armors";
+  marker_.type = visualization_msgs::msg::Marker::SPHERE_LIST;
+  marker_.action = visualization_msgs::msg::Marker::ADD;
+  marker_.scale.x = marker_.scale.y = marker_.scale.z = 0.1;
+  marker_.color.a = 1.0;
+  marker_.color.r = 1.0;
+  marker_pub_ =
+    this->create_publisher<visualization_msgs::msg::Marker>("/detector/marker", 10);
+
   // Debug Publishers
   debug_ = this->declare_parameter("debug", true);
   if (debug_) {
@@ -68,16 +78,6 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
       this->create_publisher<auto_aim_interfaces::msg::DebugArmors>("/detector/debug/armors", 10);
     binary_img_pub_ = image_transport::create_publisher(this, "/detector/debug/binary_img");
     final_img_pub_ = image_transport::create_publisher(this, "/detector/debug/final_img");
-
-    // Visualization marker
-    marker_.ns = "armors";
-    marker_.type = visualization_msgs::msg::Marker::SPHERE_LIST;
-    marker_.action = visualization_msgs::msg::Marker::ADD;
-    marker_.scale.x = marker_.scale.y = marker_.scale.z = 0.1;
-    marker_.color.a = 1.0;
-    marker_.color.r = 1.0;
-    marker_pub_ =
-      this->create_publisher<visualization_msgs::msg::Marker>("/detector/debug/marker", 10);
   }
 }
 
@@ -116,10 +116,10 @@ void ArmorDetectorNode::colorDepthCallback(
     }
 
     // Publishing detected armors
-    if (!armors_msg_.armors.empty()) {
-      armors_pub_->publish(armors_msg_);
-      if (debug_) marker_pub_->publish(marker_);
-    }
+    armors_pub_->publish(armors_msg_);
+
+    // Publishing marker
+    if (!armors_msg_.armors.empty()) marker_pub_->publish(marker_);
   }
 }
 
