@@ -8,8 +8,8 @@
   <description>A template for ROS packages.</description>
   <maintainer email="chen.junn@outlook.com">Chen Jun</maintainer>
   <license>BSD</license>
-  <url type="website">https://github.com/leggedrobotics/ros_best_practices</url>
-  <url type="bugtracker">https://github.com/leggedrobotics/ros_best_practices/issues</url>
+  <url type="website">https://github.com/chenjunnn/rm_auto_aim</url>
+  <url type="bugtracker">https://github.com/chenjunnn/rm_auto_aim/issues</url>
   <author email="chen.junn@outlook.com">Chen Jun</author>
 
   <!-- buildtool_depend: dependencies of the build process -->
