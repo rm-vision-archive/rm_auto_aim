@@ -10,6 +10,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>armor_detector</depend>
+  <depend>armor_processor</depend>
   <depend>auto_aim_interfaces</depend>
 
   <export>
