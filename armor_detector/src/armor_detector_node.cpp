@@ -66,8 +66,7 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   marker_.scale.x = marker_.scale.y = marker_.scale.z = 0.1;
   marker_.color.a = 1.0;
   marker_.color.r = 1.0;
-  marker_pub_ =
-    this->create_publisher<visualization_msgs::msg::Marker>("/detector/marker", 10);
+  marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("/detector/marker", 10);
 
   // Debug Publishers
   debug_ = this->declare_parameter("debug", true);

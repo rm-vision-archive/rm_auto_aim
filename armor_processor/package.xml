@@ -22,6 +22,7 @@
   <depend>geomoetry_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>message_filters</depend>
+  <depend>tf2_geometry_msgs</depend>
   <depend>auto_aim_interfaces</depend>
 
   <test_depend>ament_lint_auto</test_depend>
