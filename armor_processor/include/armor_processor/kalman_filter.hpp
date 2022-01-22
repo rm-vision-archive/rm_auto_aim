@@ -26,7 +26,7 @@ public:
   void init(const Eigen::VectorXd & x0);
 
   // Computes a predicted state
-  Eigen::MatrixXd predict(const Eigen::MatrixXd A);
+  Eigen::MatrixXd predict(const Eigen::MatrixXd & A);
 
   // Update the estimated state based on measurement
   Eigen::MatrixXd correct(const Eigen::VectorXd & measurement);

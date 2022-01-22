@@ -42,12 +42,10 @@ if(BUILD_TESTING)
   )
   ament_lint_auto_find_test_dependencies()
 
-  # find_package(ament_cmake_gtest)
-  # ament_add_gtest(test_armor_processor test/test_armor_processor.cpp)
-  # target_link_libraries(test_armor_processor ${PROJECT_NAME})
-
-  # ament_add_gtest(test_node test/test_node.cpp)
-  # target_link_libraries(test_node ${PROJECT_NAME})
+  find_package(ament_cmake_gtest)
+  set(TEST_NAME test_kalman_filter)
+  ament_add_gtest(${TEST_NAME} test/${TEST_NAME}.cpp)
+  target_link_libraries(${TEST_NAME} ${PROJECT_NAME})
 endif()
 
 #############

@@ -9,11 +9,12 @@ KalmanFilter::KalmanFilter(
   const Eigen::MatrixXd & R, const Eigen::MatrixXd & P)
 : A_(A), H_(H), Q_(Q), R_(R), P_(P), n_(A.rows()), I_(n_, n_), x_pre_(n_), x_post_(n_)
 {
+  I_.setIdentity();
 }
 
 void KalmanFilter::init(const Eigen::VectorXd & x0) { x_post_ = x0; }
 
-Eigen::MatrixXd KalmanFilter::predict(const Eigen::MatrixXd A)
+Eigen::MatrixXd KalmanFilter::predict(const Eigen::MatrixXd & A)
 {
   this->A_ = A;
 
