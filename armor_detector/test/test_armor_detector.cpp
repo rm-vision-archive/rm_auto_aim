@@ -81,6 +81,8 @@ TEST(ArmorDetectorTest, MatchLightsTest)
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  DETECTOR = std::make_unique<rm_auto_aim::ArmorDetector>(rm_auto_aim::RED);
+  rclcpp::init(argc, argv);
+  auto node = rclcpp::Node("test_node");
+  DETECTOR = std::make_unique<rm_auto_aim::ArmorDetector>(&node);
   return RUN_ALL_TESTS();
 }

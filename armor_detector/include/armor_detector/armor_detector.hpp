@@ -3,6 +3,9 @@
 #ifndef ARMOR_DETECTOR__ARMOR_DETECTOR_HPP_
 #define ARMOR_DETECTOR__ARMOR_DETECTOR_HPP_
 
+// ROS
+#include <rclcpp/rclcpp.hpp>
+
 // OpenCV
 #include <opencv2/core.hpp>
 #include <opencv2/core/types.hpp>
@@ -38,29 +41,29 @@ struct Armor
 class ArmorDetector
 {
 public:
-  explicit ArmorDetector(const DetectColor & color);
+  explicit ArmorDetector(rclcpp::Node * node);
 
   DetectColor detect_color;
 
   struct PreprocessParams
   {
-    double hmin, hmax, lmin, smin;
-  } r, b;
+    int64 hmin, hmax, lmin, smin;
+  } b, r;
   struct LightParams
   {
     // width / height
-    float min_ratio;
-    float max_ratio;
+    double min_ratio;
+    double max_ratio;
     // vertical angle
-    float max_angle;
+    double max_angle;
   } l;
   struct ArmorParams
   {
-    float min_light_ratio;
-    float min_center_ratio;
-    float max_center_ratio;
+    double min_light_ratio;
+    double min_center_ratio;
+    double max_center_ratio;
     // horizontal angle
-    float max_angle;
+    double max_angle;
   } a;
 
   auto_aim_interfaces::msg::DebugLights debug_lights;

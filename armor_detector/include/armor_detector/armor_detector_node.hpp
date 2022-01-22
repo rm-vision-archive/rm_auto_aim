@@ -39,11 +39,11 @@ public:
   ~ArmorDetectorNode() override;
 
 private:
-  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
+  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
   void colorDepthCallback(
-    const sensor_msgs::msg::Image::ConstSharedPtr color_msg,
-    const sensor_msgs::msg::Image::ConstSharedPtr depth_msg);
-  std::vector<Armor> detectArmors(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
+    const sensor_msgs::msg::Image::ConstSharedPtr & color_msg,
+    const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg);
+  std::vector<Armor> detectArmors(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
   void drawLightsAndArmors(
     cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
 

@@ -24,8 +24,7 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(this->get_logger(), "Starting ArmorDetectorNode!");
 
   // Detector
-  DetectColor default_color = this->declare_parameter("detect_color", 0) == 0 ? RED : BULE;
-  detector_ = std::make_unique<ArmorDetector>(default_color);
+  detector_ = std::make_unique<ArmorDetector>(this);
 
   // Subscriptions
   bool use_depth = this->declare_parameter("use_depth", true);
@@ -84,14 +83,14 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
 
 ArmorDetectorNode::~ArmorDetectorNode() = default;
 
-void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
+void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg)
 {
   detectArmors(img_msg);
 }
 
 void ArmorDetectorNode::colorDepthCallback(
-  const sensor_msgs::msg::Image::ConstSharedPtr color_msg,
-  const sensor_msgs::msg::Image::ConstSharedPtr depth_msg)
+  const sensor_msgs::msg::Image::ConstSharedPtr & color_msg,
+  const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg)
 {
   auto armors = detectArmors(color_msg);
 
@@ -125,7 +124,7 @@ void ArmorDetectorNode::colorDepthCallback(
 }
 
 std::vector<Armor> ArmorDetectorNode::detectArmors(
-  const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
+  const sensor_msgs::msg::Image::ConstSharedPtr & img_msg)
 {
   auto start_time = this->now();
   auto img = cv_bridge::toCvShare(img_msg, "rgb8")->image;

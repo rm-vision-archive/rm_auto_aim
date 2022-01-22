@@ -1,10 +1,5 @@
 // Copyright 2022 Chen Jun
 
-#include "armor_detector/armor_detector.hpp"
-
-#include <auto_aim_interfaces/msg/debug_armor.hpp>
-#include <auto_aim_interfaces/msg/debug_light.hpp>
-
 // OpenCV
 #include <opencv2/core.hpp>
 #include <opencv2/core/types.hpp>
@@ -14,6 +9,10 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+
+#include "armor_detector/armor_detector.hpp"
+#include "auto_aim_interfaces/msg/debug_armor.hpp"
+#include "auto_aim_interfaces/msg/debug_light.hpp"
 
 namespace rm_auto_aim
 {
@@ -40,16 +39,33 @@ Armor::Armor(const Light & l1, const Light & l2)
   center = (left_light.center + right_light.center) / 2;
 }
 
-ArmorDetector::ArmorDetector(const DetectColor & color) : detect_color(color)
+ArmorDetector::ArmorDetector(rclcpp::Node * node)
 {
-  // TODO(chenjun): Dynamic configure the following params
-  r = {.hmin = 150, .hmax = 25, .lmin = 140, .smin = 100};
-  b = {.hmin = 75, .hmax = 120, .lmin = 150, .smin = 160};
+  // TODO(chenjun): Dynamic configure some of the following params
+  // 0-BLUE 1-Red
+  detect_color = node->declare_parameter("default_detect_color", 0) ? RED : BULE;
 
-  l = {.min_ratio = 0.1f, .max_ratio = 0.55f, .max_angle = 40.f};
+  b = {
+    .hmin = node->declare_parameter("preprocess.b.hmin", 75),
+    .hmax = node->declare_parameter("preprocess.b.hmax", 120),
+    .lmin = node->declare_parameter("preprocess.b.lmin", 150),
+    .smin = node->declare_parameter("preprocess.b.smin", 160)};
+  r = {
+    .hmin = node->declare_parameter("preprocess.r.hmin", 150),
+    .hmax = node->declare_parameter("preprocess.r.hmax", 25),
+    .lmin = node->declare_parameter("preprocess.r.lmin", 140),
+    .smin = node->declare_parameter("preprocess.r.smin", 100)};
+
+  l = {
+    .min_ratio = node->declare_parameter("light.min_ratio", 0.1),
+    .max_ratio = node->declare_parameter("light.max_ratio", 0.55),
+    .max_angle = node->declare_parameter("light.max_angle", 40.0)};
 
   a = {
-    .min_light_ratio = 0.6f, .min_center_ratio = 0.4f, .max_center_ratio = 1.6f, .max_angle = 35};
+    .min_light_ratio = node->declare_parameter("armor.min_light_ratio", 0.6),
+    .min_center_ratio = node->declare_parameter("armor.min_center_ratio", 0.4),
+    .max_center_ratio = node->declare_parameter("armor.max_center_ratio", 1.6),
+    .max_angle = node->declare_parameter("armor.max_angle", 35.0)};
 }
 
 cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
