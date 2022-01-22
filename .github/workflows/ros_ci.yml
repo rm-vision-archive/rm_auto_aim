@@ -24,3 +24,8 @@ jobs:
           source /opt/ros/galactic/setup.sh
           cd ros_ws
           colcon test --packages-select armor_detector --event-handlers console_cohesion+ --return-code-on-test-failure
+      - name: Test armor_processor
+        run: |
+          source /opt/ros/galactic/setup.sh
+          cd ros_ws
+          colcon test --packages-select armor_processor --event-handlers console_cohesion+ --return-code-on-test-failure

@@ -1,0 +1,3 @@
+/armor_processor:
+  ros__parameters:
+    debug: true
