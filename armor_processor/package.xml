@@ -18,6 +18,7 @@
   <!-- depend: build, export, and execution dependency -->
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
+  <depend>eigen</depend>
   <depend>geomoetry_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>message_filters</depend>

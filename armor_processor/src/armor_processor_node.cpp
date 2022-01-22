@@ -24,8 +24,6 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   // }
 }
 
-ArmorProcessorNode::~ArmorProcessorNode() = default;
-
 }  // namespace rm_auto_aim
 
 #include "rclcpp_components/register_node_macro.hpp"

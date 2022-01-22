@@ -10,6 +10,8 @@
 #include <memory>
 #include <vector>
 
+#include "armor_processor/tracker.hpp"
+
 namespace rm_auto_aim
 {
 /*!
@@ -19,7 +21,6 @@ class ArmorProcessorNode : public rclcpp::Node
 {
 public:
   explicit ArmorProcessorNode(const rclcpp::NodeOptions & options);
-  ~ArmorProcessorNode() override;
 
 private:
   bool debug_;
