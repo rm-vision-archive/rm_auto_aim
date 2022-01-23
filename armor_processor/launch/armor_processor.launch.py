@@ -9,7 +9,7 @@ def generate_launch_description():
     config = os.path.join(
         get_package_share_directory('armor_processor'), 'config', 'armor_processor.yaml')
 
-    armor_detector = Node(
+    armor_processor = Node(
         name='armor_processor',
         package='armor_processor',
         executable='armor_processor_node',
@@ -20,4 +20,11 @@ def generate_launch_description():
         # arguments=['--ros-args', '--log-level', 'DEBUG'],
     )
 
-    return LaunchDescription([armor_detector])
+    # [Warning] : this is only for testing!
+    static_transform_publisher = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        arguments=['0', '0', '0', '0', '0', '0', 'shooter_link', 'camera_link']
+    )
+
+    return LaunchDescription([armor_processor, static_transform_publisher])

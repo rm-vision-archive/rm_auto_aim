@@ -23,6 +23,7 @@ ament_auto_find_build_dependencies()
 ament_auto_add_library(${PROJECT_NAME} SHARED
   src/armor_processor_node.cpp
   src/kalman_filter.cpp
+  src/tracker.cpp
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
@@ -44,6 +45,10 @@ if(BUILD_TESTING)
 
   find_package(ament_cmake_gtest)
   set(TEST_NAME test_kalman_filter)
+  ament_add_gtest(${TEST_NAME} test/${TEST_NAME}.cpp)
+  target_link_libraries(${TEST_NAME} ${PROJECT_NAME})
+
+  set(TEST_NAME test_tracker)
   ament_add_gtest(${TEST_NAME} test/${TEST_NAME}.cpp)
   target_link_libraries(${TEST_NAME} ${PROJECT_NAME})
 endif()

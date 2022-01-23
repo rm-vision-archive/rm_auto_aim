@@ -38,7 +38,8 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
         0,   50,    0,
         0,    0,  0.1;
 
-  P_.setIdentity();  // clang-format on
+  P_.setIdentity();
+  // clang-format on
   kf_ = std::make_unique<KalmanFilter>(A_, H_, Q_, R_, P_);
 
   /// Subscriber with tf2 message_filter
