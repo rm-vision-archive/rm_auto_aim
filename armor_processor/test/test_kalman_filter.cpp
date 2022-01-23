@@ -19,7 +19,7 @@ Eigen::MatrixXd P(N, N);  // error estimate covariance matrix
 
 std::unique_ptr<rm_auto_aim::KalmanFilter> KF;
 
-TEST(KalmanFilterTest, InitTest)
+TEST(KalmanFilterTest, init)
 {
   // Test x = x0 + v*t
   double dt = 1.0;
@@ -39,7 +39,7 @@ TEST(KalmanFilterTest, InitTest)
   std::cout << "P: \n" << P << std::endl;
 }
 
-TEST(KalmanFilterTest, EstimateTest)
+TEST(KalmanFilterTest, estimate)
 {
   std::vector<double> measurements{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 

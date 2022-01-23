@@ -27,7 +27,7 @@ std::vector<rm_auto_aim::Light> B_LIGHTS;
 std::vector<rm_auto_aim::Armor> R_ARMORS;
 std::vector<rm_auto_aim::Armor> B_ARMORS;
 
-TEST(ArmorDetectorTest, PreprocessTest)
+TEST(ArmorDetectorTest, preprocessImage)
 {
   IMAGE = cv::Mat(1080, 1280, CV_8UC3, cv::Scalar(1, 1, 1));
 
@@ -43,7 +43,7 @@ TEST(ArmorDetectorTest, PreprocessTest)
   EXPECT_EQ(cv::imwrite("/tmp/test_b.png", B_BINARY), true);
 }
 
-TEST(ArmorDetectorTest, FindLightsTest)
+TEST(ArmorDetectorTest, findLights)
 {
   R_LIGHTS = DETECTOR->findLights(R_BINARY);
   B_LIGHTS = DETECTOR->findLights(B_BINARY);
@@ -61,7 +61,7 @@ TEST(ArmorDetectorTest, FindLightsTest)
   EXPECT_EQ(cv::imwrite("/tmp/test_lights.png", IMAGE), true);
 }
 
-TEST(ArmorDetectorTest, MatchLightsTest)
+TEST(ArmorDetectorTest, matchLights)
 {
   R_ARMORS = DETECTOR->matchLights(R_LIGHTS);
   B_ARMORS = DETECTOR->matchLights(B_LIGHTS);
