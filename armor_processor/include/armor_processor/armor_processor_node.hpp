@@ -12,10 +12,12 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <rclcpp/rclcpp.hpp>
-#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/detail/marker_array__struct.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 // STD
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "armor_processor/kalman_filter.hpp"
@@ -33,6 +35,13 @@ public:
 private:
   void armorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armors_ptr);
 
+  void deleteMarkers();
+  void kfCorrect();
+  void publish(const rclcpp::Time & time, const Eigen::VectorXd & state);
+
+  // Last time received msg
+  rclcpp::Time last_time_;
+
   // KalmanFilter
   std::unique_ptr<KalmanFilter> kf_;
   double dt_;
@@ -42,18 +51,24 @@ private:
   Eigen::Matrix<double, 6, 6> Q_;  // process noise covariance matrix
   Eigen::Matrix<double, 3, 3> R_;  // measurement noise covariance matrix
   Eigen::Matrix<double, 6, 6> P_;  // error estimate covariance matrix
+  // KF output
+  Eigen::VectorXd kf_prediction_;
+  Eigen::VectorXd kf_corretion_;
 
   std::unique_ptr<Tracker> tracker_;
 
   // Subscriber with tf2 message_filter
+  std::string target_frame_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
   message_filters::Subscriber<auto_aim_interfaces::msg::Armors> armors_sub_;
   std::shared_ptr<tf2_filter> tf2_filter_;
 
   // Visualization marker publisher
-  visualization_msgs::msg::Marker marker_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
+  visualization_msgs::msg::Marker position_marker_;
+  visualization_msgs::msg::Marker velocity_marker_;
+  visualization_msgs::msg::MarkerArray marker_array_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 
   // Debug information publishers
   bool debug_;

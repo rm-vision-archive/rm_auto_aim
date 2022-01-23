@@ -15,6 +15,7 @@ TEST(TrackerTest, init)
   int lost_threshold = 5;
   TRACKER =
     std::make_unique<rm_auto_aim::Tracker>(max_match_distance, tracking_threshold, lost_threshold);
+  EXPECT_EQ(TRACKER->state, rm_auto_aim::Tracker::NO_FOUND);
 
   // Generate test armors
   auto_aim_interfaces::msg::Armors test_armors;
@@ -28,7 +29,8 @@ TEST(TrackerTest, init)
 
   TRACKER->init(test_armors);
 
-  EXPECT_EQ(TRACKER->tracked_armor->distance_to_image_center, 6);
+  EXPECT_EQ(TRACKER->tracked_armor.distance_to_image_center, 6);
+  EXPECT_EQ(TRACKER->state, rm_auto_aim::Tracker::DETECTING);
 }
 
 TEST(TrackerTest, update)
@@ -52,5 +54,5 @@ TEST(TrackerTest, update)
     EXPECT_EQ(TRACKER->state, rm_auto_aim::Tracker::LOST);
   }
   TRACKER->update(test_armors, predicted_position);
-  EXPECT_EQ(TRACKER->state, rm_auto_aim::Tracker::DETECTING);
+  EXPECT_EQ(TRACKER->state, rm_auto_aim::Tracker::NO_FOUND);
 }

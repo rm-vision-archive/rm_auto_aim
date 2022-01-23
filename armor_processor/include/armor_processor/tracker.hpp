@@ -18,16 +18,19 @@ class Tracker
 public:
   Tracker(double max_match_distance, int tracking_threshold, int lost_threshold);
 
-  void init(auto_aim_interfaces::msg::Armors armors_msg);
-  void update(auto_aim_interfaces::msg::Armors armors_msg, Eigen::Vector3d predicted_position);
+  using ArmorsMsg = auto_aim_interfaces::msg::Armors;
+  using Armor = auto_aim_interfaces::msg::Armor;
+  void init(const ArmorsMsg & armors_msg);
+  void update(const ArmorsMsg & armors_msg, const Eigen::Vector3d & predicted_position);
+
+  Armor tracked_armor;
 
   enum State {
+    NO_FOUND,
     DETECTING,
     TRACKING,
     LOST,
   } state;
-
-  std::unique_ptr<auto_aim_interfaces::msg::Armor> tracked_armor;
 
 private:
   double max_match_distance_;

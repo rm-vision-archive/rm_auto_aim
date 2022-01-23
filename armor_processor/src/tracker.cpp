@@ -2,19 +2,20 @@
 
 #include "armor_processor/tracker.hpp"
 
+#include <iostream>
 #include <memory>
 
 namespace rm_auto_aim
 {
 Tracker::Tracker(double max_match_distance, int tracking_threshold, int lost_threshold)
-: state(DETECTING),
+: state(NO_FOUND),
   max_match_distance_(max_match_distance),
   tracking_threshold_(tracking_threshold),
   lost_threshold_(lost_threshold)
 {
 }
 
-void Tracker::init(auto_aim_interfaces::msg::Armors armors_msg)
+void Tracker::init(const ArmorsMsg & armors_msg)
 {
   // TODO(chenjun): need more judgement
   // Simply choose the armor that is closest to image center
@@ -27,28 +28,32 @@ void Tracker::init(auto_aim_interfaces::msg::Armors armors_msg)
     }
   }
 
-  tracked_armor = std::make_unique<auto_aim_interfaces::msg::Armor>(chosen_armor);
+  tracked_armor = chosen_armor;
+  state = DETECTING;
 }
 
-void Tracker::update(
-  auto_aim_interfaces::msg::Armors armors_msg, Eigen::Vector3d predicted_position)
+void Tracker::update(const ArmorsMsg & armors_msg, const Eigen::Vector3d & predicted_position)
 {
-  Eigen::Vector3d armor_position;
-  double position_diff;
-  double min_position_diff = 1e9;
-  auto matched_armor = armors_msg.armors[0];
-  for (const auto & armor : armors_msg.armors) {
-    // Difference of the current armor position and tracked armor's predicted position
-    armor_position << armor.position.x, armor.position.y, armor.position.z;
-    position_diff = (predicted_position - armor_position).norm();
+  bool matched = false;
 
-    if (position_diff < min_position_diff) {
-      min_position_diff = position_diff;
-      matched_armor = armor;
+  if (!armors_msg.armors.empty()) {
+    double position_diff;
+    double min_position_diff = 1e9;
+    auto matched_armor = armors_msg.armors[0];
+    for (const auto & armor : armors_msg.armors) {
+      // Difference of the current armor position and tracked armor's predicted position
+      const auto & armor_position = armor.position_stamped.point;
+      Eigen::Vector3d position_vec(armor_position.x, armor_position.y, armor_position.z);
+      position_diff = (predicted_position - position_vec).norm();
+      if (position_diff < min_position_diff) {
+        min_position_diff = position_diff;
+        matched_armor = armor;
+      }
     }
-  }
+    matched = min_position_diff < max_match_distance_;
 
-  bool matched = min_position_diff < max_match_distance_;
+    if (matched) tracked_armor = matched_armor;
+  }
 
   // Tracking state machine
   if (state == DETECTING) {
@@ -57,7 +62,7 @@ void Tracker::update(
       detect_count_++;
     } else {
       detect_count_ = 0;
-      tracked_armor.reset();
+      state = NO_FOUND;
     }
     if (detect_count_ > tracking_threshold_) {
       detect_count_ = 0;
@@ -77,8 +82,7 @@ void Tracker::update(
       lost_count_++;
       if (lost_count_ > lost_threshold_) {
         lost_count_ = 0;
-        state = DETECTING;
-        tracked_armor.reset();
+        state = NO_FOUND;
       }
     } else {
       state = TRACKING;
