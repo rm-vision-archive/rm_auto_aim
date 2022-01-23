@@ -62,7 +62,6 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   // Visualization Marker Publisher
   marker_.ns = "armors";
   marker_.type = visualization_msgs::msg::Marker::SPHERE_LIST;
-  marker_.action = visualization_msgs::msg::Marker::ADD;
   marker_.scale.x = marker_.scale.y = marker_.scale.z = 0.1;
   marker_.color.a = 1.0;
   marker_.color.r = 1.0;
@@ -118,7 +117,9 @@ void ArmorDetectorNode::colorDepthCallback(
     armors_pub_->publish(armors_msg_);
 
     // Publishing marker
-    if (!armors_msg_.armors.empty()) marker_pub_->publish(marker_);
+    marker_.action = armors_msg_.armors.empty() ? visualization_msgs::msg::Marker::DELETE
+                                                : visualization_msgs::msg::Marker::ADD;
+    marker_pub_->publish(marker_);
   }
 }
 
