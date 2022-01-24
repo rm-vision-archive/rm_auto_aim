@@ -20,11 +20,4 @@ def generate_launch_description():
         # arguments=['--ros-args', '--log-level', 'DEBUG'],
     )
 
-    # [Warning] : this is only for testing!
-    static_transform_publisher = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        arguments=['0', '0', '0', '0', '0', '0', 'shooter_link', 'camera_link']
-    )
-
-    return LaunchDescription([armor_processor, static_transform_publisher])
+    return LaunchDescription([armor_processor])

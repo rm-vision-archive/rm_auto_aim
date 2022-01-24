@@ -45,11 +45,11 @@ private:
   std::unique_ptr<KalmanFilter> kf_;
   double dt_;
   // Initial KF matrices
-  Eigen::Matrix<double, 6, 6> A_;  // state transition matrix
-  Eigen::Matrix<double, 3, 6> H_;  // measurement matrix
-  Eigen::Matrix<double, 6, 6> Q_;  // process noise covariance matrix
-  Eigen::Matrix<double, 3, 3> R_;  // measurement noise covariance matrix
-  Eigen::Matrix<double, 6, 6> P_;  // error estimate covariance matrix
+  Eigen::Matrix<double, 6, 6> A_;       // state transition matrix
+  Eigen::Matrix<double, 3, 6> H_;       // measurement matrix
+  Eigen::DiagonalMatrix<double, 6> Q_;  // process noise covariance matrix
+  Eigen::DiagonalMatrix<double, 3> R_;  // measurement noise covariance matrix
+  Eigen::DiagonalMatrix<double, 6> P_;  // error estimate covariance matrix
   // KF output
   Eigen::VectorXd kf_prediction_;
   Eigen::VectorXd kf_corretion_;

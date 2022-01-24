@@ -28,16 +28,9 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
 
   H_.setIdentity();
 
-  Q_ << 0.01,    0,    0,    0,    0,    0,
-           0, 0.01,    0,    0,    0,    0,
-           0,    0, 0.01,    0,    0,    0,
-           0,    0,    0, 0.01,    0,    0,
-           0,    0,    0,    0, 0.01,    0,
-           0,    0,    0,    0,    0, 0.01;
+  Q_.diagonal() << 0.01, 0.01, 0.01, 0.1, 0.1, 0.1;
 
-  R_ << 0.05, 0,    0,
-        0,   0.05,  0,
-        0,    0,  0.05;
+  R_.diagonal() << 0.05, 0.05, 0.05;
 
   P_.setIdentity();
   // clang-format on
