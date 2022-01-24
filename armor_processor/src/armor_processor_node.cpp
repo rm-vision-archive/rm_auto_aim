@@ -44,8 +44,8 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
 
   // Tracker
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.2);
-  int tracking_threshold = this->declare_parameter("tracker.tracking_threshold", 3);
-  int lost_threshold = this->declare_parameter("tracker.lost_threshold", 20);
+  int tracking_threshold = this->declare_parameter("tracker.tracking_threshold", 5);
+  int lost_threshold = this->declare_parameter("tracker.lost_threshold", 5);
   tracker_ = std::make_unique<Tracker>(max_match_distance, tracking_threshold, lost_threshold);
 
   // Subscriber with tf2 message_filter
@@ -107,10 +107,7 @@ void ArmorProcessorNode::armorsCallback(
       kf_ = std::make_unique<KalmanFilter>(A_, H_, Q_, R_, P_);
       tracker_->init(*armors_ptr);
       Eigen::VectorXd init_state(6);
-      // TODO(chenjun):
-      init_state << tracker_->tracked_armor.position_stamped.point.x,
-        tracker_->tracked_armor.position_stamped.point.y,
-        tracker_->tracked_armor.position_stamped.point.z, 0, 0, 0;
+      init_state << tracker_->tracked_position, 0, 0, 0;
       kf_->init(init_state);
     }
   } else {
@@ -125,10 +122,9 @@ void ArmorProcessorNode::armorsCallback(
     if (tracker_->state == Tracker::NO_FOUND) {
       deleteMarkers();
     } else if (tracker_->state == Tracker::DETECTING) {
-      deleteMarkers();
-      kfCorrect();
+      kf_corretion_ = kf_->correct(tracker_->tracked_position);
     } else if (tracker_->state == Tracker::TRACKING) {
-      kfCorrect();
+      kf_corretion_ = kf_->correct(tracker_->tracked_position);
       publish(time, kf_corretion_);
     } else if (tracker_->state == Tracker::LOST) {
       publish(time, kf_prediction_);
@@ -150,15 +146,6 @@ void ArmorProcessorNode::deleteMarkers()
   marker_array_.markers.emplace_back(position_marker_);
   marker_array_.markers.emplace_back(velocity_marker_);
   marker_pub_->publish(marker_array_);
-}
-
-void ArmorProcessorNode::kfCorrect()
-{
-  auto armor_position = tracker_->tracked_armor.position_stamped.point;
-  Eigen::Vector3d measurement(armor_position.x, armor_position.y, armor_position.z);
-  RCLCPP_INFO_STREAM(this->get_logger(), "measurement:\n" << measurement);
-  kf_corretion_ = kf_->correct(measurement);
-  RCLCPP_INFO_STREAM(this->get_logger(), "kf_corretion_:\n" << kf_corretion_);
 }
 
 void ArmorProcessorNode::publish(const rclcpp::Time & time, const Eigen::VectorXd & state)

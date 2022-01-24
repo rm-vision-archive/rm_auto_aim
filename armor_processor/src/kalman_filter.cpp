@@ -36,10 +36,4 @@ Eigen::MatrixXd KalmanFilter::correct(const Eigen::VectorXd & measurement)
   return x_post_;
 }
 
-void KalmanFilter::setA(int m, int n, double value) { A_(m, n) = value; }
-
-void KalmanFilter::setQ(int m, int n, double value) { Q_(m, n) = value; }
-
-void KalmanFilter::setR(int m, int n, double value) { R_(m, n) = value; }
-
 }  // namespace rm_auto_aim

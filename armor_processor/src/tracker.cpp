@@ -29,6 +29,7 @@ void Tracker::init(const ArmorsMsg & armors_msg)
   }
 
   tracked_armor = chosen_armor;
+  tracked_position = getArmorPosition(chosen_armor);
   state = DETECTING;
 }
 
@@ -52,7 +53,10 @@ void Tracker::update(const ArmorsMsg & armors_msg, const Eigen::Vector3d & predi
     }
     matched = min_position_diff < max_match_distance_;
 
-    if (matched) tracked_armor = matched_armor;
+    if (matched) {
+      tracked_armor = matched_armor;
+      tracked_position = getArmorPosition(matched_armor);
+    }
   }
 
   // Tracking state machine

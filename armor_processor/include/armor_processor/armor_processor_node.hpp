@@ -36,7 +36,6 @@ private:
   void armorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armors_ptr);
 
   void deleteMarkers();
-  void kfCorrect();
   void publish(const rclcpp::Time & time, const Eigen::VectorXd & state);
 
   // Last time received msg

@@ -31,10 +31,6 @@ public:
   // Update the estimated state based on measurement
   Eigen::MatrixXd correct(const Eigen::VectorXd & measurement);
 
-  void setA(int m, int n, double value);
-  void setQ(int m, int n, double value);
-  void setR(int m, int n, double value);
-
 private:
   // state transition matrix
   Eigen::MatrixXd A_;

@@ -20,10 +20,12 @@ public:
 
   using ArmorsMsg = auto_aim_interfaces::msg::Armors;
   using Armor = auto_aim_interfaces::msg::Armor;
+
   void init(const ArmorsMsg & armors_msg);
   void update(const ArmorsMsg & armors_msg, const Eigen::Vector3d & predicted_position);
 
   Armor tracked_armor;
+  Eigen::Vector3d tracked_position;
 
   enum State {
     NO_FOUND,
@@ -33,6 +35,13 @@ public:
   } state;
 
 private:
+  inline Eigen::Vector3d getArmorPosition(const Armor & armor)
+  {
+    return Eigen::Vector3d(
+      armor.position_stamped.point.x, armor.position_stamped.point.y,
+      armor.position_stamped.point.z);
+  }
+
   double max_match_distance_;
 
   int tracking_threshold_;
