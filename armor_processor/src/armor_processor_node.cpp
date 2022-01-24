@@ -96,9 +96,13 @@ void ArmorProcessorNode::armorsCallback(
   rclcpp::Time time = armors_ptr->header.stamp;
 
   if (tracker_->state == Tracker::NO_FOUND) {
+    deleteMarkers();
+
     if (!armors_ptr->armors.empty()) {
-      kf_ = std::make_unique<KalmanFilter>(A_, H_, Q_, R_, P_);
+      // Tracker init
       tracker_->init(*armors_ptr);
+      // KF init
+      kf_ = std::make_unique<KalmanFilter>(A_, H_, Q_, R_, P_);
       Eigen::VectorXd init_state(6);
       init_state << tracker_->tracked_position, 0, 0, 0;
       kf_->init(init_state);
@@ -112,15 +116,13 @@ void ArmorProcessorNode::armorsCallback(
     // Tracker update
     tracker_->update(*armors_ptr, kf_prediction_.head(3));
 
-    if (tracker_->state == Tracker::NO_FOUND) {
-      deleteMarkers();
-    } else if (tracker_->state == Tracker::DETECTING) {
+    if (tracker_->state == Tracker::DETECTING) {
       kf_corretion_ = kf_->correct(tracker_->tracked_position);
     } else if (tracker_->state == Tracker::TRACKING) {
       kf_corretion_ = kf_->correct(tracker_->tracked_position);
-      publish(time, kf_corretion_);
+      publishMarkers(time, kf_corretion_);
     } else if (tracker_->state == Tracker::LOST) {
-      publish(time, kf_prediction_);
+      publishMarkers(time, kf_prediction_);
     }
   }
 
@@ -141,7 +143,7 @@ void ArmorProcessorNode::deleteMarkers()
   marker_pub_->publish(marker_array_);
 }
 
-void ArmorProcessorNode::publish(const rclcpp::Time & time, const Eigen::VectorXd & state)
+void ArmorProcessorNode::publishMarkers(const rclcpp::Time & time, const Eigen::VectorXd & state)
 {
   position_marker_.action = visualization_msgs::msg::Marker::ADD;
   position_marker_.header.stamp = time;

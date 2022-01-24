@@ -84,10 +84,6 @@ cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
       hsv_img, cv::Scalar(b.hmin, b.lmin, b.smin), cv::Scalar(b.hmax, 255, 255), binary_img);
   }
 
-  // Closing gaps in the lights
-  auto element_close = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 6));
-  cv::morphologyEx(binary_img, binary_img, cv::MORPH_CLOSE, element_close);
-
   return binary_img;
 }
 
@@ -106,14 +102,15 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & binary_img)
     // There should be at least 5 points to fit the ellipse.
     // If the size of the contour is less than 5,
     // then it should not be considered as light anyway
-    if (!contour.empty() && contour.size() < 5) {
-      continue;
-    }
+    if (contour.size() < 5) continue;
 
     auto r_rect = cv::fitEllipse(contour);
-    if (isLight(r_rect)) {
-      lights.emplace_back(Light(r_rect));
-    }
+
+    // Ignore abnormal height
+    float height_ratio = r_rect.size.height / binary_img.rows;
+    if (height_ratio < 0.001 || height_ratio > 0.2) continue;
+
+    if (isLight(r_rect)) lights.emplace_back(Light(r_rect));
   }
 
   return lights;
