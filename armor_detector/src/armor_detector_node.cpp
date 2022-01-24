@@ -103,6 +103,7 @@ void ArmorDetectorNode::colorDepthCallback(
     auto_aim_interfaces::msg::Armor armor_msg;
     armor_msg.position_stamped.header = depth_msg->header;
     for (const auto & armor : armors) {
+      // Fill the armor msg
       armor_msg.position_stamped.point = depth_processor_->getPosition(depth_img, armor.center);
       armor_msg.distance_to_image_center =
         depth_processor_->calculateDistanceToCenter(armor.center);

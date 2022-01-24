@@ -84,11 +84,8 @@ cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
       hsv_img, cv::Scalar(b.hmin, b.lmin, b.smin), cv::Scalar(b.hmax, 255, 255), binary_img);
   }
 
-  // Remove horizontal noise
-  auto element_open = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1, 4));
-  cv::morphologyEx(binary_img, binary_img, cv::MORPH_OPEN, element_open);
   // Closing gaps in the lights
-  auto element_close = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4, 1));
+  auto element_close = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 6));
   cv::morphologyEx(binary_img, binary_img, cv::MORPH_CLOSE, element_close);
 
   return binary_img;
