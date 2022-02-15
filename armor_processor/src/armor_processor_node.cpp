@@ -97,7 +97,6 @@ void ArmorProcessorNode::armorsCallback(
 
   if (tracker_->state == Tracker::NO_FOUND) {
     deleteMarkers();
-
     if (!armors_ptr->armors.empty()) {
       // Tracker init
       tracker_->init(*armors_ptr);
@@ -114,7 +113,8 @@ void ArmorProcessorNode::armorsCallback(
     // KF predict
     kf_prediction_ = kf_->predict(A_);
     // Tracker update
-    tracker_->update(*armors_ptr, kf_prediction_.head(3));
+    auto predicted_position = kf_prediction_.head(3);
+    tracker_->update(*armors_ptr, predicted_position);
 
     if (tracker_->state == Tracker::DETECTING) {
       kf_corretion_ = kf_->correct(tracker_->tracked_position);
