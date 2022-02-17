@@ -22,6 +22,7 @@
 
 #include "armor_detector/armor_detector.hpp"
 #include "armor_detector/depth_processor.hpp"
+#include "armor_detector/pnp_solver.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
 
 namespace rm_auto_aim
@@ -51,14 +52,15 @@ private:
 
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
 
-  // Color image subscription if use only color image
-  image_transport::Subscriber img_sub_;
-
   // Synchronize color and depth image if use depth
   image_transport::SubscriberFilter color_img_sub_filter_;
   image_transport::SubscriberFilter depth_img_sub_filter_;
   std::unique_ptr<ColorDepthSync> sync_;
   std::unique_ptr<DepthProcessor> depth_processor_;
+
+  // Color image subscription if use only color image
+  image_transport::Subscriber img_sub_;
+  std::unique_ptr<PnPSolver> pnp_solver_;
 
   // Detected armors publisher
   auto_aim_interfaces::msg::Armors armors_msg_;

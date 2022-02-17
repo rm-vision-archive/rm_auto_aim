@@ -2,7 +2,7 @@
   ros__parameters:
     # 0-BLUE 1-Red 
     default_detect_color: 0
-    use_depth: true
+    use_depth: false
     subscribe_compressed: false
     debug: true
 

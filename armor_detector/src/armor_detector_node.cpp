@@ -31,7 +31,7 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   std::string transport =
     this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
   if (use_depth) {
-    // Init depth_processor
+    // Using RGBD camera
     cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
       "/camera/aligned_depth_to_color/camera_info", 10,
       [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr camera_info) {
@@ -50,9 +50,17 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
     sync_->registerCallback(std::bind(&ArmorDetectorNode::colorDepthCallback, this, _1, _2));
 
   } else {
+    // Using RGB camera
+    cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
+      "/camera_info", rclcpp::SensorDataQoS(),
+      [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr camera_info) {
+        pnp_solver_ = std::make_unique<PnPSolver>(camera_info->k, camera_info->d);
+        cam_info_sub_.reset();
+      });
+
     img_sub_ = image_transport::create_subscription(
-      this, "/camera/color/image_raw", std::bind(&ArmorDetectorNode::imageCallback, this, _1),
-      transport, rmw_qos_profile_sensor_data);
+      this, "/image_raw", std::bind(&ArmorDetectorNode::imageCallback, this, _1), transport,
+      rmw_qos_profile_sensor_data);
   }
 
   // Armors Publisher
@@ -83,7 +91,40 @@ ArmorDetectorNode::~ArmorDetectorNode() = default;
 
 void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg)
 {
-  detectArmors(img_msg);
+  auto armors = detectArmors(img_msg);
+
+  if (pnp_solver_ != nullptr) {
+    armors_msg_.header = img_msg->header;
+    armors_msg_.armors.clear();
+    marker_.header = img_msg->header;
+    marker_.points.clear();
+
+    auto_aim_interfaces::msg::Armor armor_msg;
+    armor_msg.position_stamped.header = img_msg->header;
+    for (const auto & armor : armors) {
+      // Fill the armor msg
+      geometry_msgs::msg::Point point;
+      bool success = pnp_solver_->solvePnP(armor, point);
+
+      if (success) {
+        armor_msg.position_stamped.point = point;
+        armor_msg.distance_to_image_center = pnp_solver_->calculateDistanceToCenter(armor.center);
+
+        armors_msg_.armors.emplace_back(armor_msg);
+        marker_.points.emplace_back(armor_msg.position_stamped.point);
+      } else {
+        RCLCPP_WARN(this->get_logger(), "PnP failed!");
+      }
+    }
+
+    // Publishing detected armors
+    armors_pub_->publish(armors_msg_);
+
+    // Publishing marker
+    marker_.action = armors_msg_.armors.empty() ? visualization_msgs::msg::Marker::DELETE
+                                                : visualization_msgs::msg::Marker::ADD;
+    marker_pub_->publish(marker_);
+  }
 }
 
 void ArmorDetectorNode::colorDepthCallback(
