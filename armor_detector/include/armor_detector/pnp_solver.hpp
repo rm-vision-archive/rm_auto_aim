@@ -29,7 +29,7 @@ public:
 
 private:
   cv::Mat camera_matrix_;
-  cv::Mat distortion_coefficients_;
+  cv::Mat dist_coeffs_;
 
   const float kSmallArmorWidth = 127;
   const float kSmallArmorHeight = 55;

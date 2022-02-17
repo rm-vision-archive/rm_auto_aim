@@ -7,7 +7,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     config = os.path.join(
-        get_package_share_directory('armor_detector'), 'config', 'armor_detector.yaml')
+        get_package_share_directory('armor_detector'), 'config', 'mv_camera.yaml')
 
     armor_detector = Node(
         name='armor_detector',
