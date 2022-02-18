@@ -23,6 +23,7 @@
 #include "armor_processor/kalman_filter.hpp"
 #include "armor_processor/tracker.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
+#include "auto_aim_interfaces/msg/target.hpp"
 
 namespace rm_auto_aim
 {
@@ -37,6 +38,7 @@ private:
 
   void deleteMarkers();
   void publishMarkers(const rclcpp::Time & time, const Eigen::VectorXd & state);
+  void publishTarget(const Eigen::VectorXd & kf_state);
 
   // Last time received msg
   rclcpp::Time last_time_;
@@ -62,6 +64,10 @@ private:
   std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
   message_filters::Subscriber<auto_aim_interfaces::msg::Armors> armors_sub_;
   std::shared_ptr<tf2_filter> tf2_filter_;
+
+  // Publisher
+  auto_aim_interfaces::msg::Target target_msg_;
+  rclcpp::Publisher<auto_aim_interfaces::msg::Target>::SharedPtr target_pub_;
 
   // Visualization marker publisher
   visualization_msgs::msg::Marker position_marker_;

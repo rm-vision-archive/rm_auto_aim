@@ -8,13 +8,13 @@
 
     preprocess:
       b:
-        hmax: 120
         hmin: 75
+        hmax: 120
         lmin: 150
         smin: 160
       r:
-        hmax: 25
         hmin: 150
+        hmax: 25
         lmin: 140
         smin: 100
     

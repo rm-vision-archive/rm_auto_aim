@@ -9,6 +9,8 @@
 #include <memory>
 #include <vector>
 
+#include "armor_processor/tracker.hpp"
+
 namespace rm_auto_aim
 {
 ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
@@ -60,6 +62,8 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   tf2_filter_->registerCallback(&ArmorProcessorNode::armorsCallback, this);
 
   // Publisher
+  target_pub_ = this->create_publisher<auto_aim_interfaces::msg::Target>(
+    "/processor/target", rclcpp::SensorDataQoS());
 
   // Visualization Marker Publisher
   // See http://wiki.ros.org/rviz/DisplayTypes/Marker
@@ -97,6 +101,9 @@ void ArmorProcessorNode::armorsCallback(
 
   if (tracker_->state == Tracker::NO_FOUND) {
     deleteMarkers();
+    target_msg_.target_found = false;
+    target_pub_->publish(target_msg_);
+
     if (!armors_ptr->armors.empty()) {
       // Tracker init
       tracker_->init(*armors_ptr);
@@ -106,6 +113,7 @@ void ArmorProcessorNode::armorsCallback(
       init_state << tracker_->tracked_position, 0, 0, 0;
       kf_->init(init_state);
     }
+
   } else {
     // Set dt
     dt_ = (time - last_time_).seconds();
@@ -118,11 +126,19 @@ void ArmorProcessorNode::armorsCallback(
 
     if (tracker_->state == Tracker::DETECTING) {
       kf_corretion_ = kf_->correct(tracker_->tracked_position);
+      target_msg_.target_found = false;
+      target_pub_->publish(target_msg_);
+
     } else if (tracker_->state == Tracker::TRACKING) {
       kf_corretion_ = kf_->correct(tracker_->tracked_position);
       publishMarkers(time, kf_corretion_);
+      target_msg_.target_found = true;
+      publishTarget(kf_corretion_);
+
     } else if (tracker_->state == Tracker::LOST) {
       publishMarkers(time, kf_prediction_);
+      target_msg_.target_found = true;
+      publishTarget(kf_prediction_);
     }
   }
 
@@ -168,6 +184,17 @@ void ArmorProcessorNode::publishMarkers(const rclcpp::Time & time, const Eigen::
   marker_array_.markers.emplace_back(position_marker_);
   marker_array_.markers.emplace_back(velocity_marker_);
   marker_pub_->publish(marker_array_);
+}
+
+void ArmorProcessorNode::publishTarget(const Eigen::VectorXd & kf_state)
+{
+  target_msg_.position.x = kf_state(0);
+  target_msg_.position.y = kf_state(1);
+  target_msg_.position.z = kf_state(2);
+  target_msg_.velocity.x = kf_state(3);
+  target_msg_.velocity.y = kf_state(4);
+  target_msg_.velocity.z = kf_state(5);
+  target_pub_->publish(target_msg_);
 }
 
 }  // namespace rm_auto_aim
