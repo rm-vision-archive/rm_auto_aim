@@ -12,11 +12,13 @@ def generate_launch_description():
     detector_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
-                get_package_share_directory('armor_detector'), 'launch', 'armor_detector.launch.py')))
+                get_package_share_directory('armor_detector'),
+                'launch', 'armor_detector.launch.py')))
 
     processor_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
-                get_package_share_directory('armor_processor'), 'launch', 'armor_processor.launch.py')))
+                get_package_share_directory('armor_processor'),
+                'launch', 'armor_processor.launch.py')))
 
     return LaunchDescription([detector_launch, processor_launch])
