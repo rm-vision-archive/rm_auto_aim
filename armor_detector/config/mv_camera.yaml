@@ -1,23 +1,23 @@
 /armor_detector:
   ros__parameters:
     # 0-BLUE 1-Red 
-    default_detect_color: 1
+    default_detect_color: 0
     use_depth: false
     subscribe_compressed: false
     debug: true
 
     preprocess:
       b:
-        hmin: 75
-        hmax: 125
-        lmin: 200
-        smin: 50
+        hmin: 100
+        hmax: 150
+        lmin: 130
+        smin: 100
       r:
-        hmin: 150
+        hmin: 175
         hmax: 25
-        lmin: 200
-        smin: 50
-    
+        lmin: 100
+        smin: 150      
+
     light:
       max_angle: 40.0
       max_ratio: 0.55

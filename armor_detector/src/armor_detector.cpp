@@ -99,7 +99,7 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & binary_img)
   vector<Light> lights;
   this->debug_lights.data.clear();
   for (const auto & contour : contours) {
-    if (contour.size() < 10) continue;
+    if (contour.size() < 5) continue;
     auto r_rect = cv::minAreaRect(contour);
 
     if (isLight(r_rect)) {
