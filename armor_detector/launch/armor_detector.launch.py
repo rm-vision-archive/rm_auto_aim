@@ -1,3 +1,4 @@
+from cmath import e
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -15,6 +16,7 @@ def generate_launch_description():
         executable='armor_detector_node',
         namespace='',
         output='screen',
+        emulate_tty=True,
         parameters=[config],
         # Uncomment this line to change log level to DEBUG
         # arguments=['--ros-args', '--log-level', 'DEBUG'],

@@ -20,13 +20,13 @@ Light::Light(cv::RotatedRect box) : cv::RotatedRect(box)
 {
   cv::Point2f p[4];
   box.points(p);
-  if (box.angle < 90) {
-    bottom = (p[0] + p[3]) / 2, top = (p[1] + p[2]) / 2;
+  if (box.angle > 45) {
+    top = (p[0] + p[1]) / 2, bottom = (p[2] + p[3]) / 2;
+    length = box.size.width;
   } else {
-    top = (p[0] + p[3]) / 2, bottom = (p[1] + p[2]) / 2;
+    top = (p[1] + p[2]) / 2, bottom = (p[0] + p[3]) / 2;
+    length = box.size.height;
   }
-
-  length = box.size.height;
 }
 
 Armor::Armor(const Light & l1, const Light & l2)
@@ -99,18 +99,12 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & binary_img)
   vector<Light> lights;
   this->debug_lights.data.clear();
   for (const auto & contour : contours) {
-    // There should be at least 5 points to fit the ellipse.
-    // If the size of the contour is less than 5,
-    // then it should not be considered as light anyway
-    if (contour.size() < 5) continue;
+    if (contour.size() < 10) continue;
+    auto r_rect = cv::minAreaRect(contour);
 
-    auto r_rect = cv::fitEllipse(contour);
-
-    // Ignore abnormal height
-    float height_ratio = r_rect.size.height / binary_img.rows;
-    if (height_ratio < 0.001 || height_ratio > 0.2) continue;
-
-    if (isLight(r_rect)) lights.emplace_back(Light(r_rect));
+    if (isLight(r_rect)) {
+      lights.emplace_back(Light(r_rect));
+    }
   }
 
   return lights;
@@ -119,12 +113,17 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & binary_img)
 bool ArmorDetector::isLight(const cv::RotatedRect & rect)
 {
   // TODO(chenjun): may need more judgement
-  // The ratio of light (width / height)
-  float ratio = rect.size.aspectRatio();
-  bool ratio_ok = l.min_ratio < ratio && ratio < l.max_ratio;
 
   // The rotation angle in a clockwise direction.
+  // The angle of rect returned by minAreaRect is in [0, 90]
+  // If angle > 45, the width is longer than height
   float angle = rect.angle;
+
+  // The ratio of light (short size / long size)
+  float ratio = angle < 45 ? rect.size.aspectRatio() : 1.0 / rect.size.aspectRatio();
+  bool ratio_ok = l.min_ratio < ratio && ratio < l.max_ratio;
+
+  angle = angle < 45 ? angle : 90 - angle;
   bool angle_ok = angle < l.max_angle || angle > (180.f - l.max_angle);
 
   bool is_light = ratio_ok && angle_ok;

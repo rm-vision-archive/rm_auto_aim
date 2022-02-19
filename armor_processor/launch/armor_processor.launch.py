@@ -16,6 +16,7 @@ def generate_launch_description():
         namespace='',
         output='screen',
         parameters=[config],
+        emulate_tty=True,
         # Uncomment this line to change log level to DEBUG
         # arguments=['--ros-args', '--log-level', 'DEBUG'],
     )
