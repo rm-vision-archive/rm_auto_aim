@@ -11,7 +11,7 @@
 
 #include "armor_detector/armor_detector_node.hpp"
 
-TEST(ArmorDetectorNodeTest, NodeTest)
+TEST(ArmorDetectorNodeTest, NodeStartupTest)
 {
   rclcpp::init(0, nullptr);
   rclcpp::NodeOptions options;

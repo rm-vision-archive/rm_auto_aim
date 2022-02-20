@@ -24,7 +24,7 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(this->get_logger(), "Starting ArmorDetectorNode!");
 
   // Detector
-  detector_ = std::make_unique<ArmorDetector>(this);
+  detector_ = initArmorDetector();
 
   // Subscriptions
   bool use_depth = this->declare_parameter("use_depth", true);
@@ -173,6 +173,20 @@ std::vector<Armor> ArmorDetectorNode::detectArmors(
   auto img = cv_bridge::toCvShare(img_msg, "rgb8")->image;
   cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
 
+  detector_->b = {
+    .hmin = get_parameter("preprocess.b.hmin").as_int(),
+    .hmax = get_parameter("preprocess.b.hmax").as_int(),
+    .lmin = get_parameter("preprocess.b.lmin").as_int(),
+    .smin = get_parameter("preprocess.b.smin").as_int()};
+  detector_->r = {
+    .hmin = get_parameter("preprocess.r.hmin").as_int(),
+    .hmax = get_parameter("preprocess.r.hmax").as_int(),
+    .lmin = get_parameter("preprocess.r.lmin").as_int(),
+    .smin = get_parameter("preprocess.r.smin").as_int()};
+
+  detector_->detect_color =
+    static_cast<ArmorDetector::Color>(get_parameter("detect_color").as_int());
+
   auto binary_img = detector_->preprocessImage(img);
   auto lights = detector_->findLights(binary_img);
   auto armors = detector_->matchLights(lights);
@@ -191,6 +205,7 @@ std::vector<Armor> ArmorDetectorNode::detectArmors(
     drawLightsAndArmors(img, lights, armors);
     final_img_pub_.publish(*cv_bridge::CvImage(img_msg->header, "bgr8", img).toImageMsg());
   }
+
   return armors;
 }
 
@@ -207,6 +222,45 @@ void ArmorDetectorNode::drawLightsAndArmors(
     cv::line(img, armor.left_light.top, armor.right_light.bottom, cv::Scalar(0, 255, 0), 2);
     cv::line(img, armor.left_light.bottom, armor.right_light.top, cv::Scalar(0, 255, 0), 2);
   }
+}
+
+std::unique_ptr<ArmorDetector> ArmorDetectorNode::initArmorDetector()
+{
+  rcl_interfaces::msg::ParameterDescriptor param_desc;
+  param_desc.integer_range.resize(1);
+  param_desc.integer_range[0].step = 1;
+  param_desc.integer_range[0].from_value = 0;
+  param_desc.integer_range[0].to_value = 255;
+
+  ArmorDetector::PreprocessParams b = {
+    .hmin = declare_parameter("preprocess.b.hmin", 75, param_desc),
+    .hmax = declare_parameter("preprocess.b.hmax", 120, param_desc),
+    .lmin = declare_parameter("preprocess.b.lmin", 150, param_desc),
+    .smin = declare_parameter("preprocess.b.smin", 160, param_desc)};
+  ArmorDetector::PreprocessParams r = {
+    .hmin = declare_parameter("preprocess.r.hmin", 150, param_desc),
+    .hmax = declare_parameter("preprocess.r.hmax", 25, param_desc),
+    .lmin = declare_parameter("preprocess.r.lmin", 140, param_desc),
+    .smin = declare_parameter("preprocess.r.smin", 100, param_desc)};
+
+  ArmorDetector::LightParams l = {
+    .min_ratio = declare_parameter("light.min_ratio", 0.1),
+    .max_ratio = declare_parameter("light.max_ratio", 0.55),
+    .max_angle = declare_parameter("light.max_angle", 40.0)};
+
+  ArmorDetector::ArmorParams a = {
+    .min_light_ratio = declare_parameter("armor.min_light_ratio", 0.6),
+    .min_center_ratio = declare_parameter("armor.min_center_ratio", 0.4),
+    .max_center_ratio = declare_parameter("armor.max_center_ratio", 1.6),
+    .max_angle = declare_parameter("armor.max_angle", 35.0)};
+
+  param_desc.description = "0-RED, 1-BLUE";
+  param_desc.integer_range[0].from_value = 0;
+  param_desc.integer_range[0].to_value = 1;
+  auto detect_color =
+    static_cast<ArmorDetector::Color>(declare_parameter("detect_color", 0, param_desc));
+
+  return std::make_unique<ArmorDetector>(b, r, l, a, detect_color);
 }
 
 }  // namespace rm_auto_aim

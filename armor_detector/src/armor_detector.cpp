@@ -39,33 +39,11 @@ Armor::Armor(const Light & l1, const Light & l2)
   center = (left_light.center + right_light.center) / 2;
 }
 
-ArmorDetector::ArmorDetector(rclcpp::Node * node)
+ArmorDetector::ArmorDetector(
+  const PreprocessParams & init_b, const PreprocessParams & init_r, const LightParams & init_l,
+  const ArmorParams & init_a, const Color & init_color)
+: b(init_b), r(init_r), l(init_l), a(init_a), detect_color(init_color)
 {
-  // TODO(chenjun): Dynamic configure some of the following params
-  // 0-BLUE 1-Red
-  detect_color = node->declare_parameter("default_detect_color", 0) ? RED : BULE;
-
-  b = {
-    .hmin = node->declare_parameter("preprocess.b.hmin", 75),
-    .hmax = node->declare_parameter("preprocess.b.hmax", 120),
-    .lmin = node->declare_parameter("preprocess.b.lmin", 150),
-    .smin = node->declare_parameter("preprocess.b.smin", 160)};
-  r = {
-    .hmin = node->declare_parameter("preprocess.r.hmin", 150),
-    .hmax = node->declare_parameter("preprocess.r.hmax", 25),
-    .lmin = node->declare_parameter("preprocess.r.lmin", 140),
-    .smin = node->declare_parameter("preprocess.r.smin", 100)};
-
-  l = {
-    .min_ratio = node->declare_parameter("light.min_ratio", 0.1),
-    .max_ratio = node->declare_parameter("light.max_ratio", 0.55),
-    .max_angle = node->declare_parameter("light.max_angle", 40.0)};
-
-  a = {
-    .min_light_ratio = node->declare_parameter("armor.min_light_ratio", 0.6),
-    .min_center_ratio = node->declare_parameter("armor.min_center_ratio", 0.4),
-    .max_center_ratio = node->declare_parameter("armor.max_center_ratio", 1.6),
-    .max_angle = node->declare_parameter("armor.max_angle", 35.0)};
 }
 
 cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)

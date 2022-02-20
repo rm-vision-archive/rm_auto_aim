@@ -3,9 +3,6 @@
 #ifndef ARMOR_DETECTOR__ARMOR_DETECTOR_HPP_
 #define ARMOR_DETECTOR__ARMOR_DETECTOR_HPP_
 
-// ROS
-#include <rclcpp/rclcpp.hpp>
-
 // OpenCV
 #include <opencv2/core.hpp>
 #include <opencv2/core/types.hpp>
@@ -19,7 +16,6 @@
 
 namespace rm_auto_aim
 {
-enum DetectColor { RED, BULE };
 class Light : public cv::RotatedRect
 {
 public:
@@ -41,9 +37,7 @@ struct Armor
 class ArmorDetector
 {
 public:
-  explicit ArmorDetector(rclcpp::Node * node);
-
-  DetectColor detect_color;
+  enum Color { RED = 0, BULE = 1 };
 
   struct PreprocessParams
   {
@@ -66,17 +60,28 @@ public:
     double max_angle;
   } a;
 
+  ArmorDetector(
+    const PreprocessParams & init_b, const PreprocessParams & init_r, const LightParams & init_l,
+    const ArmorParams & init_a, const Color & init_color);
+
+  Color detect_color;
+
+  // Debug msgs
   auto_aim_interfaces::msg::DebugLights debug_lights;
   auto_aim_interfaces::msg::DebugArmors debug_armors;
 
   cv::Mat preprocessImage(const cv::Mat & img);
+
   std::vector<Light> findLights(const cv::Mat & binary_img);
+
   std::vector<Armor> matchLights(const std::vector<Light> & lights);
 
 private:
   bool isLight(const cv::RotatedRect & rect);
+
   bool containLight(
     const Light & light_1, const Light & light_2, const std::vector<Light> & lights);
+
   bool isArmor(const Light & light_1, const Light & light_2);
 };
 

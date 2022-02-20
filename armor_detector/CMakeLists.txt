@@ -45,11 +45,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 
   find_package(ament_cmake_gtest)
-  ament_add_gtest(test_armor_detector test/test_armor_detector.cpp)
-  target_link_libraries(test_armor_detector ${PROJECT_NAME})
-
-  ament_add_gtest(test_node test/test_node.cpp)
-  target_link_libraries(test_node ${PROJECT_NAME})
+  ament_add_gtest(test_node_startup test/test_node_startup.cpp)
+  target_link_libraries(test_node_startup ${PROJECT_NAME})
 endif()
 
 #############
