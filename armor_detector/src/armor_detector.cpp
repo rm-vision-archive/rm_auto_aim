@@ -62,6 +62,9 @@ cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
       hsv_img, cv::Scalar(b.hmin, b.lmin, b.smin), cv::Scalar(b.hmax, 255, 255), binary_img);
   }
 
+  cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 4));
+  cv::morphologyEx(binary_img, binary_img, cv::MORPH_CLOSE, element);
+
   return binary_img;
 }
 
