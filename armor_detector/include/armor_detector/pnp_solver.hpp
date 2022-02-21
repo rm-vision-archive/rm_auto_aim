@@ -31,7 +31,7 @@ private:
   cv::Mat camera_matrix_;
   cv::Mat dist_coeffs_;
 
-  const float kSmallArmorWidth = 127;
+  const float kSmallArmorWidth = 135;
   const float kSmallArmorHeight = 55;
   const float kLargeArmorWidth = 225;
   const float kLargeArmorHeight = 55;
