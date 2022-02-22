@@ -40,9 +40,9 @@ Armor::Armor(const Light & l1, const Light & l2)
 }
 
 ArmorDetector::ArmorDetector(
-  const PreprocessParams & init_b, const PreprocessParams & init_r, const LightParams & init_l,
-  const ArmorParams & init_a, const Color & init_color)
-: b(init_b), r(init_r), l(init_l), a(init_a), detect_color(init_color)
+  const PreprocessParams & init_b, const PreprocessParams & init_r, const int size,
+  const LightParams & init_l, const ArmorParams & init_a, const Color & init_color)
+: b(init_b), r(init_r), morph_size(size), l(init_l), a(init_a), detect_color(init_color)
 {
 }
 
@@ -62,7 +62,9 @@ cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
       hsv_img, cv::Scalar(b.hmin, b.lmin, b.smin), cv::Scalar(b.hmax, 255, 255), binary_img);
   }
 
-  cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 4));
+  // Connect the break of the lighs
+  auto size = cv::Size(morph_size, 2 * morph_size);
+  cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, size);
   cv::morphologyEx(binary_img, binary_img, cv::MORPH_CLOSE, element);
 
   return binary_img;

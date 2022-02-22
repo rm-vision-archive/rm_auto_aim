@@ -43,6 +43,9 @@ public:
   {
     int64 hmin, hmax, lmin, smin;
   } b, r;
+
+  int morph_size;
+
   struct LightParams
   {
     // width / height
@@ -61,8 +64,8 @@ public:
   } a;
 
   ArmorDetector(
-    const PreprocessParams & init_b, const PreprocessParams & init_r, const LightParams & init_l,
-    const ArmorParams & init_a, const Color & init_color);
+    const PreprocessParams & init_b, const PreprocessParams & init_r, const int size,
+    const LightParams & init_l, const ArmorParams & init_a, const Color & init_color);
 
   Color detect_color;
 

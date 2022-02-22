@@ -13,7 +13,8 @@
         hmin: 150
         hmax: 25
         lmin: 100
-        smin: 100      
+        smin: 100
+      morph_size: 1      
 
     light:
       max_angle: 40.0

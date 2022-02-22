@@ -184,6 +184,8 @@ std::vector<Armor> ArmorDetectorNode::detectArmors(
     .lmin = get_parameter("preprocess.r.lmin").as_int(),
     .smin = get_parameter("preprocess.r.smin").as_int()};
 
+  detector_->morph_size = get_parameter("preprocess.morph_size").as_int();
+
   detector_->detect_color =
     static_cast<ArmorDetector::Color>(get_parameter("detect_color").as_int());
 
@@ -243,6 +245,10 @@ std::unique_ptr<ArmorDetector> ArmorDetectorNode::initArmorDetector()
     .lmin = declare_parameter("preprocess.r.lmin", 140, param_desc),
     .smin = declare_parameter("preprocess.r.smin", 100, param_desc)};
 
+  param_desc.integer_range[0].from_value = 0;
+  param_desc.integer_range[0].to_value = 20;
+  int size = declare_parameter("preprocess.morph_size", 1, param_desc);
+
   ArmorDetector::LightParams l = {
     .min_ratio = declare_parameter("light.min_ratio", 0.1),
     .max_ratio = declare_parameter("light.max_ratio", 0.55),
@@ -260,7 +266,7 @@ std::unique_ptr<ArmorDetector> ArmorDetectorNode::initArmorDetector()
   auto detect_color =
     static_cast<ArmorDetector::Color>(declare_parameter("detect_color", 0, param_desc));
 
-  return std::make_unique<ArmorDetector>(b, r, l, a, detect_color);
+  return std::make_unique<ArmorDetector>(b, r, size, l, a, detect_color);
 }
 
 }  // namespace rm_auto_aim
