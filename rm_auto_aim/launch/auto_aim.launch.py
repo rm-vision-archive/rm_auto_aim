@@ -18,7 +18,6 @@ def generate_launch_description():
     armor_detector = Node(
         package='armor_detector',
         executable='armor_detector_node',
-        namespace='',
         output='screen',
         emulate_tty=True,
         parameters=[LaunchConfiguration('detector_params_file'), {
@@ -30,7 +29,6 @@ def generate_launch_description():
     armor_processor = Node(
         package='armor_processor',
         executable='armor_processor_node',
-        namespace='',
         output='screen',
         emulate_tty=True,
         parameters=[LaunchConfiguration('processor_params_file'), {

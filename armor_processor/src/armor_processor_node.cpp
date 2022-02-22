@@ -14,7 +14,7 @@
 namespace rm_auto_aim
 {
 ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
-: Node("ArmorProcessorNode", options), last_time_(0), dt_(0.0)
+: Node("armor_processor", options), last_time_(0), dt_(0.0)
 {
   RCLCPP_INFO(this->get_logger(), "Starting ArmorProcessorNode!");
 

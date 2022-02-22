@@ -19,7 +19,7 @@ using std::placeholders::_2;
 namespace rm_auto_aim
 {
 ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
-: Node("ArmorDetectorNode", options)
+: Node("armor_detector", options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting ArmorDetectorNode!");
 

@@ -1,7 +1,6 @@
 /armor_processor:
   ros__parameters:
     target_frame: shooter_link
-    debug: false
 
     tracker:
       max_match_distance: 0.2
