@@ -6,19 +6,18 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    config = os.path.join(
-        get_package_share_directory('armor_processor'), 'config', 'armor_processor.yaml')
+    default_params_file = os.path.join(
+        get_package_share_directory('armor_processor'), 'config', 'processor.yaml')
 
     armor_processor = Node(
-        name='armor_processor',
         package='armor_processor',
         executable='armor_processor_node',
         namespace='',
         output='screen',
-        parameters=[config],
         emulate_tty=True,
-        # Uncomment this line to change log level to DEBUG
-        # arguments=['--ros-args', '--log-level', 'DEBUG'],
+        parameters=[default_params_file, {
+                'debug': True,
+        }],
     )
 
     return LaunchDescription([armor_processor])
