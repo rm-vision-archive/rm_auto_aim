@@ -78,13 +78,15 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   // Debug Publishers
   debug_ = this->declare_parameter("debug", true);
   if (debug_) {
-    lights_data_pub_ =
-      this->create_publisher<auto_aim_interfaces::msg::DebugLights>("/detector/debug/lights", 10);
-    armors_data_pub_ =
-      this->create_publisher<auto_aim_interfaces::msg::DebugArmors>("/detector/debug/armors", 10);
-    binary_img_pub_ = image_transport::create_publisher(this, "/detector/debug/binary_img");
-    final_img_pub_ = image_transport::create_publisher(this, "/detector/debug/final_img");
+    createDebugPublishers();
   }
+
+  debug_param_sub_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
+  debug_cb_handle_ =
+    debug_param_sub_->add_parameter_callback("debug", [this](const rclcpp::Parameter & p) {
+      debug_ = p.as_bool();
+      debug_ ? createDebugPublishers() : destroyDebugPublishers();
+    });
 }
 
 ArmorDetectorNode::~ArmorDetectorNode() = default;
@@ -267,6 +269,24 @@ std::unique_ptr<ArmorDetector> ArmorDetectorNode::initArmorDetector()
     static_cast<ArmorDetector::Color>(declare_parameter("detect_color", 0, param_desc));
 
   return std::make_unique<ArmorDetector>(b, r, size, l, a, detect_color);
+}
+
+void ArmorDetectorNode::createDebugPublishers()
+{
+  lights_data_pub_ =
+    this->create_publisher<auto_aim_interfaces::msg::DebugLights>("/detector/debug/lights", 10);
+  armors_data_pub_ =
+    this->create_publisher<auto_aim_interfaces::msg::DebugArmors>("/detector/debug/armors", 10);
+  binary_img_pub_ = image_transport::create_publisher(this, "/detector/debug/binary_img");
+  final_img_pub_ = image_transport::create_publisher(this, "/detector/debug/final_img");
+}
+
+void ArmorDetectorNode::destroyDebugPublishers()
+{
+  lights_data_pub_.reset();
+  armors_data_pub_.reset();
+  binary_img_pub_.shutdown();
+  final_img_pub_.shutdown();
 }
 
 }  // namespace rm_auto_aim

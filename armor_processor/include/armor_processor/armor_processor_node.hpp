@@ -77,6 +77,8 @@ private:
 
   // Debug information publishers
   bool debug_;
+  std::shared_ptr<rclcpp::ParameterEventHandler> debug_param_sub_;
+  std::shared_ptr<rclcpp::ParameterCallbackHandle> debug_cb_handle_;
 };
 
 }  // namespace rm_auto_aim

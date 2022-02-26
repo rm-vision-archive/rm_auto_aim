@@ -53,6 +53,9 @@ private:
   void drawLightsAndArmors(
     cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
 
+  void createDebugPublishers();
+  void destroyDebugPublishers();
+
   std::unique_ptr<ArmorDetector> detector_;
 
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
@@ -77,6 +80,8 @@ private:
 
   // Debug information publishers
   bool debug_;
+  std::shared_ptr<rclcpp::ParameterEventHandler> debug_param_sub_;
+  std::shared_ptr<rclcpp::ParameterCallbackHandle> debug_cb_handle_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugLights>::SharedPtr lights_data_pub_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugArmors>::SharedPtr armors_data_pub_;
   image_transport::Publisher binary_img_pub_;

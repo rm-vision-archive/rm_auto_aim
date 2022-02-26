@@ -37,7 +37,6 @@ Or better, use `rosdep`:
 #### Dependencies
 
 - [Robot Operating System 2 (ROS2)](https://docs.ros.org/en/galactic/) (middleware for robotics),
-<!-- - [Eigen] (linear algebra library) -->
 - [OpenCV](https://opencv.org/) (open source computer vision library)
 
 #### Building

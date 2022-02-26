@@ -87,6 +87,13 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   debug_ = this->declare_parameter("debug", true);
   // if (debug_) {
   // }
+
+  debug_param_sub_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
+  debug_cb_handle_ =
+    debug_param_sub_->add_parameter_callback("debug", [this](const rclcpp::Parameter & p) {
+      debug_ = p.as_bool();
+      // debug_ ? createDebugPublishers() : destroyDebugPublishers();
+    });
 }
 
 void ArmorProcessorNode::armorsCallback(
