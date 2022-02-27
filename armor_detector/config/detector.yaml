@@ -4,17 +4,9 @@
     subscribe_compressed: false
 
     preprocess:
-      b:
-        hmin: 75
-        hmax: 120
-        lmin: 150
-        smin: 100
-      r:
-        hmin: 150
-        hmax: 25
-        lmin: 100
-        smin: 100
-      morph_size: 1      
+      hmin: 90
+      lmin: 165
+      smin: 100
 
     light:
       max_angle: 40.0

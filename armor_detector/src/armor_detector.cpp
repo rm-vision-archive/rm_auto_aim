@@ -20,13 +20,14 @@ Light::Light(cv::RotatedRect box) : cv::RotatedRect(box)
 {
   cv::Point2f p[4];
   box.points(p);
-  if (box.angle > 45) {
-    top = (p[0] + p[1]) / 2, bottom = (p[2] + p[3]) / 2;
-    length = box.size.width;
-  } else {
-    top = (p[1] + p[2]) / 2, bottom = (p[0] + p[3]) / 2;
-    length = box.size.height;
-  }
+  std::sort(p, p + 4, [](const cv::Point2f & a, const cv::Point2f & b) { return a.y < b.y; });
+  top = (p[0] + p[1]) / 2;
+  bottom = (p[2] + p[3]) / 2;
+
+  length = box.size.height > box.size.width ? box.size.height : box.size.width;
+
+  tilt_angle = std::atan2(std::abs(top.x - bottom.x), std::abs(top.y - bottom.y));
+  tilt_angle = tilt_angle / CV_PI * 180;
 }
 
 Armor::Armor(const Light & l1, const Light & l2)
@@ -40,81 +41,71 @@ Armor::Armor(const Light & l1, const Light & l2)
 }
 
 ArmorDetector::ArmorDetector(
-  const PreprocessParams & init_b, const PreprocessParams & init_r, const int size,
-  const LightParams & init_l, const ArmorParams & init_a, const Color & init_color)
-: b(init_b), r(init_r), morph_size(size), l(init_l), a(init_a), detect_color(init_color)
+  const PreprocessParams & init_p, const LightParams & init_l, const ArmorParams & init_a,
+  const Color & init_color)
+: p(init_p), l(init_l), a(init_a), detect_color(init_color)
 {
 }
 
-cv::Mat ArmorDetector::preprocessImage(const cv::Mat & img)
+cv::Mat ArmorDetector::preprocessImage(const cv::Mat & rgb_img)
 {
   cv::Mat hsv_img;
-  cv::cvtColor(img, hsv_img, cv::COLOR_BGR2HLS);
+  cv::cvtColor(rgb_img, hsv_img, cv::COLOR_RGB2HLS);
 
   cv::Mat binary_img;
-  if (detect_color == RED) {
-    cv::Mat red_img_1, red_img_2;
-    cv::inRange(hsv_img, cv::Scalar(r.hmin, r.lmin, r.smin), cv::Scalar(179, 255, 255), red_img_1);
-    cv::inRange(hsv_img, cv::Scalar(0, r.lmin, r.smin), cv::Scalar(r.hmax, 255, 255), red_img_2);
-    binary_img = red_img_1 + red_img_2;
-  } else if (detect_color == BULE) {
-    cv::inRange(
-      hsv_img, cv::Scalar(b.hmin, b.lmin, b.smin), cv::Scalar(b.hmax, 255, 255), binary_img);
-  }
-
-  // Connect the break of the lighs
-  auto size = cv::Size(morph_size, 2 * morph_size);
-  cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, size);
-  cv::morphologyEx(binary_img, binary_img, cv::MORPH_CLOSE, element);
+  cv::inRange(hsv_img, cv::Scalar(p.hmin, p.lmin, p.smin), cv::Scalar(180, 255, 255), binary_img);
 
   return binary_img;
 }
 
-std::vector<Light> ArmorDetector::findLights(const cv::Mat & binary_img)
+std::vector<Light> ArmorDetector::findLights(const cv::Mat & rbg_img, const cv::Mat & binary_img)
 {
-  using cv::Point;
-  using cv::Vec4i;
   using std::vector;
   vector<vector<cv::Point>> contours;
-  vector<Vec4i> hierarchy;
+  vector<cv::Vec4i> hierarchy;
   cv::findContours(binary_img, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
   vector<Light> lights;
   this->debug_lights.data.clear();
+
   for (const auto & contour : contours) {
     if (contour.size() < 5) continue;
-    auto r_rect = cv::minAreaRect(contour);
 
-    if (isLight(r_rect)) {
-      lights.emplace_back(Light(r_rect));
+    auto r_rect = cv::minAreaRect(contour);
+    auto light = Light(r_rect);
+
+    if (isLight(light)) {
+      auto roi = light.boundingRect();
+      if (
+        0 <= roi.x && 0 <= roi.width && roi.x + roi.width <= rbg_img.cols && 0 <= roi.y &&
+        0 <= roi.height && roi.y + roi.height <= rbg_img.rows) {
+        auto output = rbg_img(roi);
+        // Sum of red pixels > sum of blue pixels ?
+        light.color = cv::sum(output)[0] > cv::sum(output)[2] ? Color::RED : Color::BULE;
+        lights.emplace_back(light);
+      }
     }
   }
 
   return lights;
 }
 
-bool ArmorDetector::isLight(const cv::RotatedRect & rect)
+bool ArmorDetector::isLight(const Light & light)
 {
   // TODO(chenjun): may need more judgement
-
-  // The rotation angle in a clockwise direction.
-  // The angle of rect returned by minAreaRect is in [0, 90]
-  // If angle > 45, the width is longer than height
-  float angle = rect.angle;
-
   // The ratio of light (short size / long size)
-  float ratio = angle < 45 ? rect.size.aspectRatio() : 1.0 / rect.size.aspectRatio();
+  float ratio = light.size.height < light.size.width ? light.size.height / light.size.width
+                                                     : light.size.width / light.size.height;
   bool ratio_ok = l.min_ratio < ratio && ratio < l.max_ratio;
 
-  angle = angle < 45 ? angle : 90 - angle;
-  bool angle_ok = angle < l.max_angle || angle > (180.f - l.max_angle);
+  bool angle_ok = light.tilt_angle < l.max_angle;
 
   bool is_light = ratio_ok && angle_ok;
 
   // Fill in debug information
   auto_aim_interfaces::msg::DebugLight light_data;
   light_data.ratio = ratio;
-  light_data.angle = angle;
+  light_data.angle = light.tilt_angle;
   light_data.is_light = is_light;
   this->debug_lights.data.emplace_back(light_data);
 
@@ -128,6 +119,8 @@ std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
 
   // Loop all the pairing of lights
   for (auto light = lights.begin(); light != lights.end(); light++) {
+    if (light->color != detect_color) continue;
+
     for (auto sec_light = light + 1; sec_light != lights.end(); sec_light++) {
       if (containLight(*light, *sec_light, lights)) {
         continue;
@@ -153,10 +146,6 @@ bool ArmorDetector::containLight(
   float right = std::max(light_1.center.x, light_2.center.x);
 
   for (const auto & test_light : lights) {
-    if (test_light.center == light_1.center || test_light.center == light_2.center) {
-      continue;
-    }
-
     if (
       (left < test_light.center.x && test_light.center.x < right) &&
       ((top < test_light.top.y && test_light.top.y < bottom) ||

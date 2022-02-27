@@ -6,6 +6,7 @@
 #include <rmw/qos_profiles.h>
 
 #include <image_transport/image_transport.hpp>
+#include <opencv2/core/types.hpp>
 #include <opencv2/imgproc.hpp>
 #include <rclcpp/qos.hpp>
 
@@ -13,6 +14,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "armor_detector/armor_detector.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -173,26 +176,18 @@ std::vector<Armor> ArmorDetectorNode::detectArmors(
 {
   auto start_time = this->now();
   auto img = cv_bridge::toCvShare(img_msg, "rgb8")->image;
-  cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
 
-  detector_->b = {
-    .hmin = get_parameter("preprocess.b.hmin").as_int(),
-    .hmax = get_parameter("preprocess.b.hmax").as_int(),
-    .lmin = get_parameter("preprocess.b.lmin").as_int(),
-    .smin = get_parameter("preprocess.b.smin").as_int()};
-  detector_->r = {
-    .hmin = get_parameter("preprocess.r.hmin").as_int(),
-    .hmax = get_parameter("preprocess.r.hmax").as_int(),
-    .lmin = get_parameter("preprocess.r.lmin").as_int(),
-    .smin = get_parameter("preprocess.r.smin").as_int()};
+  detector_->p = {
+    .hmin = get_parameter("preprocess.hmin").as_int(),
+    .lmin = get_parameter("preprocess.lmin").as_int(),
+    .smin = get_parameter("preprocess.smin").as_int()};
 
-  detector_->morph_size = get_parameter("preprocess.morph_size").as_int();
-
-  detector_->detect_color =
-    static_cast<ArmorDetector::Color>(get_parameter("detect_color").as_int());
+  detector_->detect_color = static_cast<Color>(get_parameter("detect_color").as_int());
 
   auto binary_img = detector_->preprocessImage(img);
-  auto lights = detector_->findLights(binary_img);
+
+  auto lights = detector_->findLights(img, binary_img);
+
   auto armors = detector_->matchLights(lights);
 
   if (debug_) {
@@ -207,7 +202,7 @@ std::vector<Armor> ArmorDetectorNode::detectArmors(
     armors_data_pub_->publish(detector_->debug_armors);
 
     drawLightsAndArmors(img, lights, armors);
-    final_img_pub_.publish(*cv_bridge::CvImage(img_msg->header, "bgr8", img).toImageMsg());
+    final_img_pub_.publish(*cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg());
   }
 
   return armors;
@@ -218,7 +213,8 @@ void ArmorDetectorNode::drawLightsAndArmors(
 {
   // Draw Lights
   for (const auto & light : lights) {
-    cv::ellipse(img, light, cv::Scalar(255, 0, 255), 2);
+    auto color = light.color == RED ? cv::Scalar(255, 255, 0) : cv::Scalar(255, 0, 255);
+    cv::ellipse(img, light, color, 2);
   }
 
   // Draw armors
@@ -236,20 +232,10 @@ std::unique_ptr<ArmorDetector> ArmorDetectorNode::initArmorDetector()
   param_desc.integer_range[0].from_value = 0;
   param_desc.integer_range[0].to_value = 255;
 
-  ArmorDetector::PreprocessParams b = {
-    .hmin = declare_parameter("preprocess.b.hmin", 75, param_desc),
-    .hmax = declare_parameter("preprocess.b.hmax", 120, param_desc),
-    .lmin = declare_parameter("preprocess.b.lmin", 150, param_desc),
-    .smin = declare_parameter("preprocess.b.smin", 160, param_desc)};
-  ArmorDetector::PreprocessParams r = {
-    .hmin = declare_parameter("preprocess.r.hmin", 150, param_desc),
-    .hmax = declare_parameter("preprocess.r.hmax", 25, param_desc),
-    .lmin = declare_parameter("preprocess.r.lmin", 140, param_desc),
-    .smin = declare_parameter("preprocess.r.smin", 100, param_desc)};
-
-  param_desc.integer_range[0].from_value = 0;
-  param_desc.integer_range[0].to_value = 20;
-  int size = declare_parameter("preprocess.morph_size", 1, param_desc);
+  ArmorDetector::PreprocessParams p = {
+    .hmin = declare_parameter("preprocess.hmin", 90, param_desc),
+    .lmin = declare_parameter("preprocess.lmin", 150, param_desc),
+    .smin = declare_parameter("preprocess.smin", 160, param_desc)};
 
   ArmorDetector::LightParams l = {
     .min_ratio = declare_parameter("light.min_ratio", 0.1),
@@ -265,10 +251,9 @@ std::unique_ptr<ArmorDetector> ArmorDetectorNode::initArmorDetector()
   param_desc.description = "0-RED, 1-BLUE";
   param_desc.integer_range[0].from_value = 0;
   param_desc.integer_range[0].to_value = 1;
-  auto detect_color =
-    static_cast<ArmorDetector::Color>(declare_parameter("detect_color", 0, param_desc));
+  auto detect_color = static_cast<Color>(declare_parameter("detect_color", 0, param_desc));
 
-  return std::make_unique<ArmorDetector>(b, r, size, l, a, detect_color);
+  return std::make_unique<ArmorDetector>(p, l, a, detect_color);
 }
 
 void ArmorDetectorNode::createDebugPublishers()

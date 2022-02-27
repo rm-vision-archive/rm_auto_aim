@@ -16,14 +16,17 @@
 
 namespace rm_auto_aim
 {
-class Light : public cv::RotatedRect
+enum Color { RED = 0, BULE = 1 };
+
+struct Light : public cv::RotatedRect
 {
-public:
-  using RotatedRect::RotatedRect;
+  Light() = default;
   explicit Light(cv::RotatedRect box);
 
+  Color color;
   cv::Point2f top, bottom;
   float length;
+  float tilt_angle;
 };
 
 struct Armor
@@ -37,12 +40,10 @@ struct Armor
 class ArmorDetector
 {
 public:
-  enum Color { RED = 0, BULE = 1 };
-
   struct PreprocessParams
   {
-    int64 hmin, hmax, lmin, smin;
-  } b, r;
+    int64 hmin, lmin, smin;
+  } p;
 
   int morph_size;
 
@@ -64,8 +65,8 @@ public:
   } a;
 
   ArmorDetector(
-    const PreprocessParams & init_b, const PreprocessParams & init_r, const int size,
-    const LightParams & init_l, const ArmorParams & init_a, const Color & init_color);
+    const PreprocessParams & init_p, const LightParams & init_l, const ArmorParams & init_a,
+    const Color & init_color);
 
   Color detect_color;
 
@@ -73,14 +74,14 @@ public:
   auto_aim_interfaces::msg::DebugLights debug_lights;
   auto_aim_interfaces::msg::DebugArmors debug_armors;
 
-  cv::Mat preprocessImage(const cv::Mat & img);
+  cv::Mat preprocessImage(const cv::Mat & rbg_img);
 
-  std::vector<Light> findLights(const cv::Mat & binary_img);
+  std::vector<Light> findLights(const cv::Mat & rbg_img, const cv::Mat & binary_img);
 
   std::vector<Armor> matchLights(const std::vector<Light> & lights);
 
 private:
-  bool isLight(const cv::RotatedRect & rect);
+  bool isLight(const Light & light);
 
   bool containLight(
     const Light & light_1, const Light & light_2, const std::vector<Light> & lights);
