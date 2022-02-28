@@ -105,12 +105,9 @@ void ArmorProcessorNode::armorsCallback(
   }
 
   rclcpp::Time time = armors_ptr->header.stamp;
+  target_msg_.header.stamp = time;
 
   if (tracker_->state == Tracker::NO_FOUND) {
-    deleteMarkers();
-    target_msg_.target_found = false;
-    target_pub_->publish(target_msg_);
-
     if (!armors_ptr->armors.empty()) {
       // Tracker init
       tracker_->init(*armors_ptr);
@@ -120,6 +117,10 @@ void ArmorProcessorNode::armorsCallback(
       init_state << tracker_->tracked_position, 0, 0, 0;
       kf_->init(init_state);
     }
+
+    deleteMarkers();
+    target_msg_.target_found = false;
+    target_pub_->publish(target_msg_);
 
   } else {
     // Set dt
