@@ -3,10 +3,7 @@
     use_depth: false
     subscribe_compressed: false
 
-    preprocess:
-      hmin: 90
-      lmin: 165
-      smin: 100
+    min_lightness: 160
 
     light:
       max_angle: 40.0

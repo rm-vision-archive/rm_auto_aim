@@ -40,13 +40,6 @@ struct Armor
 class ArmorDetector
 {
 public:
-  struct PreprocessParams
-  {
-    int64 hmin, lmin, smin;
-  } p;
-
-  int morph_size;
-
   struct LightParams
   {
     // width / height
@@ -54,7 +47,7 @@ public:
     double max_ratio;
     // vertical angle
     double max_angle;
-  } l;
+  };
   struct ArmorParams
   {
     double min_light_ratio;
@@ -62,13 +55,16 @@ public:
     double max_center_ratio;
     // horizontal angle
     double max_angle;
-  } a;
+  };
 
   ArmorDetector(
-    const PreprocessParams & init_p, const LightParams & init_l, const ArmorParams & init_a,
-    const Color & init_color);
+    const int & init_min_l, const Color & init_color, const LightParams & init_l,
+    const ArmorParams & init_a);
 
+  int min_lightness;
   Color detect_color;
+  LightParams l;
+  ArmorParams a;
 
   // Debug msgs
   auto_aim_interfaces::msg::DebugLights debug_lights;

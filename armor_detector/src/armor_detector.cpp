@@ -41,9 +41,9 @@ Armor::Armor(const Light & l1, const Light & l2)
 }
 
 ArmorDetector::ArmorDetector(
-  const PreprocessParams & init_p, const LightParams & init_l, const ArmorParams & init_a,
-  const Color & init_color)
-: p(init_p), l(init_l), a(init_a), detect_color(init_color)
+  const int & init_min_l, const Color & init_color, const LightParams & init_l,
+  const ArmorParams & init_a)
+: min_lightness(init_min_l), detect_color(init_color), l(init_l), a(init_a)
 {
 }
 
@@ -53,7 +53,7 @@ cv::Mat ArmorDetector::preprocessImage(const cv::Mat & rgb_img)
   cv::cvtColor(rgb_img, hsv_img, cv::COLOR_RGB2HLS);
 
   cv::Mat binary_img;
-  cv::inRange(hsv_img, cv::Scalar(p.hmin, p.lmin, p.smin), cv::Scalar(180, 255, 255), binary_img);
+  cv::inRange(hsv_img, cv::Scalar(0, min_lightness, 0), cv::Scalar(180, 255, 255), binary_img);
 
   return binary_img;
 }
@@ -119,9 +119,9 @@ std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
 
   // Loop all the pairing of lights
   for (auto light = lights.begin(); light != lights.end(); light++) {
-    if (light->color != detect_color) continue;
-
     for (auto sec_light = light + 1; sec_light != lights.end(); sec_light++) {
+      if (light->color != detect_color || sec_light->color != detect_color) continue;
+
       if (containLight(*light, *sec_light, lights)) {
         continue;
       }

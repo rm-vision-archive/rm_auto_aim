@@ -177,10 +177,7 @@ std::vector<Armor> ArmorDetectorNode::detectArmors(
   auto start_time = this->now();
   auto img = cv_bridge::toCvShare(img_msg, "rgb8")->image;
 
-  detector_->p = {
-    .hmin = get_parameter("preprocess.hmin").as_int(),
-    .lmin = get_parameter("preprocess.lmin").as_int(),
-    .smin = get_parameter("preprocess.smin").as_int()};
+  detector_->min_lightness = get_parameter("min_lightness").as_int();
 
   detector_->detect_color = static_cast<Color>(get_parameter("detect_color").as_int());
 
@@ -231,29 +228,25 @@ std::unique_ptr<ArmorDetector> ArmorDetectorNode::initArmorDetector()
   param_desc.integer_range[0].step = 1;
   param_desc.integer_range[0].from_value = 0;
   param_desc.integer_range[0].to_value = 255;
-
-  ArmorDetector::PreprocessParams p = {
-    .hmin = declare_parameter("preprocess.hmin", 90, param_desc),
-    .lmin = declare_parameter("preprocess.lmin", 150, param_desc),
-    .smin = declare_parameter("preprocess.smin", 160, param_desc)};
-
-  ArmorDetector::LightParams l = {
-    .min_ratio = declare_parameter("light.min_ratio", 0.1),
-    .max_ratio = declare_parameter("light.max_ratio", 0.55),
-    .max_angle = declare_parameter("light.max_angle", 40.0)};
-
-  ArmorDetector::ArmorParams a = {
-    .min_light_ratio = declare_parameter("armor.min_light_ratio", 0.6),
-    .min_center_ratio = declare_parameter("armor.min_center_ratio", 0.4),
-    .max_center_ratio = declare_parameter("armor.max_center_ratio", 1.6),
-    .max_angle = declare_parameter("armor.max_angle", 35.0)};
+  int min_lightness = declare_parameter("min_lightness", 150, param_desc);
 
   param_desc.description = "0-RED, 1-BLUE";
   param_desc.integer_range[0].from_value = 0;
   param_desc.integer_range[0].to_value = 1;
   auto detect_color = static_cast<Color>(declare_parameter("detect_color", 0, param_desc));
 
-  return std::make_unique<ArmorDetector>(p, l, a, detect_color);
+  ArmorDetector::LightParams l_params = {
+    .min_ratio = declare_parameter("light.min_ratio", 0.1),
+    .max_ratio = declare_parameter("light.max_ratio", 0.55),
+    .max_angle = declare_parameter("light.max_angle", 40.0)};
+
+  ArmorDetector::ArmorParams a_params = {
+    .min_light_ratio = declare_parameter("armor.min_light_ratio", 0.6),
+    .min_center_ratio = declare_parameter("armor.min_center_ratio", 0.4),
+    .max_center_ratio = declare_parameter("armor.max_center_ratio", 1.6),
+    .max_angle = declare_parameter("armor.max_angle", 35.0)};
+
+  return std::make_unique<ArmorDetector>(min_lightness, detect_color, l_params, a_params);
 }
 
 void ArmorDetectorNode::createDebugPublishers()
