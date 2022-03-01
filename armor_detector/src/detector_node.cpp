@@ -30,6 +30,11 @@ BaseDetectorNode::BaseDetectorNode(
   // Detector
   detector_ = initArmorDetector();
 
+  // Number classifier
+  double height_ratio = this->declare_parameter("number_classifier.height_ratio", 1.1);
+  double weight_ratio = this->declare_parameter("number_classifier.weight_ratio", 0.4);
+  classifier_ = std::make_unique<NumberClassifier>(height_ratio, weight_ratio);
+
   // Subscriptions transport type
   transport_ = this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
 
@@ -46,7 +51,7 @@ BaseDetectorNode::BaseDetectorNode(
   marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("/detector/marker", 10);
 
   // Debug Publishers
-  debug_ = this->declare_parameter("debug", true);
+  debug_ = this->declare_parameter("debug", false);
   if (debug_) {
     createDebugPublishers();
   }
@@ -95,14 +100,17 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   // Convert ROS img to cv::Mat
   auto img = cv_bridge::toCvShare(img_msg, "rgb8")->image;
 
-  // Get param
+  // Detect armors
   detector_->min_lightness = get_parameter("min_lightness").as_int();
   detector_->detect_color = static_cast<Color>(get_parameter("detect_color").as_int());
-
-  // Detect armors
   auto binary_img = detector_->preprocessImage(img);
   auto lights = detector_->findLights(img, binary_img);
   auto armors = detector_->matchLights(lights);
+
+  // Extract numbers
+  classifier_->hr = get_parameter("number_classifier.height_ratio").as_double();
+  classifier_->wr = get_parameter("number_classifier.weight_ratio").as_double();
+  auto numbers = classifier_->extractNumbers(img, armors);
 
   // Publish debug info
   if (debug_) {
@@ -115,6 +123,10 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
 
     lights_data_pub_->publish(detector_->debug_lights);
     armors_data_pub_->publish(detector_->debug_armors);
+
+    if (!numbers.empty()) {
+      number_pub_.publish(*cv_bridge::CvImage(img_msg->header, "mono8", numbers[0]).toImageMsg());
+    }
 
     drawLightsAndArmors(img, lights, armors);
     final_img_pub_.publish(*cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg());
@@ -146,6 +158,7 @@ void BaseDetectorNode::createDebugPublishers()
   armors_data_pub_ =
     this->create_publisher<auto_aim_interfaces::msg::DebugArmors>("/detector/debug/armors", 10);
   binary_img_pub_ = image_transport::create_publisher(this, "/detector/debug/binary_img");
+  number_pub_ = image_transport::create_publisher(this, "/detector/debug/number");
   final_img_pub_ = image_transport::create_publisher(this, "/detector/debug/final_img");
 }
 
@@ -154,6 +167,7 @@ void BaseDetectorNode::destroyDebugPublishers()
   lights_data_pub_.reset();
   armors_data_pub_.reset();
   binary_img_pub_.shutdown();
+  number_pub_.shutdown();
   final_img_pub_.shutdown();
 }
 

@@ -24,6 +24,7 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
   src/armor_detector.cpp
   src/depth_processor.cpp
   src/pnp_solver.cpp
+  src/number_classifier.cpp
   src/detector_node.cpp
 )
 

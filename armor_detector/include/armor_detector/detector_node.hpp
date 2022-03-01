@@ -23,6 +23,7 @@
 
 #include "armor_detector/armor_detector.hpp"
 #include "armor_detector/depth_processor.hpp"
+#include "armor_detector/number_classifier.hpp"
 #include "armor_detector/pnp_solver.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
 
@@ -43,9 +44,6 @@ protected:
   // Image subscriptions transport type
   std::string transport_;
 
-  // Armor Detector
-  std::unique_ptr<ArmorDetector> detector_;
-
   // Detected armors publisher
   auto_aim_interfaces::msg::Armors armors_msg_;
   rclcpp::Publisher<auto_aim_interfaces::msg::Armors>::SharedPtr armors_pub_;
@@ -63,6 +61,12 @@ private:
   void drawLightsAndArmors(
     cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
 
+  // Armor Detector
+  std::unique_ptr<ArmorDetector> detector_;
+
+  // Number Classifier
+  std::unique_ptr<NumberClassifier> classifier_;
+
   // Debug information publishers
   bool debug_;
   std::shared_ptr<rclcpp::ParameterEventHandler> debug_param_sub_;
@@ -70,6 +74,7 @@ private:
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugLights>::SharedPtr lights_data_pub_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugArmors>::SharedPtr armors_data_pub_;
   image_transport::Publisher binary_img_pub_;
+  image_transport::Publisher number_pub_;
   image_transport::Publisher final_img_pub_;
 };
 
