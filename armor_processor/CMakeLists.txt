@@ -21,9 +21,9 @@ ament_auto_find_build_dependencies()
 ###########
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
-  src/armor_processor_node.cpp
   src/kalman_filter.cpp
   src/tracker.cpp
+  src/processor_node.cpp
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
@@ -57,8 +57,4 @@ endif()
 ## Install ##
 #############
 
-ament_auto_package(
-  INSTALL_TO_SHARE
-  config
-  launch
-)
+ament_auto_package()

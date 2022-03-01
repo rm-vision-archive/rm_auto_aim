@@ -12,7 +12,6 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <rclcpp/rclcpp.hpp>
-#include <visualization_msgs/msg/detail/marker_array__struct.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
 // STD

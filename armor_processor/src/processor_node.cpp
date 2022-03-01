@@ -1,15 +1,10 @@
 // Copyright 2022 Chen Jun
 
-#include "armor_processor/armor_processor_node.hpp"
-
-#include <Eigen/src/Core/DiagonalMatrix.h>
-#include <tf2/convert.h>
+#include "armor_processor/processor_node.hpp"
 
 // STD
 #include <memory>
 #include <vector>
-
-#include "armor_processor/tracker.hpp"
 
 namespace rm_auto_aim
 {
@@ -27,6 +22,7 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
         0,  0,  0,  1,  0,  0,
         0,  0,  0,  0,  1,  0,
         0,  0,  0,  0,  0,  1;
+  // clang-format on
 
   H_.setIdentity();
 
@@ -35,7 +31,6 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   R_.diagonal() << 0.05, 0.05, 0.05;
 
   P_.setIdentity();
-  // clang-format on
 
   // Tracker
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.2);
