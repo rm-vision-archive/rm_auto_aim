@@ -25,6 +25,7 @@ def generate_launch_description():
         Node(
             package='armor_detector',
             executable=[LaunchConfiguration('camera_type'), '_detector_node'],
+            name='armor_detector',
             output='screen',
             emulate_tty=True,
             parameters=[LaunchConfiguration('params_file'), {
