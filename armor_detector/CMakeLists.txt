@@ -21,15 +21,20 @@ ament_auto_find_build_dependencies()
 ###########
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
-  src/armor_detector_node.cpp
   src/armor_detector.cpp
   src/depth_processor.cpp
   src/pnp_solver.cpp
+  src/detector_node.cpp
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN rm_auto_aim::ArmorDetectorNode
-  EXECUTABLE ${PROJECT_NAME}_node
+  PLUGIN rm_auto_aim::RgbDetectorNode
+  EXECUTABLE rgb_detector_node
+)
+
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN rm_auto_aim::RgbDepthDetectorNode
+  EXECUTABLE rgb_depth_detector_node
 )
 
 #############
@@ -53,8 +58,4 @@ endif()
 ## Install ##
 #############
 
-ament_auto_package(
-  INSTALL_TO_SHARE
-  config
-  launch
-)
+ament_auto_package()

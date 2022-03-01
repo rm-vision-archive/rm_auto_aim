@@ -1,7 +1,7 @@
 // Copyright 2022 Chen Jun
 
-#ifndef ARMOR_DETECTOR__ARMOR_DETECTOR_NODE_HPP_
-#define ARMOR_DETECTOR__ARMOR_DETECTOR_NODE_HPP_
+#ifndef ARMOR_DETECTOR__DETECTOR_NODE_HPP_
+#define ARMOR_DETECTOR__DETECTOR_NODE_HPP_
 
 // ROS
 #include <message_filters/sync_policies/approximate_time.h>
@@ -18,6 +18,7 @@
 
 // STD
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "armor_detector/armor_detector.hpp"
@@ -30,45 +31,20 @@ namespace rm_auto_aim
 using SyncPolicy =
   message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image>;
 using ColorDepthSync = message_filters::Synchronizer<SyncPolicy>;
-/*!
- * Main class for the node to handle the ROS interfacing.
- */
-class ArmorDetectorNode : public rclcpp::Node
+
+class BaseDetectorNode : public rclcpp::Node
 {
 public:
-  explicit ArmorDetectorNode(const rclcpp::NodeOptions & options);
-  ~ArmorDetectorNode() override;
+  BaseDetectorNode(const std::string & node_name, const rclcpp::NodeOptions & options);
 
-private:
-  std::unique_ptr<ArmorDetector> initArmorDetector();
-
-  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
-
-  void colorDepthCallback(
-    const sensor_msgs::msg::Image::ConstSharedPtr & color_msg,
-    const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg);
-
+protected:
   std::vector<Armor> detectArmors(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
 
-  void drawLightsAndArmors(
-    cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
+  // Image subscriptions transport type
+  std::string transport_;
 
-  void createDebugPublishers();
-  void destroyDebugPublishers();
-
+  // Armor Detector
   std::unique_ptr<ArmorDetector> detector_;
-
-  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
-
-  // Synchronize color and depth image if use depth
-  image_transport::SubscriberFilter color_img_sub_filter_;
-  image_transport::SubscriberFilter depth_img_sub_filter_;
-  std::unique_ptr<ColorDepthSync> sync_;
-  std::unique_ptr<DepthProcessor> depth_processor_;
-
-  // Color image subscription if use only color image
-  image_transport::Subscriber img_sub_;
-  std::unique_ptr<PnPSolver> pnp_solver_;
 
   // Detected armors publisher
   auto_aim_interfaces::msg::Armors armors_msg_;
@@ -77,6 +53,15 @@ private:
   // Visualization marker publisher
   visualization_msgs::msg::Marker marker_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
+
+private:
+  std::unique_ptr<ArmorDetector> initArmorDetector();
+
+  void createDebugPublishers();
+  void destroyDebugPublishers();
+
+  void drawLightsAndArmors(
+    cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
 
   // Debug information publishers
   bool debug_;
@@ -88,6 +73,38 @@ private:
   image_transport::Publisher final_img_pub_;
 };
 
+class RgbDetectorNode : public BaseDetectorNode
+{
+public:
+  explicit RgbDetectorNode(const rclcpp::NodeOptions & options);
+
+private:
+  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
+
+  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
+
+  image_transport::Subscriber img_sub_;
+  std::unique_ptr<PnPSolver> pnp_solver_;
+};
+
+class RgbDepthDetectorNode : public BaseDetectorNode
+{
+public:
+  explicit RgbDepthDetectorNode(const rclcpp::NodeOptions & options);
+
+private:
+  void colorDepthCallback(
+    const sensor_msgs::msg::Image::ConstSharedPtr & color_msg,
+    const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg);
+
+  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
+
+  image_transport::SubscriberFilter color_img_sub_filter_;
+  image_transport::SubscriberFilter depth_img_sub_filter_;
+  std::unique_ptr<ColorDepthSync> sync_;
+  std::unique_ptr<DepthProcessor> depth_processor_;
+};
+
 }  // namespace rm_auto_aim
 
-#endif  // ARMOR_DETECTOR__ARMOR_DETECTOR_NODE_HPP_
+#endif  // ARMOR_DETECTOR__DETECTOR_NODE_HPP_
