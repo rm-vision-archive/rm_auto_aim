@@ -1,7 +1,7 @@
 // Copyright 2022 Chen Jun
 
-#ifndef ARMOR_PROCESSOR__ARMOR_PROCESSOR_NODE_HPP_
-#define ARMOR_PROCESSOR__ARMOR_PROCESSOR_NODE_HPP_
+#ifndef ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_
+#define ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_
 
 // ROS
 #include <message_filters/subscriber.h>
@@ -82,4 +82,4 @@ private:
 
 }  // namespace rm_auto_aim
 
-#endif  // ARMOR_PROCESSOR__ARMOR_PROCESSOR_NODE_HPP_
+#endif  // ARMOR_PROCESSOR__PROCESSOR_NODE_HPP_

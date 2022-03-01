@@ -9,42 +9,37 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    default_detector_params_file = os.path.join(
-        get_package_share_directory('armor_detector'), 'config', 'detector.yaml')
-
-    default_processor_params_file = os.path.join(
-        get_package_share_directory('armor_processor'), 'config', 'processor.yaml')
-
-    armor_detector = Node(
-        package='armor_detector',
-        executable='armor_detector_node',
-        output='screen',
-        emulate_tty=True,
-        parameters=[LaunchConfiguration('detector_params_file'), {
-                'debug': LaunchConfiguration('debug'),
-                'detect_color': LaunchConfiguration('detect_color'),
-        }],
-    )
-
-    armor_processor = Node(
-        package='armor_processor',
-        executable='armor_processor_node',
-        output='screen',
-        emulate_tty=True,
-        parameters=[LaunchConfiguration('processor_params_file'), {
-                'debug': LaunchConfiguration('debug'),
-        }],
-    )
+    default_params_file = os.path.join(get_package_share_directory(
+        'rm_auto_aim'), 'config/default.yaml')
 
     return LaunchDescription([
-        DeclareLaunchArgument(name='detector_params_file',
-                              default_value=default_detector_params_file),
-        DeclareLaunchArgument(name='processor_params_file',
-                              default_value=default_processor_params_file),
-        DeclareLaunchArgument(name='debug',
-                              default_value='true'),
+        DeclareLaunchArgument(name='camera_type',
+                              default_value='rgb', description='rgb or rgbd'),
         DeclareLaunchArgument(name='detect_color',
                               default_value='0', description='0-BLUE 1-Red'),
-        armor_detector,
-        armor_processor
+        DeclareLaunchArgument(name='debug',
+                              default_value='true'),
+        DeclareLaunchArgument(name='params_file',
+                              default_value=default_params_file),
+
+        Node(
+            package='armor_detector',
+            executable=[LaunchConfiguration('camera_type'), '_detector_node'],
+            output='screen',
+            emulate_tty=True,
+            parameters=[LaunchConfiguration('params_file'), {
+                'debug': LaunchConfiguration('debug'),
+                'detect_color': LaunchConfiguration('detect_color'),
+            }],
+        ),
+
+        Node(
+            package='armor_processor',
+            executable='armor_processor_node',
+            output='screen',
+            emulate_tty=True,
+            parameters=[LaunchConfiguration('params_file'), {
+                'debug': LaunchConfiguration('debug'),
+            }],
+        ),
     ])

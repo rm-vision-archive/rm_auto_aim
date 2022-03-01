@@ -34,7 +34,7 @@ rclcpp_components_register_node(${PROJECT_NAME}
 
 rclcpp_components_register_node(${PROJECT_NAME}
   PLUGIN rm_auto_aim::RgbDepthDetectorNode
-  EXECUTABLE rgb_depth_detector_node
+  EXECUTABLE rgbd_detector_node
 )
 
 #############

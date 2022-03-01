@@ -11,7 +11,7 @@ namespace rm_auto_aim
 ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
 : Node("armor_processor", options), last_time_(0), dt_(0.0)
 {
-  RCLCPP_INFO(this->get_logger(), "Starting ArmorProcessorNode!");
+  RCLCPP_INFO(this->get_logger(), "Starting ProcessorNode!");
 
   // Kalman Filter initial matrix
   // TODO(chenjun): the params need to be changed
