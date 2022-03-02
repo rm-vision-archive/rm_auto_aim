@@ -8,8 +8,9 @@ This is a package of Robomaster auto-aim task using OpenCV and ROS2.
 
 ### License
 
-To be added.
-<!-- The source code is released under a [BSD 3-Clause license](rm_auto_aim/LICENSE). -->
+The source code is released under a [MIT license](rm_auto_aim/LICENSE).
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 **Author: Chen Jun<br />
 Maintainer: Chen Jun, chen.junn@outlook.com**

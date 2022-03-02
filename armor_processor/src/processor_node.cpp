@@ -14,7 +14,7 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(this->get_logger(), "Starting ProcessorNode!");
 
   // Kalman Filter initial matrix
-  // TODO(chenjun): the params need to be changed
+  // A - state transition matrix
   // clang-format off
   A_ << 1,  0,  0, dt_, 0,  0,
         0,  1,  0,  0, dt_, 0,
@@ -24,12 +24,16 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
         0,  0,  0,  0,  0,  1;
   // clang-format on
 
+  // H - measurement matrix
   H_.setIdentity();
 
+  // Q - process noise covariance matrix
   Q_.diagonal() << 0.01, 0.01, 0.01, 0.1, 0.1, 0.1;
 
+  // R - measurement noise covariance matrix
   R_.diagonal() << 0.05, 0.05, 0.05;
 
+  // P - error estimate covariance matrix
   P_.setIdentity();
 
   // Tracker
@@ -125,6 +129,7 @@ void ArmorProcessorNode::armorsCallback(
     kf_prediction_ = kf_->predict(A_);
     // Tracker update
     auto predicted_position = kf_prediction_.head(3);
+    // Use predicted position from last frame to match armors
     tracker_->update(*armors_ptr, predicted_position);
 
     if (tracker_->state == Tracker::DETECTING) {
