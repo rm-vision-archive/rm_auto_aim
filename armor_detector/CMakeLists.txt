@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ## enforcing cleaner code.
 add_definitions(-Wall -Werror)
 
+## Export compile commands for clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 #######################
 ## Find dependencies ##
 #######################
@@ -16,16 +19,22 @@ add_definitions(-Wall -Werror)
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
+## Find OpenVINO dependencies
+find_package(OpenCV REQUIRED)
+find_package(InferenceEngine REQUIRED)
+find_package(ngraph REQUIRED)
+list(APPEND ${PROJECT_NAME}_FOUND_BUILD_DEPENDS
+  OpenCV
+  InferenceEngine
+  ngraph
+)
+
 ###########
 ## Build ##
 ###########
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
-  src/armor_detector.cpp
-  src/depth_processor.cpp
-  src/pnp_solver.cpp
-  src/number_classifier.cpp
-  src/detector_node.cpp
+  DIRECTORY src
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
@@ -53,10 +62,16 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest)
   ament_add_gtest(test_node_startup test/test_node_startup.cpp)
   target_link_libraries(test_node_startup ${PROJECT_NAME})
+
+  ament_add_gtest(test_classifier test/test_classifier.cpp)
+  target_link_libraries(test_classifier ${PROJECT_NAME})
 endif()
 
 #############
 ## Install ##
 #############
 
-ament_auto_package()
+ament_auto_package(
+  INSTALL_TO_SHARE
+  model
+)

@@ -32,10 +32,14 @@ struct Light : public cv::RotatedRect
 
 struct Armor
 {
+  Armor() = default;
   Armor(const Light & l1, const Light & l2);
 
   Light left_light, right_light;
   cv::Point2f center;
+
+  int number;
+  float confidence;
 };
 
 class ArmorDetector

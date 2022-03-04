@@ -5,6 +5,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <rmw/qos_profiles.h>
 
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <image_transport/image_transport.hpp>
 #include <opencv2/core/types.hpp>
 #include <opencv2/imgproc.hpp>
@@ -33,7 +34,9 @@ BaseDetectorNode::BaseDetectorNode(
   // Number classifier
   double height_ratio = this->declare_parameter("number_classifier.height_ratio", 1.1);
   double weight_ratio = this->declare_parameter("number_classifier.weight_ratio", 0.4);
-  classifier_ = std::make_unique<NumberClassifier>(height_ratio, weight_ratio);
+  auto model_path =
+    ament_index_cpp::get_package_share_directory("armor_detector") + "/model/model.onnx";
+  classifier_ = std::make_unique<NumberClassifier>(height_ratio, weight_ratio, model_path);
 
   // Subscriptions transport type
   transport_ = this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
@@ -110,7 +113,11 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   // Extract numbers
   classifier_->hr = get_parameter("number_classifier.height_ratio").as_double();
   classifier_->wr = get_parameter("number_classifier.weight_ratio").as_double();
-  auto numbers = classifier_->extractNumbers(img, armors);
+  std::vector<cv::Mat> number_imgs;
+  if (!armors.empty()) {
+    number_imgs = classifier_->extractNumbers(img, armors);
+    classifier_->doClassify(number_imgs, armors);
+  }
 
   // Publish debug info
   if (debug_) {
@@ -124,8 +131,9 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
     lights_data_pub_->publish(detector_->debug_lights);
     armors_data_pub_->publish(detector_->debug_armors);
 
-    if (!numbers.empty()) {
-      number_pub_.publish(*cv_bridge::CvImage(img_msg->header, "mono8", numbers[0]).toImageMsg());
+    if (!number_imgs.empty()) {
+      number_pub_.publish(
+        *cv_bridge::CvImage(img_msg->header, "mono8", number_imgs[0]).toImageMsg());
     }
 
     drawLightsAndArmors(img, lights, armors);
@@ -148,6 +156,13 @@ void BaseDetectorNode::drawLightsAndArmors(
   for (const auto & armor : armors) {
     cv::line(img, armor.left_light.top, armor.right_light.bottom, cv::Scalar(0, 255, 0), 2);
     cv::line(img, armor.left_light.bottom, armor.right_light.top, cv::Scalar(0, 255, 0), 2);
+  }
+
+  // Show numbers and confidence
+  for (const auto & armor : armors) {
+    cv::putText(
+      img, std::to_string(armor.number) + ": " + std::to_string(armor.confidence),
+      armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
   }
 }
 
