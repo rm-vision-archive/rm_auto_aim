@@ -2,6 +2,7 @@
 
 // OpenCV
 #include <opencv2/core.hpp>
+#include <opencv2/core/base.hpp>
 #include <opencv2/core/types.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -24,7 +25,8 @@ Light::Light(cv::RotatedRect box) : cv::RotatedRect(box)
   top = (p[0] + p[1]) / 2;
   bottom = (p[2] + p[3]) / 2;
 
-  length = box.size.height > box.size.width ? box.size.height : box.size.width;
+  length = cv::norm(top - bottom);
+  width = cv::norm(p[0] - p[1]);
 
   tilt_angle = std::atan2(std::abs(top.x - bottom.x), std::abs(top.y - bottom.y));
   tilt_angle = tilt_angle / CV_PI * 180;
@@ -93,9 +95,8 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & rbg_img, const cv::
 bool ArmorDetector::isLight(const Light & light)
 {
   // TODO(chenjun): may need more judgement
-  // The ratio of light (short size / long size)
-  float ratio = light.size.height < light.size.width ? light.size.height / light.size.width
-                                                     : light.size.width / light.size.height;
+  // The ratio of light (short side / long side)
+  float ratio = light.width / light.length;
   bool ratio_ok = l.min_ratio < ratio && ratio < l.max_ratio;
 
   bool angle_ok = light.tilt_angle < l.max_angle;
@@ -160,7 +161,7 @@ bool ArmorDetector::containLight(
 
 bool ArmorDetector::isArmor(const Light & light_1, const Light & light_2)
 {
-  // Ratio of the length of 2 lights
+  // Ratio of the length of 2 lights (short side / long side)
   float light_length_ratio = light_1.length < light_2.length ? light_1.length / light_2.length
                                                              : light_2.length / light_1.length;
   bool light_ratio_ok = light_length_ratio > a.min_light_ratio;
