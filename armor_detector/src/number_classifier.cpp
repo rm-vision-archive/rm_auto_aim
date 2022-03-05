@@ -5,7 +5,6 @@
 #include <pstl/glue_algorithm_defs.h>
 
 // OpenCV
-#include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
