@@ -32,11 +32,14 @@ BaseDetectorNode::BaseDetectorNode(
   detector_ = initArmorDetector();
 
   // Number classifier
-  double height_ratio = this->declare_parameter("number_classifier.height_ratio", 1.1);
-  double weight_ratio = this->declare_parameter("number_classifier.weight_ratio", 0.4);
-  auto model_path =
-    ament_index_cpp::get_package_share_directory("armor_detector") + "/model/model.onnx";
-  classifier_ = std::make_unique<NumberClassifier>(height_ratio, weight_ratio, model_path);
+  double height_ratio = this->declare_parameter("number_classifier.height_ratio", 1.0);
+  double weight_ratio = this->declare_parameter("number_classifier.weight_ratio", 0.28);
+  double confidence_threshold =
+    this->declare_parameter("number_classifier.confidence_threshold", 0.5);
+  auto template_path =
+    ament_index_cpp::get_package_share_directory("armor_detector") + "/template/";
+  classifier_ = std::make_unique<NumberClassifier>(
+    height_ratio, weight_ratio, confidence_threshold, template_path);
 
   // Subscriptions transport type
   transport_ = this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
@@ -113,10 +116,12 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   // Extract numbers
   classifier_->hr = get_parameter("number_classifier.height_ratio").as_double();
   classifier_->wr = get_parameter("number_classifier.weight_ratio").as_double();
-  std::vector<cv::Mat> number_imgs;
+  classifier_->confidence_threshold =
+    get_parameter("number_classifier.confidence_threshold").as_double();
+  cv::Mat xor_img;
   if (!armors.empty()) {
-    number_imgs = classifier_->extractNumbers(img, armors);
-    classifier_->doClassify(number_imgs, armors);
+    classifier_->extractNumbers(img, armors);
+    classifier_->xorClassify(armors, xor_img);
   }
 
   // Publish debug info
@@ -126,18 +131,20 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
       this->get_logger(),
       "detectArmors used: " << (final_time - start_time).seconds() * 1000.0 << "ms");
 
-    binary_img_pub_.publish(*cv_bridge::CvImage(img_msg->header, "mono8", binary_img).toImageMsg());
+    binary_img_pub_->publish(
+      *cv_bridge::CvImage(img_msg->header, "mono8", binary_img).toImageMsg());
 
     lights_data_pub_->publish(detector_->debug_lights);
     armors_data_pub_->publish(detector_->debug_armors);
 
-    if (!number_imgs.empty()) {
-      number_pub_.publish(
-        *cv_bridge::CvImage(img_msg->header, "mono8", number_imgs[0]).toImageMsg());
+    if (!armors.empty()) {
+      number_pub_->publish(
+        *cv_bridge::CvImage(img_msg->header, "mono8", armors[0].number_img).toImageMsg());
+      xor_pub_->publish(*cv_bridge::CvImage(img_msg->header, "mono8", xor_img).toImageMsg());
     }
 
     drawLightsAndArmors(img, lights, armors);
-    final_img_pub_.publish(*cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg());
+    final_img_pub_->publish(*cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg());
   }
 
   return armors;
@@ -160,9 +167,12 @@ void BaseDetectorNode::drawLightsAndArmors(
 
   // Show numbers and confidence
   for (const auto & armor : armors) {
+    std::stringstream text_ss;
+    text_ss << armor.number << ": " << std::fixed << std::setprecision(1)
+            << armor.confidence * 100.0 << "%";
     cv::putText(
-      img, std::to_string(armor.number) + ": " + std::to_string(armor.confidence),
-      armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+      img, text_ss.str(), armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 0.6,
+      cv::Scalar(0, 255, 255), 2);
   }
 }
 
@@ -172,18 +182,20 @@ void BaseDetectorNode::createDebugPublishers()
     this->create_publisher<auto_aim_interfaces::msg::DebugLights>("/detector/debug/lights", 10);
   armors_data_pub_ =
     this->create_publisher<auto_aim_interfaces::msg::DebugArmors>("/detector/debug/armors", 10);
-  binary_img_pub_ = image_transport::create_publisher(this, "/detector/debug/binary_img");
-  number_pub_ = image_transport::create_publisher(this, "/detector/debug/number");
-  final_img_pub_ = image_transport::create_publisher(this, "/detector/debug/final_img");
+  binary_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/bin_img", 10);
+  final_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/final_img", 10);
+  number_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/number", 10);
+  xor_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/xor", 10);
 }
 
 void BaseDetectorNode::destroyDebugPublishers()
 {
   lights_data_pub_.reset();
   armors_data_pub_.reset();
-  binary_img_pub_.shutdown();
-  number_pub_.shutdown();
-  final_img_pub_.shutdown();
+  binary_img_pub_.reset();
+  final_img_pub_.reset();
+  number_pub_.reset();
+  xor_pub_.reset();
 }
 
 RgbDetectorNode::RgbDetectorNode(const rclcpp::NodeOptions & options)

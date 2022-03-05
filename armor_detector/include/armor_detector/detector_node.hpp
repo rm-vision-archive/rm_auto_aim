@@ -8,7 +8,6 @@
 #include <message_filters/synchronizer.h>
 
 #include <image_transport/image_transport.hpp>
-#include <image_transport/publisher.hpp>
 #include <image_transport/subscriber_filter.hpp>
 #include <rclcpp/publisher.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -73,9 +72,10 @@ private:
   std::shared_ptr<rclcpp::ParameterCallbackHandle> debug_cb_handle_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugLights>::SharedPtr lights_data_pub_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugArmors>::SharedPtr armors_data_pub_;
-  image_transport::Publisher binary_img_pub_;
-  image_transport::Publisher number_pub_;
-  image_transport::Publisher final_img_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr binary_img_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr final_img_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr number_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr xor_pub_;
 };
 
 class RgbDetectorNode : public BaseDetectorNode

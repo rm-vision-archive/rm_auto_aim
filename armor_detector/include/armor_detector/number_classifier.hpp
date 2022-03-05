@@ -4,10 +4,7 @@
 #define ARMOR_DETECTOR__NUMBER_CLASSIFIER_HPP_
 
 // OpenCV
-#include <opencv2/core.hpp>
-
-// OpenVINO
-#include <inference_engine.hpp>
+#include <opencv2/opencv.hpp>
 
 // STL
 #include <cstddef>
@@ -23,34 +20,21 @@ class NumberClassifier
 {
 public:
   NumberClassifier(
-    const double height_ratio, const double width_ratio, const std::string & model_path);
+    const double & height_ratio, const double & width_ratio, const double & ct,
+    const std::string & template_path);
 
-  std::vector<cv::Mat> extractNumbers(const cv::Mat & src, const std::vector<Armor> & armors);
+  void extractNumbers(const cv::Mat & src, std::vector<Armor> & armors);
 
-  void doClassify(const std::vector<cv::Mat> & numbers, std::vector<Armor> & armors);
-
-  void prepareInput(const std::vector<cv::Mat> & imgs, InferenceEngine::Blob::Ptr & blob);
-
-  void processOutput(const InferenceEngine::Blob::Ptr & blob, std::vector<Armor> & armors);
+  void xorClassify(std::vector<Armor> & armors, cv::Mat & xor_all);
 
   // height_ratio
   double hr;
   // width_ratio
   double wr;
+  double confidence_threshold;
 
 private:
-  InferenceEngine::Core core_;
-  InferenceEngine::CNNNetwork network_;
-  InferenceEngine::ExecutableNetwork executable_network_;
-  InferenceEngine::InferRequest infer_request_;
-
-  std::string input_name_;
-  std::string output_name_;
-
-  size_t batch_size_;
-  size_t class_num_;
-
-  float confidence_threshold_;
+  std::vector<cv::Mat> templates_;
 };
 }  // namespace rm_auto_aim
 

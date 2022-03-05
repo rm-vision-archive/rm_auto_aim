@@ -38,6 +38,8 @@ struct Armor
   Light left_light, right_light;
   cv::Point2f center;
 
+  cv::Mat number_img;
+
   int number;
   float confidence;
 };

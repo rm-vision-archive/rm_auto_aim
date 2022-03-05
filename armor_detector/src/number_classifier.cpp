@@ -2,10 +2,17 @@
 
 #include "armor_detector/number_classifier.hpp"
 
+#include <pstl/glue_algorithm_defs.h>
+
 // OpenCV
+#include <iostream>
+#include <opencv2/core.hpp>
+#include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
-#include <opencv2/dnn.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/opencv.hpp>
 
 // STL
 #include <algorithm>
@@ -17,33 +24,20 @@
 namespace rm_auto_aim
 {
 NumberClassifier::NumberClassifier(
-  const double height_ratio, const double width_ratio, const std::string & model_path)
-: hr(height_ratio), wr(width_ratio), class_num_(6)
+  const double & height_ratio, const double & width_ratio, const double & c_t,
+  const std::string & template_path)
+: hr(height_ratio), wr(width_ratio), confidence_threshold(c_t)
 {
-  const int dynamic_batch_limit = 100;
-
-  network_ = core_.ReadNetwork(model_path);
-
-  auto input_info = network_.getInputsInfo();
-  input_name_ = input_info.begin()->first;
-
-  auto output_info = network_.getOutputsInfo();
-  output_name_ = output_info.begin()->first;
-
-  const std::map<std::string, std::string> dyn_config = {
-    {InferenceEngine::PluginConfigParams::KEY_DYN_BATCH_ENABLED,
-     InferenceEngine::PluginConfigParams::YES}};
-  network_.setBatchSize(dynamic_batch_limit);
-
-  executable_network_ = core_.LoadNetwork(network_, "CPU", dyn_config);
-  infer_request_ = executable_network_.CreateInferRequest();
+  templates_.resize(10);
+  templates_[2] = cv::imread(template_path + "2.png", cv::IMREAD_GRAYSCALE);
+  templates_[3] = cv::imread(template_path + "3.png", cv::IMREAD_GRAYSCALE);
+  templates_[4] = cv::imread(template_path + "4.png", cv::IMREAD_GRAYSCALE);
+  templates_[5] = cv::imread(template_path + "5.png", cv::IMREAD_GRAYSCALE);
 }
 
-std::vector<cv::Mat> NumberClassifier::extractNumbers(
-  const cv::Mat & src, const std::vector<Armor> & armors)
+void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & armors)
 {
-  std::vector<cv::Mat> numbers;
-  for (const auto & armor : armors) {
+  for (auto & armor : armors) {
     auto top_width_diff = armor.right_light.top - armor.left_light.top;
     auto bottom_width_diff = armor.right_light.bottom - armor.left_light.bottom;
     auto left_height_diff = armor.left_light.bottom - armor.left_light.top;
@@ -56,7 +50,7 @@ std::vector<cv::Mat> NumberClassifier::extractNumbers(
       armor.center - right_height_diff * hr + top_width_diff * wr,
       armor.center + right_height_diff * hr + bottom_width_diff * wr};
 
-    const auto output_size = cv::Size(32, 32);
+    const auto output_size = cv::Size(20, 28);
     cv::Point2f target_vertices[4] = {
       cv::Point(0, output_size.height - 1),
       cv::Point(0, 0),
@@ -69,72 +63,44 @@ std::vector<cv::Mat> NumberClassifier::extractNumbers(
     cv::Mat number_image;
     cv::warpPerspective(src, number_image, rotation_matrix, output_size);
 
-    cv::Mat gray_number_image;
-    cv::cvtColor(number_image, gray_number_image, cv::COLOR_RGB2GRAY);
-    numbers.emplace_back(gray_number_image);
+    cv::cvtColor(number_image, number_image, cv::COLOR_RGB2GRAY);
+
+    cv::threshold(number_image, number_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+    armor.number_img = number_image;
   }
-
-  return numbers;
 }
 
-void NumberClassifier::doClassify(const std::vector<cv::Mat> & numbers, std::vector<Armor> & armors)
+void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_all)
 {
-  batch_size_ = numbers.size();
-  infer_request_.SetBatch(batch_size_);
+  std::vector<int> available_numbers = {2, 3, 4, 5};
+  double full_mat_sum = 20 * 28 * 255;
+  cv::Mat xor_result;
+  std::vector<cv::Mat> xor_results;
 
-  auto input_blob = infer_request_.GetBlob(input_name_);
+  for (auto & armor : armors) {
+    armor.confidence = 0;
+    for (const int & number : available_numbers) {
+      cv::bitwise_xor(armor.number_img, templates_[number], xor_result);
+      xor_results.emplace_back(xor_result.clone());
 
-  prepareInput(numbers, input_blob);
+      double xor_sum = cv::sum(xor_result)[0];
+      double confidence = 1 - xor_sum / full_mat_sum;
 
-  infer_request_.Infer();
-
-  auto output_blob = infer_request_.GetBlob(output_name_);
-
-  processOutput(output_blob, armors);
-}
-
-void NumberClassifier::prepareInput(
-  const std::vector<cv::Mat> & imgs, InferenceEngine::Blob::Ptr & blob)
-{
-  size_t channels = 1;
-  size_t img_w = imgs[0].cols;
-  size_t img_h = imgs[0].rows;
-
-  auto input_blob = InferenceEngine::as<InferenceEngine::MemoryBlob>(blob);
-  auto input_blob_holder = input_blob->wmap();
-  float * blob_data = input_blob_holder.as<float *>();
-
-  for (size_t batch_id = 0; batch_id < batch_size_; ++batch_id) {
-    auto img = imgs[batch_id];
-    auto img_data = img.data;
-    for (size_t h = 0; h < img_h; ++h) {
-      for (size_t w = 0; w < img_w; ++w) {
-        blob_data[batch_id * channels * img_h * img_w + h * img_w + w] =
-          static_cast<float>(img_data[h * img_w + w]);
+      if (confidence > armor.confidence) {
+        armor.confidence = confidence;
+        armor.number = number;
       }
     }
   }
-}
 
-void NumberClassifier::processOutput(
-  const InferenceEngine::Blob::Ptr & blob, std::vector<Armor> & armors)
-{
-  auto output_blob = InferenceEngine::as<InferenceEngine::MemoryBlob>(blob);
-  auto output_blob_holder = output_blob->rmap();
-  const float * output_blob_data = output_blob_holder.as<const float *>();
+  cv::vconcat(xor_results, xor_all);
 
-  float max_confidence = 0.0;
-  for (size_t batch_id = 0; batch_id < batch_size_; ++batch_id) {
-    auto & armor = armors[batch_id];
-    for (size_t class_id = 0; class_id < class_num_; ++class_id) {
-      auto confidence = output_blob_data[batch_id * class_num_ + class_id];
-      if (confidence > max_confidence) {
-        max_confidence = confidence;
-        armor.number = class_id;
-      }
-    }
-    armor.confidence = max_confidence;
-  }
+  armors.erase(
+    std::remove_if(
+      armors.begin(), armors.end(),
+      [this](const Armor & armor) { return armor.confidence < confidence_threshold; }),
+    armors.end());
 }
 
 }  // namespace rm_auto_aim

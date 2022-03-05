@@ -19,16 +19,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
-## Find OpenVINO dependencies
-find_package(OpenCV REQUIRED)
-find_package(InferenceEngine REQUIRED)
-find_package(ngraph REQUIRED)
-list(APPEND ${PROJECT_NAME}_FOUND_BUILD_DEPENDS
-  OpenCV
-  InferenceEngine
-  ngraph
-)
-
 ###########
 ## Build ##
 ###########
@@ -62,9 +52,6 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest)
   ament_add_gtest(test_node_startup test/test_node_startup.cpp)
   target_link_libraries(test_node_startup ${PROJECT_NAME})
-
-  ament_add_gtest(test_classifier test/test_classifier.cpp)
-  target_link_libraries(test_classifier ${PROJECT_NAME})
 endif()
 
 #############
@@ -73,5 +60,5 @@ endif()
 
 ament_auto_package(
   INSTALL_TO_SHARE
-  model
+  template
 )
