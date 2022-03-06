@@ -7,7 +7,7 @@
 
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <image_transport/image_transport.hpp>
-#include <opencv2/core/types.hpp>
+#include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <rclcpp/qos.hpp>
 
@@ -138,8 +138,16 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
     armors_data_pub_->publish(detector_->debug_armors);
 
     if (!armors.empty()) {
-      number_pub_->publish(
-        *cv_bridge::CvImage(img_msg->header, "mono8", armors[0].number_img).toImageMsg());
+      // Combine all number images to one
+      std::vector<cv::Mat> number_imgs;
+      number_imgs.reserve(armors.size());
+      for (const auto & armor : armors) {
+        number_imgs.emplace_back(armor.number_img);
+      }
+      cv::Mat all_num_img;
+      cv::vconcat(number_imgs, all_num_img);
+
+      number_pub_->publish(*cv_bridge::CvImage(img_msg->header, "mono8", all_num_img).toImageMsg());
       xor_pub_->publish(*cv_bridge::CvImage(img_msg->header, "mono8", xor_img).toImageMsg());
     }
 
@@ -169,9 +177,9 @@ void BaseDetectorNode::drawLightsAndArmors(
   for (const auto & armor : armors) {
     std::stringstream text_ss;
     text_ss << armor.number << ": " << std::fixed << std::setprecision(1)
-            << armor.confidence * 100.0 << "%";
+            << armor.similarity * 100.0 << "%";
     cv::putText(
-      img, text_ss.str(), armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 0.6,
+      img, text_ss.str(), armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 0.8,
       cv::Scalar(0, 255, 255), 2);
   }
 }

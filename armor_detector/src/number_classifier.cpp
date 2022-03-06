@@ -78,16 +78,16 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_al
   std::vector<cv::Mat> xor_results;
 
   for (auto & armor : armors) {
-    armor.confidence = 0;
+    armor.similarity = 0;
     for (const int & number : available_numbers) {
       cv::bitwise_xor(armor.number_img, templates_[number], xor_result);
       xor_results.emplace_back(xor_result.clone());
 
-      double xor_sum = cv::sum(xor_result)[0];
-      double confidence = 1 - xor_sum / full_mat_sum;
+      double diff_sum = cv::sum(xor_result)[0];
+      double similarity = 1 - diff_sum / full_mat_sum;
 
-      if (confidence > armor.confidence) {
-        armor.confidence = confidence;
+      if (similarity > armor.similarity) {
+        armor.similarity = similarity;
         armor.number = number;
       }
     }
@@ -98,7 +98,7 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_al
   armors.erase(
     std::remove_if(
       armors.begin(), armors.end(),
-      [this](const Armor & armor) { return armor.confidence < confidence_threshold; }),
+      [this](const Armor & armor) { return armor.similarity < confidence_threshold; }),
     armors.end());
 }
 

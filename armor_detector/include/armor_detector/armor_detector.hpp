@@ -41,7 +41,7 @@ struct Armor
   cv::Mat number_img;
 
   int number;
-  float confidence;
+  float similarity;
 };
 
 class ArmorDetector
