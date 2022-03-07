@@ -30,14 +30,14 @@ BaseDetectorNode::BaseDetectorNode(
   detector_ = initArmorDetector();
 
   // Number classifier
-  double height_ratio = this->declare_parameter("number_classifier.height_ratio", 1.0);
-  double weight_ratio = this->declare_parameter("number_classifier.weight_ratio", 0.28);
-  double confidence_threshold =
-    this->declare_parameter("number_classifier.confidence_threshold", 0.5);
+  double height_factor = this->declare_parameter("number_classifier.height_factor", 2.0);
+  double width_factor = this->declare_parameter("number_classifier.width_factor", 0.56);
+  double similarity_threshold =
+    this->declare_parameter("number_classifier.similarity_threshold", 0.5);
   auto template_path =
     ament_index_cpp::get_package_share_directory("armor_detector") + "/template/";
   classifier_ = std::make_unique<NumberClassifier>(
-    height_ratio, weight_ratio, confidence_threshold, template_path);
+    height_factor, width_factor, similarity_threshold, template_path);
 
   // Subscriptions transport type
   transport_ = this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
@@ -124,10 +124,10 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   auto armors = detector_->matchLights(lights);
 
   // Extract numbers
-  classifier_->hr = get_parameter("number_classifier.height_ratio").as_double();
-  classifier_->wr = get_parameter("number_classifier.weight_ratio").as_double();
-  classifier_->confidence_threshold =
-    get_parameter("number_classifier.confidence_threshold").as_double();
+  classifier_->height_factor = get_parameter("number_classifier.height_factor").as_double();
+  classifier_->width_factor = get_parameter("number_classifier.width_factor").as_double();
+  classifier_->similarity_threshold =
+    get_parameter("number_classifier.similarity_threshold").as_double();
   cv::Mat xor_img;
   if (!armors.empty()) {
     classifier_->extractNumbers(img, armors);

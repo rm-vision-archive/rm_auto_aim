@@ -1,4 +1,5 @@
 // Copyright 2022 Chen Jun
+// Licensed under the MIT License.
 
 #include "armor_detector/number_classifier.hpp"
 
@@ -23,9 +24,8 @@
 namespace rm_auto_aim
 {
 NumberClassifier::NumberClassifier(
-  const double & height_ratio, const double & width_ratio, const double & c_t,
-  const std::string & template_path)
-: hr(height_ratio), wr(width_ratio), confidence_threshold(c_t)
+  const double & hf, const double & wf, const double & ct, const std::string & template_path)
+: height_factor(hf), width_factor(wf), similarity_threshold(ct)
 {
   templates_ = {
     {'2', cv::imread(template_path + "2.png", cv::IMREAD_GRAYSCALE)},
@@ -38,17 +38,31 @@ NumberClassifier::NumberClassifier(
 void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & armors)
 {
   for (auto & armor : armors) {
-    auto top_width_diff = armor.right_light.top - armor.left_light.top;
-    auto bottom_width_diff = armor.right_light.bottom - armor.left_light.bottom;
+    // Scaling height
     auto left_height_diff = armor.left_light.bottom - armor.left_light.top;
     auto right_height_diff = armor.right_light.bottom - armor.right_light.top;
 
-    // The order is bottomLeft, topLeft, topRight, bottomRight
-    cv::Point2f number_vertices[4] = {
-      armor.center + left_height_diff * hr - bottom_width_diff * wr,
-      armor.center - left_height_diff * hr - top_width_diff * wr,
-      armor.center - right_height_diff * hr + top_width_diff * wr,
-      armor.center + right_height_diff * hr + bottom_width_diff * wr};
+    auto left_center = (armor.left_light.top + armor.left_light.bottom) / 2;
+    auto right_center = (armor.right_light.top + armor.right_light.bottom) / 2;
+
+    auto top_left = left_center - left_height_diff / 2 * height_factor;
+    auto top_right = right_center - right_height_diff / 2 * height_factor;
+    auto bottom_left = left_center + left_height_diff / 2 * height_factor;
+    auto bottom_right = right_center + right_height_diff / 2 * height_factor;
+
+    // Scaling width
+    auto top_width_diff = armor.right_light.top - armor.left_light.top;
+    auto bottom_width_diff = armor.right_light.bottom - armor.left_light.bottom;
+
+    auto top_center = (top_left + top_right) / 2;
+    auto bottom_center = (bottom_left + bottom_right) / 2;
+
+    top_left = top_center - top_width_diff / 2 * width_factor;
+    top_right = top_center + top_width_diff / 2 * width_factor;
+    bottom_left = bottom_center - bottom_width_diff / 2 * width_factor;
+    bottom_right = bottom_center + bottom_width_diff / 2 * width_factor;
+
+    cv::Point2f number_vertices[4] = {bottom_left, top_left, top_right, bottom_right};
 
     const auto output_size = cv::Size(20, 28);
     cv::Point2f target_vertices[4] = {
@@ -103,7 +117,7 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_al
   armors.erase(
     std::remove_if(
       armors.begin(), armors.end(),
-      [this](const Armor & armor) { return armor.similarity < confidence_threshold; }),
+      [this](const Armor & armor) { return armor.similarity < similarity_threshold; }),
     armors.end());
 }
 

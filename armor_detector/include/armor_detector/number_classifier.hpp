@@ -27,11 +27,11 @@ public:
 
   void xorClassify(std::vector<Armor> & armors, cv::Mat & xor_all);
 
-  // height_ratio
-  double hr;
-  // width_ratio
-  double wr;
-  double confidence_threshold;
+  // Height scaling factor
+  double height_factor;
+  // Width scaling factor
+  double width_factor;
+  double similarity_threshold;
 
 private:
   std::map<char, cv::Mat> templates_;
