@@ -35,13 +35,6 @@ public:
   } state;
 
 private:
-  inline Eigen::Vector3d getArmorPosition(const Armor & armor)
-  {
-    return Eigen::Vector3d(
-      armor.position_stamped.point.x, armor.position_stamped.point.y,
-      armor.position_stamped.point.z);
-  }
-
   double max_match_distance_;
 
   int tracking_threshold_;

@@ -100,7 +100,10 @@ void ArmorProcessorNode::armorsCallback(
 {
   // Tranform armor position from image frame to world coordinate
   for (auto & armor : armors_ptr->armors) {
-    armor.position_stamped = tf2_buffer_->transform(armor.position_stamped, target_frame_);
+    geometry_msgs::msg::PointStamped ps;
+    ps.header = armors_ptr->header;
+    ps.point = armor.position;
+    armor.position = tf2_buffer_->transform(ps, target_frame_).point;
   }
 
   rclcpp::Time time = armors_ptr->header.stamp;

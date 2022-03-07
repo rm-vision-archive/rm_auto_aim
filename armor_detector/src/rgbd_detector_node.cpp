@@ -51,17 +51,16 @@ void RgbDepthDetectorNode::colorDepthCallback(
     marker_.points.clear();
 
     auto_aim_interfaces::msg::Armor armor_msg;
-    armor_msg.position_stamped.header = depth_msg->header;
     for (const auto & armor : armors) {
       // Fill the armor msg
-      armor_msg.position_stamped.point = depth_processor_->getPosition(depth_img, armor.center);
+      armor_msg.position = depth_processor_->getPosition(depth_img, armor.center);
       armor_msg.distance_to_image_center =
         depth_processor_->calculateDistanceToCenter(armor.center);
 
       // If z < 0.4m, the depth would turn to zero
-      if (armor_msg.position_stamped.point.z != 0) {
+      if (armor_msg.position.z != 0) {
         armors_msg_.armors.emplace_back(armor_msg);
-        marker_.points.emplace_back(armor_msg.position_stamped.point);
+        marker_.points.emplace_back(armor_msg.position);
       }
     }
 

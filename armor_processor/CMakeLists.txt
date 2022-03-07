@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ## enforcing cleaner code.
 add_definitions(-Wall -Werror)
 
+## Export compile commands for clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 #######################
 ## Find dependencies ##
 #######################
@@ -21,9 +24,7 @@ ament_auto_find_build_dependencies()
 ###########
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
-  src/kalman_filter.cpp
-  src/tracker.cpp
-  src/processor_node.cpp
+  DIRECTORY src
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}

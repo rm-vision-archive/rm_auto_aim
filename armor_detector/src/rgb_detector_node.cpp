@@ -40,18 +40,17 @@ void RgbDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPt
     marker_.points.clear();
 
     auto_aim_interfaces::msg::Armor armor_msg;
-    armor_msg.position_stamped.header = img_msg->header;
     for (const auto & armor : armors) {
       // Fill the armor msg
-      geometry_msgs::msg::Point point;
-      bool success = pnp_solver_->solvePnP(armor, point);
+      geometry_msgs::msg::Point position;
+      bool success = pnp_solver_->solvePnP(armor, position);
 
       if (success) {
-        armor_msg.position_stamped.point = point;
+        armor_msg.position = position;
         armor_msg.distance_to_image_center = pnp_solver_->calculateDistanceToCenter(armor.center);
 
         armors_msg_.armors.emplace_back(armor_msg);
-        marker_.points.emplace_back(armor_msg.position_stamped.point);
+        marker_.points.emplace_back(armor_msg.position);
       } else {
         RCLCPP_WARN(this->get_logger(), "PnP failed!");
       }

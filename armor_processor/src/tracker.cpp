@@ -29,7 +29,7 @@ void Tracker::init(const ArmorsMsg & armors_msg)
   }
 
   tracked_armor = chosen_armor;
-  tracked_position = getArmorPosition(chosen_armor);
+  tracked_position << chosen_armor.position.x, chosen_armor.position.y, chosen_armor.position.z;
   state = DETECTING;
 }
 
@@ -43,8 +43,7 @@ void Tracker::update(const ArmorsMsg & armors_msg, const Eigen::Vector3d & predi
     auto matched_armor = armors_msg.armors[0];
     for (const auto & armor : armors_msg.armors) {
       // Difference of the current armor position and tracked armor's predicted position
-      const auto & armor_position = armor.position_stamped.point;
-      Eigen::Vector3d position_vec(armor_position.x, armor_position.y, armor_position.z);
+      Eigen::Vector3d position_vec(armor.position.x, armor.position.y, armor.position.z);
       position_diff = (predicted_position - position_vec).norm();
       if (position_diff < min_position_diff) {
         min_position_diff = position_diff;
@@ -55,7 +54,8 @@ void Tracker::update(const ArmorsMsg & armors_msg, const Eigen::Vector3d & predi
 
     if (matched) {
       tracked_armor = matched_armor;
-      tracked_position = getArmorPosition(matched_armor);
+      tracked_position << matched_armor.position.x, matched_armor.position.y,
+        matched_armor.position.z;
     }
   }
 
