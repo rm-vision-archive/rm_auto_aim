@@ -8,8 +8,8 @@
 
 // STL
 #include <cstddef>
+#include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "armor_detector/armor_detector.hpp"
@@ -34,7 +34,7 @@ public:
   double confidence_threshold;
 
 private:
-  std::vector<cv::Mat> templates_;
+  std::map<char, cv::Mat> templates_;
 };
 }  // namespace rm_auto_aim
 

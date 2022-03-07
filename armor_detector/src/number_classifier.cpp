@@ -27,11 +27,12 @@ NumberClassifier::NumberClassifier(
   const std::string & template_path)
 : hr(height_ratio), wr(width_ratio), confidence_threshold(c_t)
 {
-  templates_.resize(10);
-  templates_[2] = cv::imread(template_path + "2.png", cv::IMREAD_GRAYSCALE);
-  templates_[3] = cv::imread(template_path + "3.png", cv::IMREAD_GRAYSCALE);
-  templates_[4] = cv::imread(template_path + "4.png", cv::IMREAD_GRAYSCALE);
-  templates_[5] = cv::imread(template_path + "5.png", cv::IMREAD_GRAYSCALE);
+  templates_ = {
+    {'2', cv::imread(template_path + "2.png", cv::IMREAD_GRAYSCALE)},
+    {'3', cv::imread(template_path + "3.png", cv::IMREAD_GRAYSCALE)},
+    {'4', cv::imread(template_path + "4.png", cv::IMREAD_GRAYSCALE)},
+    {'5', cv::imread(template_path + "5.png", cv::IMREAD_GRAYSCALE)},
+  };
 }
 
 void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & armors)
@@ -72,15 +73,14 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & 
 
 void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_all)
 {
-  std::vector<int> available_numbers = {2, 3, 4, 5};
   double full_mat_sum = 20 * 28 * 255;
   cv::Mat xor_result;
   std::vector<cv::Mat> xor_results;
 
   for (auto & armor : armors) {
     armor.similarity = 0;
-    for (const int & number : available_numbers) {
-      cv::bitwise_xor(armor.number_img, templates_[number], xor_result);
+    for (const auto & id_template : templates_) {
+      cv::bitwise_xor(armor.number_img, id_template.second, xor_result);
       xor_results.emplace_back(xor_result.clone());
 
       double diff_sum = cv::sum(xor_result)[0];
@@ -88,12 +88,12 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_al
 
       if (similarity > armor.similarity) {
         armor.similarity = similarity;
-        armor.number = number;
+        armor.number = id_template.first;
       }
     }
 
     std::stringstream result_ss;
-    result_ss << armor.number << ":" << std::fixed << std::setprecision(1)
+    result_ss << armor.number << ":_" << std::fixed << std::setprecision(1)
               << armor.similarity * 100.0 << "%";
     armor.classfication_result = result_ss.str();
   }
