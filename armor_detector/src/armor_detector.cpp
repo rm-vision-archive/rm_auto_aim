@@ -3,6 +3,7 @@
 // OpenCV
 #include <opencv2/core.hpp>
 #include <opencv2/core/base.hpp>
+#include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -77,13 +78,13 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & rbg_img, const cv::
     auto light = Light(r_rect);
 
     if (isLight(light)) {
-      auto roi = light.boundingRect();
+      auto roi_rect = light.boundingRect();
       if (
-        0 <= roi.x && 0 <= roi.width && roi.x + roi.width <= rbg_img.cols && 0 <= roi.y &&
-        0 <= roi.height && roi.y + roi.height <= rbg_img.rows) {
-        auto output = rbg_img(roi);
+        0 <= roi_rect.x && 0 <= roi_rect.width && roi_rect.x + roi_rect.width <= rbg_img.cols &&
+        0 <= roi_rect.y && 0 <= roi_rect.height && roi_rect.y + roi_rect.height <= rbg_img.rows) {
+        auto roi = rbg_img(roi_rect);
         // Sum of red pixels > sum of blue pixels ?
-        light.color = cv::sum(output)[0] > cv::sum(output)[2] ? Color::RED : Color::BULE;
+        light.color = cv::sum(roi)[0] > cv::sum(roi)[2] ? Color::RED : Color::BULE;
         lights.emplace_back(light);
       }
     }
@@ -119,16 +120,16 @@ std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
   this->debug_armors.data.clear();
 
   // Loop all the pairing of lights
-  for (auto light = lights.begin(); light != lights.end(); light++) {
-    for (auto sec_light = light + 1; sec_light != lights.end(); sec_light++) {
-      if (light->color != detect_color || sec_light->color != detect_color) continue;
+  for (auto light_1 = lights.begin(); light_1 != lights.end(); light_1++) {
+    for (auto light_2 = light_1 + 1; light_2 != lights.end(); light_2++) {
+      if (light_1->color != detect_color || light_2->color != detect_color) continue;
 
-      if (containLight(*light, *sec_light, lights)) {
+      if (containLight(*light_1, *light_2, lights)) {
         continue;
       }
 
-      if (isArmor(*light, *sec_light)) {
-        armors.emplace_back(Armor(*light, *sec_light));
+      if (isArmor(*light_1, *light_2)) {
+        armors.emplace_back(Armor(*light_1, *light_2));
       }
     }
   }
@@ -136,22 +137,19 @@ std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
   return armors;
 }
 
-// Check if there is another light in the quadrilateral formed by the 2 lights
+// Check if there is another light in the boundingRect formed by the 2 lights
 bool ArmorDetector::containLight(
   const Light & light_1, const Light & light_2, const std::vector<Light> & lights)
 {
-  // Y-axis is positive downward
-  float top = std::min(light_1.top.y, light_2.top.y);
-  float bottom = std::max(light_1.bottom.y, light_2.bottom.y);
-  float left = std::min(light_1.center.x, light_2.center.x);
-  float right = std::max(light_1.center.x, light_2.center.x);
+  auto points = std::vector<cv::Point2f>{light_1.top, light_1.bottom, light_2.top, light_2.bottom};
+  auto bounding_rect = cv::boundingRect(points);
 
   for (const auto & test_light : lights) {
+    if (test_light.center == light_1.center || test_light.center == light_2.center) continue;
+
     if (
-      (left < test_light.center.x && test_light.center.x < right) &&
-      ((top < test_light.top.y && test_light.top.y < bottom) ||
-       (top < test_light.center.y && test_light.center.y < bottom) ||
-       (top < test_light.bottom.y && test_light.bottom.y < bottom))) {
+      bounding_rect.contains(test_light.top) || bounding_rect.contains(test_light.bottom) ||
+      bounding_rect.contains(test_light.center)) {
       return true;
     }
   }
