@@ -25,7 +25,7 @@ public:
 
   void extractNumbers(const cv::Mat & src, std::vector<Armor> & armors);
 
-  void xorClassify(std::vector<Armor> & armors, cv::Mat & xor_all);
+  void xorClassify(std::vector<Armor> & armors, cv::Mat & xor_show);
 
   // Height scaling factor
   double height_factor;

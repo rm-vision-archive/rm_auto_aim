@@ -85,16 +85,17 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & 
   }
 }
 
-void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_all)
+void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_show)
 {
   double full_mat_sum = 20 * 28 * 255;
   cv::Mat xor_result;
-  std::vector<cv::Mat> xor_results;
+  std::vector<cv::Mat> all_xor_results;
 
   for (auto & armor : armors) {
     armor.similarity = 0;
-    for (const auto & id_template : templates_) {
-      cv::bitwise_xor(armor.number_img, id_template.second, xor_result);
+    std::vector<cv::Mat> xor_results;
+    for (const auto & number_template : templates_) {
+      cv::bitwise_xor(armor.number_img, number_template.second, xor_result);
       xor_results.emplace_back(xor_result.clone());
 
       double diff_sum = cv::sum(xor_result)[0];
@@ -102,17 +103,20 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_al
 
       if (similarity > armor.similarity) {
         armor.similarity = similarity;
-        armor.number = id_template.first;
+        armor.number = number_template.first;
       }
     }
-
     std::stringstream result_ss;
     result_ss << armor.number << ":_" << std::fixed << std::setprecision(1)
               << armor.similarity * 100.0 << "%";
     armor.classfication_result = result_ss.str();
+
+    cv::Mat vertical_concat;
+    cv::vconcat(xor_results, vertical_concat);
+    all_xor_results.emplace_back(vertical_concat.clone());
   }
 
-  cv::vconcat(xor_results, xor_all);
+  cv::hconcat(all_xor_results, xor_show);
 
   armors.erase(
     std::remove_if(
