@@ -45,10 +45,11 @@ void RgbDepthDetectorNode::colorDepthCallback(
   if (depth_processor_ != nullptr) {
     auto depth_img = cv_bridge::toCvShare(depth_msg, "16UC1")->image;
 
-    armors_msg_.header = depth_msg->header;
+    armors_msg_.header = position_marker_.header = text_marker_.header = depth_msg->header;
     armors_msg_.armors.clear();
-    marker_.header = depth_msg->header;
-    marker_.points.clear();
+    marker_array_.markers.clear();
+    position_marker_.points.clear();
+    text_marker_.id = 0;
 
     auto_aim_interfaces::msg::Armor armor_msg;
     for (const auto & armor : armors) {
@@ -60,7 +61,13 @@ void RgbDepthDetectorNode::colorDepthCallback(
       // If z < 0.4m, the depth would turn to zero
       if (armor_msg.position.z != 0) {
         armors_msg_.armors.emplace_back(armor_msg);
-        marker_.points.emplace_back(armor_msg.position);
+        position_marker_.points.emplace_back(armor_msg.position);
+
+        text_marker_.id++;
+        text_marker_.pose.position = armor_msg.position;
+        text_marker_.pose.position.y -= 0.1;
+        text_marker_.text = armor.classfication_result;
+        marker_array_.markers.emplace_back(text_marker_);
       }
     }
 
@@ -68,9 +75,7 @@ void RgbDepthDetectorNode::colorDepthCallback(
     armors_pub_->publish(armors_msg_);
 
     // Publishing marker
-    marker_.action = armors_msg_.armors.empty() ? visualization_msgs::msg::Marker::DELETE
-                                                : visualization_msgs::msg::Marker::ADD;
-    marker_pub_->publish(marker_);
+    publishMarkers();
   }
 }
 

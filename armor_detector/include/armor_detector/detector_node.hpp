@@ -14,7 +14,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
-#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 // STD
 #include <memory>
@@ -41,6 +41,8 @@ public:
 protected:
   std::vector<Armor> detectArmors(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
 
+  void publishMarkers();
+
   // Camera info subscription
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
 
@@ -52,8 +54,10 @@ protected:
   rclcpp::Publisher<auto_aim_interfaces::msg::Armors>::SharedPtr armors_pub_;
 
   // Visualization marker publisher
-  visualization_msgs::msg::Marker marker_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
+  visualization_msgs::msg::Marker position_marker_;
+  visualization_msgs::msg::Marker text_marker_;
+  visualization_msgs::msg::MarkerArray marker_array_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 
 private:
   std::unique_ptr<ArmorDetector> initArmorDetector();

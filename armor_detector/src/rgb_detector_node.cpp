@@ -34,10 +34,11 @@ void RgbDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPt
   auto armors = detectArmors(img_msg);
 
   if (pnp_solver_ != nullptr) {
-    armors_msg_.header = img_msg->header;
+    armors_msg_.header = position_marker_.header = text_marker_.header = img_msg->header;
     armors_msg_.armors.clear();
-    marker_.header = img_msg->header;
-    marker_.points.clear();
+    marker_array_.markers.clear();
+    position_marker_.points.clear();
+    text_marker_.id = 0;
 
     auto_aim_interfaces::msg::Armor armor_msg;
     for (const auto & armor : armors) {
@@ -50,7 +51,13 @@ void RgbDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPt
         armor_msg.distance_to_image_center = pnp_solver_->calculateDistanceToCenter(armor.center);
 
         armors_msg_.armors.emplace_back(armor_msg);
-        marker_.points.emplace_back(armor_msg.position);
+        position_marker_.points.emplace_back(armor_msg.position);
+
+        text_marker_.id++;
+        text_marker_.pose.position = armor_msg.position;
+        text_marker_.pose.position.y -= 0.1;
+        text_marker_.text = armor.classfication_result;
+        marker_array_.markers.emplace_back(text_marker_);
       } else {
         RCLCPP_WARN(this->get_logger(), "PnP failed!");
       }
@@ -60,9 +67,7 @@ void RgbDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPt
     armors_pub_->publish(armors_msg_);
 
     // Publishing marker
-    marker_.action = armors_msg_.armors.empty() ? visualization_msgs::msg::Marker::DELETE
-                                                : visualization_msgs::msg::Marker::ADD;
-    marker_pub_->publish(marker_);
+    publishMarkers();
   }
 }
 

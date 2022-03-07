@@ -9,6 +9,7 @@
 
 // STD
 #include <cmath>
+#include <string>
 #include <vector>
 
 #include "auto_aim_interfaces/msg/debug_armors.hpp"
@@ -42,6 +43,7 @@ struct Armor
 
   int number;
   float similarity;
+  std::string classfication_result;
 };
 
 class ArmorDetector

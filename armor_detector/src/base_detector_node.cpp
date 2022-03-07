@@ -8,6 +8,7 @@
 #include <image_transport/image_transport.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+#include <rclcpp/duration.hpp>
 #include <rclcpp/qos.hpp>
 
 // STD
@@ -46,12 +47,24 @@ BaseDetectorNode::BaseDetectorNode(
     "/detector/armors", rclcpp::SensorDataQoS());
 
   // Visualization Marker Publisher
-  marker_.ns = "armors";
-  marker_.type = visualization_msgs::msg::Marker::SPHERE_LIST;
-  marker_.scale.x = marker_.scale.y = marker_.scale.z = 0.1;
-  marker_.color.a = 1.0;
-  marker_.color.r = 1.0;
-  marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("/detector/marker", 10);
+  position_marker_.ns = "armors";
+  position_marker_.type = visualization_msgs::msg::Marker::SPHERE_LIST;
+  position_marker_.scale.x = position_marker_.scale.y = position_marker_.scale.z = 0.1;
+  position_marker_.color.a = 1.0;
+  position_marker_.color.r = 1.0;
+
+  text_marker_.ns = "classification";
+  text_marker_.action = visualization_msgs::msg::Marker::ADD;
+  text_marker_.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  text_marker_.scale.z = 0.1;
+  text_marker_.color.a = 1.0;
+  text_marker_.color.r = 1.0;
+  text_marker_.color.g = 1.0;
+  text_marker_.color.b = 1.0;
+  text_marker_.lifetime = rclcpp::Duration::from_seconds(0.1);
+
+  marker_pub_ =
+    this->create_publisher<visualization_msgs::msg::MarkerArray>("/detector/marker", 10);
 
   // Debug Publishers
   debug_ = this->declare_parameter("debug", false);
@@ -172,11 +185,8 @@ void BaseDetectorNode::drawLightsAndArmors(
 
   // Show numbers and confidence
   for (const auto & armor : armors) {
-    std::stringstream text_ss;
-    text_ss << armor.number << ": " << std::fixed << std::setprecision(1)
-            << armor.similarity * 100.0 << "%";
     cv::putText(
-      img, text_ss.str(), armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 0.8,
+      img, armor.classfication_result, armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 0.8,
       cv::Scalar(0, 255, 255), 2);
   }
 }
@@ -201,6 +211,14 @@ void BaseDetectorNode::destroyDebugPublishers()
   final_img_pub_.reset();
   number_pub_.reset();
   xor_pub_.reset();
+}
+
+void BaseDetectorNode::publishMarkers()
+{
+  using Marker = visualization_msgs::msg::Marker;
+  position_marker_.action = armors_msg_.armors.empty() ? Marker::DELETE : Marker::ADD;
+  marker_array_.markers.emplace_back(position_marker_);
+  marker_pub_->publish(marker_array_);
 }
 
 }  // namespace rm_auto_aim

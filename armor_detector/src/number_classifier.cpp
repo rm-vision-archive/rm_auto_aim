@@ -91,6 +91,11 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_al
         armor.number = number;
       }
     }
+
+    std::stringstream result_ss;
+    result_ss << armor.number << ":" << std::fixed << std::setprecision(1)
+              << armor.similarity * 100.0 << "%";
+    armor.classfication_result = result_ss.str();
   }
 
   cv::vconcat(xor_results, xor_all);
