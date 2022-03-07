@@ -1,4 +1,5 @@
 // Copyright 2022 Chen Jun
+// Licensed under the MIT License.
 
 #ifndef ARMOR_DETECTOR__DETECTOR_NODE_HPP_
 #define ARMOR_DETECTOR__DETECTOR_NODE_HPP_
@@ -39,6 +40,9 @@ public:
 
 protected:
   std::vector<Armor> detectArmors(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
+
+  // Camera info subscription
+  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
 
   // Image subscriptions transport type
   std::string transport_;
@@ -86,8 +90,6 @@ public:
 private:
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
 
-  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
-
   image_transport::Subscriber img_sub_;
   std::unique_ptr<PnPSolver> pnp_solver_;
 };
@@ -101,8 +103,6 @@ private:
   void colorDepthCallback(
     const sensor_msgs::msg::Image::ConstSharedPtr & color_msg,
     const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg);
-
-  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
 
   image_transport::SubscriberFilter color_img_sub_filter_;
   image_transport::SubscriberFilter depth_img_sub_filter_;
