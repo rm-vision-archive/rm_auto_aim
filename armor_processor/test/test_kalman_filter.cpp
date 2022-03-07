@@ -30,7 +30,9 @@ TEST(KalmanFilterTest, init)
   R << 0.1;
   P.setIdentity();
 
-  KF = std::make_unique<rm_auto_aim::KalmanFilter>(A, H, Q, R, P);
+  auto matrices = rm_auto_aim::KalmanFilterMatrices{A, H, Q, R, P};
+
+  KF = std::make_unique<rm_auto_aim::KalmanFilter>(matrices);
 
   std::cout << "A: \n" << A << std::endl;
   std::cout << "H: \n" << H << std::endl;
@@ -63,7 +65,7 @@ TEST(KalmanFilterTest, estimate)
   for (const auto & measurement : measurements) {
     KF->predict(A);
     measurement_vector << measurement;
-    auto result = KF->correct(measurement_vector);
+    auto result = KF->update(measurement_vector);
     std::cout << result.transpose() << std::endl;
   }
 }

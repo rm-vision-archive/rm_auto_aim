@@ -4,12 +4,18 @@
 
 namespace rm_auto_aim
 {
-KalmanFilter::KalmanFilter(
-  const Eigen::MatrixXd & A, const Eigen::MatrixXd & H, const Eigen::MatrixXd & Q,
-  const Eigen::MatrixXd & R, const Eigen::MatrixXd & P)
-: A_(A), H_(H), Q_(Q), R_(R), P_(P), n_(A.rows()), I_(n_, n_), x_pre_(n_), x_post_(n_)
+KalmanFilter::KalmanFilter(const KalmanFilterMatrices & matrices)
+: A_(matrices.A),
+  H_(matrices.H),
+  Q_(matrices.Q),
+  R_(matrices.R),
+  P_(matrices.P),
+  n_(matrices.A.rows()),
+  I_(Eigen::MatrixXd::Identity(n_, n_)),
+  x_pre_(n_),
+  x_post_(n_)
 {
-  I_.setIdentity();
+I_.setIdentity();
 }
 
 void KalmanFilter::init(const Eigen::VectorXd & x0) { x_post_ = x0; }
@@ -26,7 +32,7 @@ Eigen::MatrixXd KalmanFilter::predict(const Eigen::MatrixXd & A)
   return x_pre_;
 }
 
-Eigen::MatrixXd KalmanFilter::correct(const Eigen::VectorXd & measurement)
+Eigen::MatrixXd KalmanFilter::update(const Eigen::VectorXd & measurement)
 {
   K_ = P_ * H_.transpose() * (H_ * P_ * H_.transpose() + R_).inverse();
   x_pre_ += K_ * (measurement - H_ * x_pre_);

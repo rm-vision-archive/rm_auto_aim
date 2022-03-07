@@ -48,10 +48,6 @@ if(BUILD_TESTING)
   set(TEST_NAME test_kalman_filter)
   ament_add_gtest(${TEST_NAME} test/${TEST_NAME}.cpp)
   target_link_libraries(${TEST_NAME} ${PROJECT_NAME})
-
-  set(TEST_NAME test_tracker)
-  ament_add_gtest(${TEST_NAME} test/${TEST_NAME}.cpp)
-  target_link_libraries(${TEST_NAME} ${PROJECT_NAME})
 endif()
 
 #############

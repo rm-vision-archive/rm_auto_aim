@@ -6,6 +6,8 @@
 #include <memory>
 #include <vector>
 
+#include "armor_processor/kalman_filter.hpp"
+
 namespace rm_auto_aim
 {
 ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
@@ -16,7 +18,8 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   // Kalman Filter initial matrix
   // A - state transition matrix
   // clang-format off
-  A_ << 1,  0,  0, dt_, 0,  0,
+  Eigen::Matrix<double, 6, 6> a;
+  a <<  1,  0,  0, dt_, 0,  0,
         0,  1,  0,  0, dt_, 0,
         0,  0,  1,  0,  0, dt_,
         0,  0,  0,  1,  0,  0,
@@ -25,16 +28,22 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   // clang-format on
 
   // H - measurement matrix
-  H_.setIdentity();
+  Eigen::Matrix<double, 3, 6> h;
+  h.setIdentity();
 
   // Q - process noise covariance matrix
-  Q_.diagonal() << 0.01, 0.01, 0.01, 0.1, 0.1, 0.1;
+  Eigen::DiagonalMatrix<double, 6> q;
+  q.diagonal() << 0.01, 0.01, 0.01, 0.1, 0.1, 0.1;
 
   // R - measurement noise covariance matrix
-  R_.diagonal() << 0.05, 0.05, 0.05;
+  Eigen::DiagonalMatrix<double, 3> r;
+  r.diagonal() << 0.05, 0.05, 0.05;
 
   // P - error estimate covariance matrix
-  P_.setIdentity();
+  Eigen::DiagonalMatrix<double, 6> p;
+  p.setIdentity();
+
+  kf_matrices_ = KalmanFilterMatrices{a, h, q, r, p};
 
   // Tracker
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.2);
@@ -114,7 +123,7 @@ void ArmorProcessorNode::armorsCallback(
       // Tracker init
       tracker_->init(*armors_ptr);
       // KF init
-      kf_ = std::make_unique<KalmanFilter>(A_, H_, Q_, R_, P_);
+      kf_ = std::make_unique<KalmanFilter>(kf_matrices_);
       Eigen::VectorXd init_state(6);
       init_state << tracker_->tracked_position, 0, 0, 0;
       kf_->init(init_state);
@@ -127,21 +136,21 @@ void ArmorProcessorNode::armorsCallback(
   } else {
     // Set dt
     dt_ = (time - last_time_).seconds();
-    A_(0, 3) = A_(1, 4) = A_(2, 5) = dt_;
+    kf_matrices_.A(0, 3) = kf_matrices_.A(1, 4) = kf_matrices_.A(2, 5) = dt_;
     // KF predict
-    kf_prediction_ = kf_->predict(A_);
+    kf_prediction_ = kf_->predict(kf_matrices_.A);
     // Tracker update
     auto predicted_position = kf_prediction_.head(3);
     // Use predicted position from last frame to match armors
     tracker_->update(*armors_ptr, predicted_position);
 
     if (tracker_->state == Tracker::DETECTING) {
-      kf_corretion_ = kf_->correct(tracker_->tracked_position);
+      kf_corretion_ = kf_->update(tracker_->tracked_position);
       target_msg_.target_found = false;
       target_pub_->publish(target_msg_);
 
     } else if (tracker_->state == Tracker::TRACKING) {
-      kf_corretion_ = kf_->correct(tracker_->tracked_position);
+      kf_corretion_ = kf_->update(tracker_->tracked_position);
       publishMarkers(time, kf_corretion_);
       target_msg_.target_found = true;
       publishTarget(kf_corretion_);
