@@ -12,6 +12,7 @@
 #include <rclcpp/qos.hpp>
 
 // STD
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -102,8 +103,8 @@ std::unique_ptr<ArmorDetector> BaseDetectorNode::initArmorDetector()
 
   ArmorDetector::ArmorParams a_params = {
     .min_light_ratio = declare_parameter("armor.min_light_ratio", 0.6),
-    .min_center_ratio = declare_parameter("armor.min_center_ratio", 0.4),
-    .max_center_ratio = declare_parameter("armor.max_center_ratio", 1.6),
+    .min_center_distance = declare_parameter("armor.min_center_distance", 0.8),
+    .max_center_distance = declare_parameter("armor.max_center_distance", 3.2),
     .max_angle = declare_parameter("armor.max_angle", 35.0)};
 
   return std::make_unique<ArmorDetector>(min_lightness, detect_color, l_params, a_params);
@@ -143,6 +144,13 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
 
     binary_img_pub_->publish(
       *cv_bridge::CvImage(img_msg->header, "mono8", binary_img).toImageMsg());
+
+    std::sort(
+      detector_->debug_lights.data.begin(), detector_->debug_lights.data.end(),
+      [](const auto & l1, const auto & l2) { return l1.center_x < l2.center_x; });
+    std::sort(
+      detector_->debug_armors.data.begin(), detector_->debug_armors.data.end(),
+      [](const auto & a1, const auto & a2) { return a1.center_x < a2.center_x; });
 
     lights_data_pub_->publish(detector_->debug_lights);
     armors_data_pub_->publish(detector_->debug_armors);

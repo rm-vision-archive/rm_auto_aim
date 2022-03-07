@@ -106,6 +106,7 @@ bool ArmorDetector::isLight(const Light & light)
 
   // Fill in debug information
   auto_aim_interfaces::msg::DebugLight light_data;
+  light_data.center_x = light.center.x;
   light_data.ratio = ratio;
   light_data.angle = light.tilt_angle;
   light_data.is_light = is_light;
@@ -164,23 +165,24 @@ bool ArmorDetector::isArmor(const Light & light_1, const Light & light_2)
                                                              : light_2.length / light_1.length;
   bool light_ratio_ok = light_length_ratio > a.min_light_ratio;
 
-  // Distance between the center of 2 lights
-  float center_distance = cv::norm(light_1.center - light_2.center);
-  float center_length_ratio = center_distance / (light_1.length + light_2.length);
-  bool center_ratio_ok =
-    a.min_center_ratio < center_length_ratio && center_length_ratio < a.max_center_ratio;
+  // Distance between the center of 2 lights (unit : light length)
+  float avg_light_length = (light_1.length + light_2.length) / 2;
+  float center_distance = cv::norm(light_1.center - light_2.center) / avg_light_length;
+  bool center_distance_ok =
+    a.min_center_distance < center_distance && center_distance < a.max_center_distance;
 
   // Angle of light center connection
   cv::Point2f diff = light_1.center - light_2.center;
   float angle = std::abs(std::atan(diff.y / diff.x)) / CV_PI * 180;
   bool angle_ok = angle < a.max_angle;
 
-  bool is_armor = light_ratio_ok && center_ratio_ok && angle_ok;
+  bool is_armor = light_ratio_ok && center_distance_ok && angle_ok;
 
   // Fill in debug information
   auto_aim_interfaces::msg::DebugArmor armor_data;
+  armor_data.center_x = (light_1.center.x + light_2.center.x) / 2;
   armor_data.light_ratio = light_length_ratio;
-  armor_data.center_ratio = center_length_ratio;
+  armor_data.center_distance = center_distance;
   armor_data.angle = angle;
   armor_data.is_armor = is_armor;
   this->debug_armors.data.emplace_back(armor_data);

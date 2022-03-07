@@ -60,8 +60,8 @@ public:
   struct ArmorParams
   {
     double min_light_ratio;
-    double min_center_ratio;
-    double max_center_ratio;
+    double min_center_distance;
+    double max_center_distance;
     // horizontal angle
     double max_angle;
   };
