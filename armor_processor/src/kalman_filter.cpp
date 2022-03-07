@@ -15,7 +15,6 @@ KalmanFilter::KalmanFilter(const KalmanFilterMatrices & matrices)
   x_pre_(n_),
   x_post_(n_)
 {
-I_.setIdentity();
 }
 
 void KalmanFilter::init(const Eigen::VectorXd & x0) { x_post_ = x0; }

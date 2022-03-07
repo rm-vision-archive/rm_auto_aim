@@ -105,67 +105,49 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
 }
 
 void ArmorProcessorNode::armorsCallback(
-  const auto_aim_interfaces::msg::Armors::SharedPtr armors_ptr)
+  const auto_aim_interfaces::msg::Armors::SharedPtr armors_msg)
 {
   // Tranform armor position from image frame to world coordinate
-  for (auto & armor : armors_ptr->armors) {
+  for (auto & armor : armors_msg->armors) {
     geometry_msgs::msg::PointStamped ps;
-    ps.header = armors_ptr->header;
+    ps.header = armors_msg->header;
     ps.point = armor.position;
     armor.position = tf2_buffer_->transform(ps, target_frame_).point;
   }
 
-  rclcpp::Time time = armors_ptr->header.stamp;
+  rclcpp::Time time = armors_msg->header.stamp;
   target_msg_.header.stamp = time;
 
-  if (tracker_->state == Tracker::NO_FOUND) {
-    if (!armors_ptr->armors.empty()) {
-      // Tracker init
-      tracker_->init(*armors_ptr);
-      // KF init
-      kf_ = std::make_unique<KalmanFilter>(kf_matrices_);
-      Eigen::VectorXd init_state(6);
-      init_state << tracker_->tracked_position, 0, 0, 0;
-      kf_->init(init_state);
-    }
+  if (tracker_->tracker_state == Tracker::NO_FOUND) {
+    tracker_->init(armors_msg, kf_matrices_);
 
-    deleteMarkers();
     target_msg_.target_found = false;
     target_pub_->publish(target_msg_);
+    deleteMarkers();
 
   } else {
     // Set dt
     dt_ = (time - last_time_).seconds();
     kf_matrices_.A(0, 3) = kf_matrices_.A(1, 4) = kf_matrices_.A(2, 5) = dt_;
-    // KF predict
-    kf_prediction_ = kf_->predict(kf_matrices_.A);
-    // Tracker update
-    auto predicted_position = kf_prediction_.head(3);
-    // Use predicted position from last frame to match armors
-    tracker_->update(*armors_ptr, predicted_position);
+    tracker_->update(armors_msg, kf_matrices_.A);
 
-    if (tracker_->state == Tracker::DETECTING) {
-      kf_corretion_ = kf_->update(tracker_->tracked_position);
+    if (tracker_->tracker_state == Tracker::DETECTING) {
       target_msg_.target_found = false;
       target_pub_->publish(target_msg_);
+      deleteMarkers();
 
-    } else if (tracker_->state == Tracker::TRACKING) {
-      kf_corretion_ = kf_->update(tracker_->tracked_position);
-      publishMarkers(time, kf_corretion_);
+    } else if (
+      tracker_->tracker_state == Tracker::TRACKING || tracker_->tracker_state == Tracker::LOST) {
       target_msg_.target_found = true;
-      publishTarget(kf_corretion_);
-
-    } else if (tracker_->state == Tracker::LOST) {
-      publishMarkers(time, kf_prediction_);
-      target_msg_.target_found = true;
-      publishTarget(kf_prediction_);
+      publishTarget(tracker_->target_state);
+      publishMarkers(time, tracker_->target_state);
     }
   }
 
   last_time_ = time;
 
   if (debug_) {
-    RCLCPP_INFO_STREAM(this->get_logger(), "Tracker state:" << tracker_->state);
+    RCLCPP_INFO_STREAM(this->get_logger(), "Tracker state:" << tracker_->tracker_state);
   }
 }
 

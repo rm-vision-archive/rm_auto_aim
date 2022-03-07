@@ -42,15 +42,9 @@ private:
   // Last time received msg
   rclcpp::Time last_time_;
 
-  // KalmanFilter
-  std::unique_ptr<KalmanFilter> kf_;
   // Initial KF matrices
   KalmanFilterMatrices kf_matrices_;
   double dt_;
-
-  // KF output
-  Eigen::VectorXd kf_prediction_;
-  Eigen::VectorXd kf_corretion_;
 
   std::unique_ptr<Tracker> tracker_;
 
