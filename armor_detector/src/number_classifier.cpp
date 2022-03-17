@@ -35,12 +35,12 @@ NumberClassifier::NumberClassifier(
     {'3', cv::imread(template_path + "3.png", cv::IMREAD_GRAYSCALE)},
     {'4', cv::imread(template_path + "4.png", cv::IMREAD_GRAYSCALE)},
     {'5', cv::imread(template_path + "5.png", cv::IMREAD_GRAYSCALE)},
-    {'6', cv::imread(template_path + "outpost.png", cv::IMREAD_GRAYSCALE)},
+    {'O', cv::imread(template_path + "outpost.png", cv::IMREAD_GRAYSCALE)},
   };
   large_armor_templates_ = {
     {'1', cv::imread(template_path + "1.png", cv::IMREAD_GRAYSCALE)},
-    {'7', cv::imread(template_path + "guard.png", cv::IMREAD_GRAYSCALE)},
-    {'8', cv::imread(template_path + "base.png", cv::IMREAD_GRAYSCALE)},
+    {'G', cv::imread(template_path + "guard.png", cv::IMREAD_GRAYSCALE)},
+    {'B', cv::imread(template_path + "base.png", cv::IMREAD_GRAYSCALE)},
   };
 }
 
@@ -48,6 +48,7 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & 
 {
   for (auto & armor : armors) {
     auto width_factor = armor.armor_type == LARGE ? large_width_factor : small_width_factor;
+
     // Scaling height
     auto left_height_diff = armor.left_light.bottom - armor.left_light.top;
     auto right_height_diff = armor.right_light.bottom - armor.right_light.top;
@@ -99,6 +100,8 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_sh
 {
   double full_mat_sum;
   std::map<char, cv::Mat> templates;
+
+  // For debug usage
   cv::Mat xor_result;
   std::vector<cv::Mat> all_xor_results;
 
@@ -129,8 +132,10 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_sh
               << armor.similarity * 100.0 << "%";
     armor.classfication_result = result_ss.str();
 
+    // For debug usage
     cv::Mat vertical_concat;
     cv::vconcat(xor_results, vertical_concat);
+    cv::resize(vertical_concat, vertical_concat, cv::Size(28, 100));
     all_xor_results.emplace_back(vertical_concat.clone());
   }
 

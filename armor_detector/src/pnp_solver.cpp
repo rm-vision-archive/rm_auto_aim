@@ -40,10 +40,10 @@ bool PnPSolver::solvePnP(const Armor & armor, geometry_msgs::msg::Point & point)
   image_armor_points.emplace_back(armor.right_light.bottom);
 
   // Solve pnp
-  // TODO(chenjun): support large armor
   cv::Mat rvec, tvec;
+  auto object_points = armor.armor_type == SMALL ? small_armor_points_ : large_armor_points_;
   bool success = cv::solvePnP(
-    small_armor_points_, image_armor_points, camera_matrix_, dist_coeffs_, rvec, tvec, false,
+    object_points, image_armor_points, camera_matrix_, dist_coeffs_, rvec, tvec, false,
     cv::SOLVEPNP_IPPE);
 
   if (success) {

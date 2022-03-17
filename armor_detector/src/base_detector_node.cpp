@@ -144,9 +144,11 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   // Publish debug info
   if (debug_) {
     auto final_time = this->now();
-    RCLCPP_INFO_STREAM(
-      this->get_logger(),
-      "detectArmors used: " << (final_time - start_time).seconds() * 1000.0 << "ms");
+    auto latency = (final_time - start_time).seconds() * 1000;
+    RCLCPP_INFO_STREAM(this->get_logger(), "detectArmors used: " << latency << "ms");
+    cv::putText(
+      img, "Latency: " + std::to_string(latency) + "ms", cv::Point(10, 30),
+      cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
 
     binary_img_pub_->publish(
       *cv_bridge::CvImage(img_msg->header, "mono8", binary_img).toImageMsg());
@@ -165,7 +167,8 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
       // Combine all number images to one
       std::vector<cv::Mat> number_imgs;
       number_imgs.reserve(armors.size());
-      for (const auto & armor : armors) {
+      for (auto & armor : armors) {
+        cv::resize(armor.number_img, armor.number_img, cv::Size(28, 28));
         number_imgs.emplace_back(armor.number_img);
       }
       cv::Mat all_num_img;
