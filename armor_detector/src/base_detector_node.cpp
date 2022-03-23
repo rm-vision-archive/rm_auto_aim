@@ -81,6 +81,18 @@ BaseDetectorNode::BaseDetectorNode(
       debug_ = p.as_bool();
       debug_ ? createDebugPublishers() : destroyDebugPublishers();
     });
+
+  this->declare_parameter("use_serial_color", true);
+
+  color_cb_handle_ = debug_param_sub_->add_parameter_callback(
+    "robot_color",
+    [this](const rclcpp::Parameter & p) {
+      bool use_serial_color = this->get_parameter("use_serial_color").as_bool();
+      if (use_serial_color) {
+        this->set_parameter(rclcpp::Parameter("detect_color", p.as_bool() ? 1 : 0));
+      }
+    },
+    "rm_serial_driver");
 }
 
 std::unique_ptr<ArmorDetector> BaseDetectorNode::initArmorDetector()
@@ -122,7 +134,11 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
 
   // Detect armors
   detector_->min_lightness = get_parameter("min_lightness").as_int();
-  detector_->detect_color = static_cast<Color>(get_parameter("detect_color").as_int());
+  if (!this->get_parameter("use_serial_color").as_bool()) {
+    detector_->detect_color = static_cast<Color>(get_parameter("detect_color").as_int());
+  }
+  RCLCPP_INFO(this->get_logger(), "Update detect color!");
+
   auto binary_img = detector_->preprocessImage(img);
   auto lights = detector_->findLights(img, binary_img);
   auto armors = detector_->matchLights(lights);
@@ -138,7 +154,9 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   cv::Mat xor_img;
   if (!armors.empty()) {
     classifier_->extractNumbers(img, armors);
+    RCLCPP_INFO(this->get_logger(), "Successfully extract numbers!");
     classifier_->xorClassify(armors, xor_img);
+    RCLCPP_INFO(this->get_logger(), "Successfully classify numbers!");
   }
 
   // Publish debug info
@@ -168,7 +186,7 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
       std::vector<cv::Mat> number_imgs;
       number_imgs.reserve(armors.size());
       for (auto & armor : armors) {
-        cv::resize(armor.number_img, armor.number_img, cv::Size(28, 28));
+        cv::resize(armor.number_img, armor.number_img, cv::Size(20, 28));
         number_imgs.emplace_back(armor.number_img);
       }
       cv::Mat all_num_img;

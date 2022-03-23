@@ -68,14 +68,14 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & 
     auto top_center = (top_left + top_right) / 2;
     auto bottom_center = (bottom_left + bottom_right) / 2;
 
-    top_left = top_center - top_width_diff / 2 * width_factor;
-    top_right = top_center + top_width_diff / 2 * width_factor;
-    bottom_left = bottom_center - bottom_width_diff / 2 * width_factor;
-    bottom_right = bottom_center + bottom_width_diff / 2 * width_factor;
+    top_left = top_center - top_width_diff / 2;
+    top_right = top_center + top_width_diff / 2;
+    bottom_left = bottom_center - bottom_width_diff / 2;
+    bottom_right = bottom_center + bottom_width_diff / 2;
 
     cv::Point2f number_vertices[4] = {bottom_left, top_left, top_right, bottom_right};
-
-    const auto output_size = armor.armor_type == LARGE ? cv::Size(28, 28) : cv::Size(20, 28);
+    auto output_width = 20 / width_factor;
+    const auto output_size = cv::Size(output_width, 28);
     cv::Point2f target_vertices[4] = {
       cv::Point(0, output_size.height - 1),
       cv::Point(0, 0),
@@ -88,6 +88,9 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & 
     cv::Mat number_image;
     cv::warpPerspective(src, number_image, rotation_matrix, output_size);
 
+    cv::Rect rect = cv::Rect(output_width / 2 - 10, 0, 20, 28);
+    number_image = number_image(rect);
+
     cv::cvtColor(number_image, number_image, cv::COLOR_RGB2GRAY);
 
     cv::threshold(number_image, number_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
@@ -98,7 +101,7 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & 
 
 void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_show)
 {
-  double full_mat_sum;
+  double full_mat_sum = 20 * 28 * 255;
   std::map<char, cv::Mat> templates;
 
   // For debug usage
@@ -106,13 +109,7 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_sh
   std::vector<cv::Mat> all_xor_results;
 
   for (auto & armor : armors) {
-    if (armor.armor_type == SMALL) {
-      full_mat_sum = 20 * 28 * 255;
-      templates = small_armor_templates_;
-    } else {
-      full_mat_sum = 28 * 28 * 255;
-      templates = large_armor_templates_;
-    }
+    templates = armor.armor_type == SMALL ? small_armor_templates_ : large_armor_templates_;
     armor.similarity = 0;
     std::vector<cv::Mat> xor_results;
     for (const auto & number_template : templates) {
@@ -135,7 +132,7 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_sh
     // For debug usage
     cv::Mat vertical_concat;
     cv::vconcat(xor_results, vertical_concat);
-    cv::resize(vertical_concat, vertical_concat, cv::Size(28, 100));
+    cv::resize(vertical_concat, vertical_concat, cv::Size(20, 100));
     all_xor_results.emplace_back(vertical_concat.clone());
   }
 

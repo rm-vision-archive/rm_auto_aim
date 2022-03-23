@@ -78,6 +78,8 @@ private:
   bool debug_;
   std::shared_ptr<rclcpp::ParameterEventHandler> debug_param_sub_;
   std::shared_ptr<rclcpp::ParameterCallbackHandle> debug_cb_handle_;
+  std::shared_ptr<rclcpp::ParameterEventHandler> color_param_sub_;
+  std::shared_ptr<rclcpp::ParameterCallbackHandle> color_cb_handle_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugLights>::SharedPtr lights_data_pub_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugArmors>::SharedPtr armors_data_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr binary_img_pub_;
