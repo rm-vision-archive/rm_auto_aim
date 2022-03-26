@@ -13,6 +13,7 @@
 
 // STD
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,8 +35,16 @@ BaseDetectorNode::BaseDetectorNode(
   double height_factor = this->declare_parameter("number_classifier.height_factor", 2.0);
   double small_width_factor = this->declare_parameter("number_classifier.small_width_factor", 0.56);
   double large_width_factor = this->declare_parameter("number_classifier.large_width_factor", 0.56);
-  double similarity_threshold =
-    this->declare_parameter("number_classifier.similarity_threshold", 0.5);
+  auto declare_similarity_threshold = [this](const char & number, const double & value) {
+    return this->declare_parameter(
+      std::string("number_classifier.similarity_threshold.") + number, value);
+  };
+  std::map<char, double> similarity_threshold = {
+    {'1', declare_similarity_threshold('1', 0.8)}, {'2', declare_similarity_threshold('2', 0.7)},
+    {'3', declare_similarity_threshold('3', 0.7)}, {'4', declare_similarity_threshold('4', 0.7)},
+    {'5', declare_similarity_threshold('5', 0.7)}, {'B', declare_similarity_threshold('B', 0.7)},
+    {'G', declare_similarity_threshold('G', 0.7)}, {'O', declare_similarity_threshold('O', 0.7)},
+  };
   auto template_path =
     ament_index_cpp::get_package_share_directory("armor_detector") + "/template/";
   classifier_ = std::make_unique<NumberClassifier>(
@@ -134,10 +143,6 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
 
   // Detect armors
   detector_->min_lightness = get_parameter("min_lightness").as_int();
-  if (!this->get_parameter("use_serial_color").as_bool()) {
-    detector_->detect_color = static_cast<Color>(get_parameter("detect_color").as_int());
-  }
-  RCLCPP_INFO(this->get_logger(), "Update detect color!");
 
   auto binary_img = detector_->preprocessImage(img);
   auto lights = detector_->findLights(img, binary_img);
@@ -149,14 +154,10 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
     get_parameter("number_classifier.small_width_factor").as_double();
   classifier_->large_width_factor =
     get_parameter("number_classifier.large_width_factor").as_double();
-  classifier_->similarity_threshold =
-    get_parameter("number_classifier.similarity_threshold").as_double();
   cv::Mat xor_img;
   if (!armors.empty()) {
     classifier_->extractNumbers(img, armors);
-    RCLCPP_INFO(this->get_logger(), "Successfully extract numbers!");
     classifier_->xorClassify(armors, xor_img);
-    RCLCPP_INFO(this->get_logger(), "Successfully classify numbers!");
   }
 
   // Publish debug info

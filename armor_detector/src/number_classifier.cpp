@@ -26,9 +26,9 @@
 namespace rm_auto_aim
 {
 NumberClassifier::NumberClassifier(
-  const double & hf, const double & swf, const double & lwf, const double & ct,
+  const double & hf, const double & swf, const double & lwf, const std::map<char, double> & st,
   const std::string & template_path)
-: height_factor(hf), small_width_factor(swf), large_width_factor(lwf), similarity_threshold(ct)
+: height_factor(hf), small_width_factor(swf), large_width_factor(lwf), similarity_threshold(st)
 {
   small_armor_templates_ = {
     {'2', cv::imread(template_path + "2.png", cv::IMREAD_GRAYSCALE)},
@@ -74,7 +74,7 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & 
     bottom_right = bottom_center + bottom_width_diff / 2;
 
     cv::Point2f number_vertices[4] = {bottom_left, top_left, top_right, bottom_right};
-    auto output_width = 20 / width_factor;
+    int output_width = 20 / width_factor;
     const auto output_size = cv::Size(output_width, 28);
     cv::Point2f target_vertices[4] = {
       cv::Point(0, output_size.height - 1),
@@ -83,13 +83,10 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & 
       cv::Point(output_size.width - 1, output_size.height - 1),
     };
 
-    auto rotation_matrix = cv::getPerspectiveTransform(number_vertices, target_vertices);
-
     cv::Mat number_image;
+    auto rotation_matrix = cv::getPerspectiveTransform(number_vertices, target_vertices);
     cv::warpPerspective(src, number_image, rotation_matrix, output_size);
-
-    cv::Rect rect = cv::Rect(output_width / 2 - 10, 0, 20, 28);
-    number_image = number_image(rect);
+    number_image = number_image(cv::Rect(output_width / 2 - 10, 0, 20, 28));
 
     cv::cvtColor(number_image, number_image, cv::COLOR_RGB2GRAY);
 
@@ -141,7 +138,9 @@ void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_sh
   armors.erase(
     std::remove_if(
       armors.begin(), armors.end(),
-      [this](const Armor & armor) { return armor.similarity < similarity_threshold; }),
+      [this](const Armor & armor) {
+        return armor.similarity < similarity_threshold[armor.number];
+      }),
     armors.end());
 }
 

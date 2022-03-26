@@ -21,7 +21,8 @@ class NumberClassifier
 public:
   NumberClassifier(
     const double & small_height_ratio, const double & large_height_ratio,
-    const double & width_ratio, const double & ct, const std::string & template_path);
+    const double & width_ratio, const std::map<char, double> & st,
+    const std::string & template_path);
 
   void extractNumbers(const cv::Mat & src, std::vector<Armor> & armors);
 
@@ -33,7 +34,8 @@ public:
   double small_width_factor;
   // Large armor width scaling factor
   double large_width_factor;
-  double similarity_threshold;
+
+  std::map<char, double> similarity_threshold;
 
 private:
   std::map<char, cv::Mat> small_armor_templates_;
