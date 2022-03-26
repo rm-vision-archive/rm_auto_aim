@@ -7,7 +7,6 @@
 #include <Eigen/Eigen>
 
 // ROS
-#include <auto_aim_interfaces/msg/detail/target__struct.hpp>
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
 
@@ -16,20 +15,23 @@
 
 #include "armor_processor/kalman_filter.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
+#include "auto_aim_interfaces/msg/target.hpp"
 
 namespace rm_auto_aim
 {
 class Tracker
 {
 public:
-  Tracker(double max_match_distance, int tracking_threshold, int lost_threshold);
+  Tracker(
+    const KalmanFilterMatrices & kf_matrices, double max_match_distance, int tracking_threshold,
+    int lost_threshold);
 
   using Armors = auto_aim_interfaces::msg::Armors;
   using Armor = auto_aim_interfaces::msg::Armor;
 
-  void init(const Armors::SharedPtr & armors_msg, const KalmanFilterMatrices & kf_matrices);
+  void init(const Armors::SharedPtr & armors_msg);
 
-  void update(const Armors::SharedPtr & armors_msg, const Eigen::MatrixXd & kf_a);
+  void update(const Armors::SharedPtr & armors_msg, const double & dt);
 
   enum State {
     NO_FOUND,
@@ -41,7 +43,11 @@ public:
   Eigen::VectorXd target_state;
 
 private:
+  KalmanFilterMatrices kf_matrices_;
   std::unique_ptr<KalmanFilter> kf_;
+
+  char tracking_number_;
+  Eigen::Vector3d tracking_velocity_;
 
   double max_match_distance_;
 

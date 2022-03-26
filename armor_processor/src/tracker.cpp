@@ -8,15 +8,20 @@
 
 namespace rm_auto_aim
 {
-Tracker::Tracker(double max_match_distance, int tracking_threshold, int lost_threshold)
+Tracker::Tracker(
+  const KalmanFilterMatrices & kf_matrices, double max_match_distance, int tracking_threshold,
+  int lost_threshold)
 : tracker_state(NO_FOUND),
+  kf_matrices_(kf_matrices),
+  tracking_number_(0),
+  tracking_velocity_(Eigen::Vector3d::Zero()),
   max_match_distance_(max_match_distance),
   tracking_threshold_(tracking_threshold),
   lost_threshold_(lost_threshold)
 {
 }
 
-void Tracker::init(const Armors::SharedPtr & armors_msg, const KalmanFilterMatrices & kf_matrices)
+void Tracker::init(const Armors::SharedPtr & armors_msg)
 {
   if (armors_msg->armors.empty()) {
     return;
@@ -34,19 +39,21 @@ void Tracker::init(const Armors::SharedPtr & armors_msg, const KalmanFilterMatri
   }
 
   // KF init
-  kf_ = std::make_unique<KalmanFilter>(kf_matrices);
+  kf_ = std::make_unique<KalmanFilter>(kf_matrices_);
   Eigen::VectorXd init_state(6);
   const auto position = chosen_armor.position;
   init_state << position.x, position.y, position.z, 0, 0, 0;
   kf_->init(init_state);
 
+  tracking_number_ = chosen_armor.number;
   tracker_state = DETECTING;
 }
 
-void Tracker::update(const Armors::SharedPtr & armors_msg, const Eigen::MatrixXd & kf_a)
+void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
 {
   // KF predict
-  Eigen::VectorXd kf_prediction = kf_->predict(kf_a);
+  kf_matrices_.A(0, 3) = kf_matrices_.A(1, 4) = kf_matrices_.A(2, 5) = dt;
+  Eigen::VectorXd kf_prediction = kf_->predict(kf_matrices_.A);
   auto predicted_position = kf_prediction.head(3);
 
   bool matched = false;
@@ -72,7 +79,21 @@ void Tracker::update(const Armors::SharedPtr & armors_msg, const Eigen::MatrixXd
       target_state = kf_->update(position_vec);
     } else {
       target_state = kf_prediction;
+      // Check if there is same id armor in msg
+      for (const auto & armor : armors_msg->armors) {
+        if (armor.number == tracking_number_) {
+          matched = true;
+          // Reset KF
+          kf_ = std::make_unique<KalmanFilter>(kf_matrices_);
+          Eigen::VectorXd init_state(6);
+          init_state << armor.position.x, armor.position.y, armor.position.z, tracking_velocity_;
+          kf_->init(init_state);
+          break;
+        }
+      }
     }
+
+    tracking_velocity_ = target_state.tail(3);
   }
 
   // Tracking state machine

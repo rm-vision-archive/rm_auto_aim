@@ -49,7 +49,8 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.2);
   int tracking_threshold = this->declare_parameter("tracker.tracking_threshold", 5);
   int lost_threshold = this->declare_parameter("tracker.lost_threshold", 5);
-  tracker_ = std::make_unique<Tracker>(max_match_distance, tracking_threshold, lost_threshold);
+  tracker_ =
+    std::make_unique<Tracker>(kf_matrices_, max_match_distance, tracking_threshold, lost_threshold);
 
   // Subscriber with tf2 message_filter
   // tf2 relevant
@@ -124,8 +125,7 @@ void ArmorProcessorNode::armorsCallback(
   target_msg_.header.stamp = time;
 
   if (tracker_->tracker_state == Tracker::NO_FOUND) {
-    tracker_->init(armors_msg, kf_matrices_);
-
+    tracker_->init(armors_msg);
     target_msg_.target_found = false;
     target_pub_->publish(target_msg_);
     deleteMarkers();
@@ -133,8 +133,8 @@ void ArmorProcessorNode::armorsCallback(
   } else {
     // Set dt
     dt_ = (time - last_time_).seconds();
-    kf_matrices_.A(0, 3) = kf_matrices_.A(1, 4) = kf_matrices_.A(2, 5) = dt_;
-    tracker_->update(armors_msg, kf_matrices_.A);
+
+    tracker_->update(armors_msg, dt_);
 
     if (tracker_->tracker_state == Tracker::DETECTING) {
       target_msg_.target_found = false;
