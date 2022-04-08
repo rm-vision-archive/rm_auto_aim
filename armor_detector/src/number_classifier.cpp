@@ -28,7 +28,7 @@ NumberClassifier::NumberClassifier(
   const double & hf, const double & swf, const double & lwf, const std::map<char, double> & st,
   const std::string & template_path)
 : height_factor(hf), small_width_factor(swf), large_width_factor(lwf), similarity_threshold(st)
-{  
+{
   small_armor_templates_ = {
     {'2', cv::imread(template_path + "2.png", cv::IMREAD_GRAYSCALE)},
     {'3', cv::imread(template_path + "3.png", cv::IMREAD_GRAYSCALE)},
@@ -106,7 +106,7 @@ void NumberClassifier::fcClassify(std::vector<Armor> & armors)
     class_names.push_back(line);
   }
   // load model
-  std::string model = "/root/ros_ws/model/number_classification13-r.onnx";
+  std::string model = "/root/ros_ws/model/number_classification_14.onnx";
   cv::dnn::Net net = cv::dnn::readNetFromONNX(model);
 
   for (auto & armor : armors) {
@@ -119,7 +119,7 @@ void NumberClassifier::fcClassify(std::vector<Armor> & armors)
     cv::Mat blob;
     float scale = 1.0;
     cv::dnn::blobFromImage(image, blob, scale, cv::Size(28, 20), cv::Scalar(0), false, false);
-    std::cout << "blob: " << blob.size << std::endl;
+    std::cout << "blob: " << blob.size << std::endl;  /////   DEBUG
 
     // set the input blob for the neural network
     double t = cv::getTickCount();
@@ -127,10 +127,11 @@ void NumberClassifier::fcClassify(std::vector<Armor> & armors)
     // forward pass the image blob through the model
     cv::Mat outputs = net.forward();
     t = (cv::getTickCount() - t) / cv::getTickFrequency();
-    std::cout << "Output shape: " << outputs.size() << ", Time-cost: " << t << std::endl;
+    std::cout << "Output shape: " << outputs.size() << ", Time-cost: " << t
+              << std::endl;  /////  DEBUG
     cv::Point class_id_point;
     double final_prob;
-    std::cout << "outputs: " << outputs << std::endl;
+    std::cout << "outputs: " << outputs << std::endl;  /////  DEBUG
     minMaxLoc(outputs, nullptr, &final_prob, nullptr, &class_id_point);
     int label_id = class_id_point.x;
 
@@ -141,12 +142,12 @@ void NumberClassifier::fcClassify(std::vector<Armor> & armors)
     cv::exp(outputs - max_prob, softmax_prob);
     sum = static_cast<float>(cv::sum(softmax_prob)[0]);
     softmax_prob /= sum;
-    std::cout << "softmaxoutputs: " << softmax_prob << std::endl;
+    std::cout << "softmaxoutputs: " << softmax_prob << std::endl;  /////   DEBUG
 
     minMaxLoc(softmax_prob.reshape(1, 1), nullptr, &final_prob, nullptr, &class_id_point);
     label_id = class_id_point.x;
 
-    if (final_prob > 0.8) {
+    if (final_prob > 0.6) {
       armor.confidence = final_prob;
       armor.number = *class_names[label_id].c_str();
     }
@@ -160,6 +161,7 @@ void NumberClassifier::fcClassify(std::vector<Armor> & armors)
     std::cout << "number: " << armor.number << std::endl;
     std::cout << "confidence: " << armor.confidence << std::endl;
     std::cout << "classfication_result: " << armor.classfication_result << std::endl;
+    ///////////////
 
     armors.erase(
       std::remove_if(

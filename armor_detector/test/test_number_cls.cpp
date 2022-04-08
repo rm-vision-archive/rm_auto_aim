@@ -22,16 +22,21 @@ void benchmark(int batch_size)
     {'1', 0.8}, {'2', 0.7}, {'3', 0.7}, {'4', 0.7}, {'5', 0.7}, {'B', 0.7}, {'G', 0.7}, {'O', 0.7},
   };
   auto model_path = ament_index_cpp::get_package_share_directory("armor_detector") +
-                    "/model/number_classification12.onnx";
+                    "/model/number_classification_14.onnx";
   rm_auto_aim::NumberClassifier nc(2.0, 0.4, 0.56, similarity_threshold, model_path);
 
-  //   auto test_mat = cv::Mat(20, 28, CV_8UC1, cv::Scalar(0));
-  //   auto test_mat_vector = std::vector<cv::Mat>(batch_size, test_mat);
+  //  随机生成
+  // auto dummy_armors = std::vector<rm_auto_aim::Armor>(batch_size);
+  // for (auto & armor : dummy_armors) {
+  //   auto test_mat = cv::Mat(20, 28, CV_8UC1);
+  //   armor.number_img = test_mat;
+  // }
 
+  //  固定图片
   auto dummy_armors = std::vector<rm_auto_aim::Armor>(batch_size);
   for (auto & armor : dummy_armors) {
     cv::Mat number_image =
-      cv::imread("/root/ros_ws/src/rm_pioneer_vision/rm_auto_aim/armor_detector/template/3.png");
+      cv::imread("/root/ros_ws/src/rm_pioneer_vision/rm_auto_aim/armor_detector/template/1.png");
     armor.number_img = number_image;
   }
 
@@ -62,3 +67,9 @@ void benchmark(int batch_size)
 }
 
 TEST(benchmark, batch_size_1) { benchmark(1); }
+
+// TEST(benchmark, batch_size_5) { benchmark(5); }
+
+// TEST(benchmark, batch_size_10) { benchmark(10); }
+
+// TEST(benchmark, batch_size_20) { benchmark(20); }
