@@ -44,7 +44,9 @@ struct Armor
   cv::Mat number_img;
 
   char number;
+  // std::string number;
   float similarity;
+  float confidence;
   std::string classfication_result;
   ArmorType armor_type;
 };

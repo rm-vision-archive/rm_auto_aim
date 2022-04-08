@@ -1,14 +1,12 @@
 // Copyright 2022 Chen Jun
 // Licensed under the MIT License.
 
-#include "armor_detector/number_classifier.hpp"
-
-#include <pstl/glue_algorithm_defs.h>
-
 // OpenCV
 #include <opencv2/core.hpp>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
+#include <opencv2/dnn.hpp>
+#include <opencv2/dnn/all_layers.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -22,6 +20,7 @@
 #include <vector>
 
 #include "armor_detector/armor_detector.hpp"
+#include "armor_detector/number_classifier.hpp"
 
 namespace rm_auto_aim
 {
@@ -29,7 +28,7 @@ NumberClassifier::NumberClassifier(
   const double & hf, const double & swf, const double & lwf, const std::map<char, double> & st,
   const std::string & template_path)
 : height_factor(hf), small_width_factor(swf), large_width_factor(lwf), similarity_threshold(st)
-{
+{  
   small_armor_templates_ = {
     {'2', cv::imread(template_path + "2.png", cv::IMREAD_GRAYSCALE)},
     {'3', cv::imread(template_path + "3.png", cv::IMREAD_GRAYSCALE)},
@@ -96,52 +95,79 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & 
   }
 }
 
-void NumberClassifier::xorClassify(std::vector<Armor> & armors, cv::Mat & xor_show)
+void NumberClassifier::fcClassify(std::vector<Armor> & armors)
 {
-  double full_mat_sum = 20 * 28 * 255;
-  std::map<char, cv::Mat> templates;
-
-  // For debug usage
-  cv::Mat xor_result;
-  std::vector<cv::Mat> all_xor_results;
+  std::vector<std::string> class_names;
+  std::ifstream ifs(
+    std::string("/root/ros_ws/src/rm_pioneer_vision/rm_auto_aim/armor_detector/src/number.txt")
+      .c_str());
+  std::string line;
+  while (getline(ifs, line)) {
+    class_names.push_back(line);
+  }
+  // load model
+  std::string model = "/root/ros_ws/model/number_classification13-r.onnx";
+  cv::dnn::Net net = cv::dnn::readNetFromONNX(model);
 
   for (auto & armor : armors) {
-    templates = armor.armor_type == SMALL ? small_armor_templates_ : large_armor_templates_;
-    armor.similarity = 0;
-    std::vector<cv::Mat> xor_results;
-    for (const auto & number_template : templates) {
-      cv::bitwise_xor(armor.number_img, number_template.second, xor_result);
-      xor_results.emplace_back(xor_result.clone());
+    // load the image from disk
+    cv::Mat image = armor.number_img;
+    cv::cvtColor(image, image, cv::COLOR_RGB2GRAY);
+    cv::resize(image, image, cv::Size(28, 20));
+    image = image / 255.0;
+    // create blob from image
+    cv::Mat blob;
+    float scale = 1.0;
+    cv::dnn::blobFromImage(image, blob, scale, cv::Size(28, 20), cv::Scalar(0), false, false);
+    std::cout << "blob: " << blob.size << std::endl;
 
-      double diff_sum = cv::sum(xor_result)[0];
-      double similarity = 1 - diff_sum / full_mat_sum;
+    // set the input blob for the neural network
+    double t = cv::getTickCount();
+    net.setInput(blob);
+    // forward pass the image blob through the model
+    cv::Mat outputs = net.forward();
+    t = (cv::getTickCount() - t) / cv::getTickFrequency();
+    std::cout << "Output shape: " << outputs.size() << ", Time-cost: " << t << std::endl;
+    cv::Point class_id_point;
+    double final_prob;
+    std::cout << "outputs: " << outputs << std::endl;
+    minMaxLoc(outputs, nullptr, &final_prob, nullptr, &class_id_point);
+    int label_id = class_id_point.x;
 
-      if (similarity > armor.similarity) {
-        armor.similarity = similarity;
-        armor.number = number_template.first;
-      }
+    float max_prob = 0.0;
+    float sum = 0.0;
+    cv::Mat softmax_prob;
+    max_prob = *std::max_element(outputs.begin<float>(), outputs.end<float>());
+    cv::exp(outputs - max_prob, softmax_prob);
+    sum = static_cast<float>(cv::sum(softmax_prob)[0]);
+    softmax_prob /= sum;
+    std::cout << "softmaxoutputs: " << softmax_prob << std::endl;
+
+    minMaxLoc(softmax_prob.reshape(1, 1), nullptr, &final_prob, nullptr, &class_id_point);
+    label_id = class_id_point.x;
+
+    if (final_prob > 0.8) {
+      armor.confidence = final_prob;
+      armor.number = *class_names[label_id].c_str();
     }
+
     std::stringstream result_ss;
     result_ss << armor.number << ":_" << std::fixed << std::setprecision(1)
-              << armor.similarity * 100.0 << "%";
+              << armor.confidence * 100.0 << "%";
     armor.classfication_result = result_ss.str();
 
-    // For debug usage
-    cv::Mat vertical_concat;
-    cv::vconcat(xor_results, vertical_concat);
-    cv::resize(vertical_concat, vertical_concat, cv::Size(20, 100));
-    all_xor_results.emplace_back(vertical_concat.clone());
+    //////////////// DEBUG
+    std::cout << "number: " << armor.number << std::endl;
+    std::cout << "confidence: " << armor.confidence << std::endl;
+    std::cout << "classfication_result: " << armor.classfication_result << std::endl;
+
+    armors.erase(
+      std::remove_if(
+        armors.begin(), armors.end(),
+        [this](const Armor & armor) {
+          return armor.confidence < similarity_threshold[armor.number];
+        }),
+      armors.end());
   }
-
-  cv::hconcat(all_xor_results, xor_show);
-
-  armors.erase(
-    std::remove_if(
-      armors.begin(), armors.end(),
-      [this](const Armor & armor) {
-        return armor.similarity < similarity_threshold[armor.number];
-      }),
-    armors.end());
 }
-
 }  // namespace rm_auto_aim

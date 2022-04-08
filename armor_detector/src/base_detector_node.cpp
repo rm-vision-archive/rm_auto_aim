@@ -157,7 +157,7 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   cv::Mat xor_img;
   if (!armors.empty()) {
     classifier_->extractNumbers(img, armors);
-    classifier_->xorClassify(armors, xor_img);
+    classifier_->fcClassify(armors);  // , xor_img
   }
 
   // Publish debug info

@@ -8,6 +8,7 @@
 
 // STL
 #include <cstddef>
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
@@ -21,12 +22,13 @@ class NumberClassifier
 public:
   NumberClassifier(
     const double & small_height_ratio, const double & large_height_ratio,
-    const double & width_ratio, const std::map<char, double> & st,
-    const std::string & template_path);
+    const double & width_ratio, const std::map<char, double> & st,  // char
+    const std::string & template_path);   // template_path
 
   void extractNumbers(const cv::Mat & src, std::vector<Armor> & armors);
 
-  void xorClassify(std::vector<Armor> & armors, cv::Mat & xor_show);
+  // void xorClassify(std::vector<Armor> & armors, cv::Mat & xor_show);
+  void fcClassify(std::vector<Armor> & armors);  //, cv::Mat & xor_show
 
   // Height scaling factor
   double height_factor;
@@ -35,6 +37,7 @@ public:
   // Large armor width scaling factor
   double large_width_factor;
 
+  // std::map<char, double> similarity_threshold;
   std::map<char, double> similarity_threshold;
 
 private:

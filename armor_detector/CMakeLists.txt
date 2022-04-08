@@ -52,6 +52,10 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest)
   ament_add_gtest(test_node_startup test/test_node_startup.cpp)
   target_link_libraries(test_node_startup ${PROJECT_NAME})
+
+  ament_add_gtest(test_number_cls test/test_number_cls.cpp)
+  target_link_libraries(test_number_cls ${PROJECT_NAME})
+
 endif()
 
 #############
