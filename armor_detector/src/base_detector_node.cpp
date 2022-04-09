@@ -35,7 +35,7 @@ BaseDetectorNode::BaseDetectorNode(
   auto pkg_path = ament_index_cpp::get_package_share_directory("armor_detector");
   auto model_path = pkg_path + "/model/fc.onnx";
   auto label_path = pkg_path + "/model/label.txt";
-  double threshold = this->declare_parameter("classifier.threshold", 0.5);
+  double threshold = this->declare_parameter("classifier.threshold", 0.98);
   classifier_ = std::make_unique<NumberClassifier>(model_path, label_path, threshold);
 
   // Subscriptions transport type
@@ -127,6 +127,7 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   // Extract numbers
   if (!armors.empty()) {
     classifier_->extractNumbers(img, armors);
+    classifier_->threshold = get_parameter("classifier.threshold").as_double();
     classifier_->fcClassify(armors);
   }
 

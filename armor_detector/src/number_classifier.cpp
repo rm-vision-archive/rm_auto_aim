@@ -99,7 +99,7 @@ void NumberClassifier::fcClassify(std::vector<Armor> & armors)
 
     // Create blob from image
     cv::Mat blob;
-    cv::dnn::blobFromImage(image, blob, 1., cv::Size(28, 20), cv::Scalar(0), false, false);
+    cv::dnn::blobFromImage(image, blob, 1., cv::Size(28, 20));
 
     // Set the input blob for the neural network
     net_.setInput(blob);
@@ -125,12 +125,13 @@ void NumberClassifier::fcClassify(std::vector<Armor> & armors)
     result_ss << armor.number << ":_" << std::fixed << std::setprecision(1)
               << armor.confidence * 100.0 << "%";
     armor.classfication_result = result_ss.str();
-
-    armors.erase(
-      std::remove_if(
-        armors.begin(), armors.end(),
-        [this](const Armor & armor) { return armor.confidence < threshold; }),
-      armors.end());
   }
+
+  armors.erase(
+    std::remove_if(
+      armors.begin(), armors.end(),
+      [this](const Armor & armor) { return armor.confidence < threshold; }),
+    armors.end());
 }
+
 }  // namespace rm_auto_aim
