@@ -130,7 +130,7 @@ void NumberClassifier::fcClassify(std::vector<Armor> & armors)
   armors.erase(
     std::remove_if(
       armors.begin(), armors.end(),
-      [this](const Armor & armor) { return armor.confidence < threshold; }),
+      [this](const Armor & armor) { return armor.confidence < threshold || armor.number == 'N'; }),
     armors.end());
 }
 
