@@ -32,23 +32,11 @@ BaseDetectorNode::BaseDetectorNode(
   detector_ = initArmorDetector();
 
   // Number classifier
-  double height_factor = this->declare_parameter("number_classifier.height_factor", 2.0);
-  double small_width_factor = this->declare_parameter("number_classifier.small_width_factor", 0.56);
-  double large_width_factor = this->declare_parameter("number_classifier.large_width_factor", 0.56);
-  auto declare_similarity_threshold = [this](const char & number, const double & value) {
-    return this->declare_parameter(
-      std::string("number_classifier.similarity_threshold.") + number, value);
-  };
-  std::map<char, double> similarity_threshold = {
-    {'1', declare_similarity_threshold('1', 0.8)}, {'2', declare_similarity_threshold('2', 0.8)},
-    {'3', declare_similarity_threshold('3', 0.8)}, {'4', declare_similarity_threshold('4', 0.8)},
-    {'5', declare_similarity_threshold('5', 0.8)}, {'B', declare_similarity_threshold('B', 0.8)},
-    {'G', declare_similarity_threshold('G', 0.8)}, {'O', declare_similarity_threshold('O', 0.8)},
-  };
-  auto template_path =
-    ament_index_cpp::get_package_share_directory("armor_detector") + "/template/";
-  classifier_ = std::make_unique<NumberClassifier>(
-    height_factor, small_width_factor, large_width_factor, similarity_threshold, template_path);
+  auto pkg_path = ament_index_cpp::get_package_share_directory("armor_detector");
+  auto model_path = pkg_path + "/model/fc.onnx";
+  auto label_path = pkg_path + "/model/label.txt";
+  double threshold = this->declare_parameter("classifier.threshold", 0.7);
+  classifier_ = std::make_unique<NumberClassifier>(model_path, label_path, threshold);
 
   // Subscriptions transport type
   transport_ = this->declare_parameter("subscribe_compressed", false) ? "compressed" : "raw";
@@ -90,18 +78,6 @@ BaseDetectorNode::BaseDetectorNode(
       debug_ = p.as_bool();
       debug_ ? createDebugPublishers() : destroyDebugPublishers();
     });
-
-  this->declare_parameter("use_serial_color", true);
-
-  color_cb_handle_ = debug_param_sub_->add_parameter_callback(
-    "robot_color",
-    [this](const rclcpp::Parameter & p) {
-      bool use_serial_color = this->get_parameter("use_serial_color").as_bool();
-      if (use_serial_color) {
-        this->set_parameter(rclcpp::Parameter("detect_color", p.as_bool() ? 1 : 0));
-      }
-    },
-    "rm_serial_driver");
 }
 
 std::unique_ptr<ArmorDetector> BaseDetectorNode::initArmorDetector()
@@ -149,15 +125,10 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   auto armors = detector_->matchLights(lights);
 
   // Extract numbers
-  classifier_->height_factor = get_parameter("number_classifier.height_factor").as_double();
-  classifier_->small_width_factor =
-    get_parameter("number_classifier.small_width_factor").as_double();
-  classifier_->large_width_factor =
-    get_parameter("number_classifier.large_width_factor").as_double();
-  cv::Mat xor_img;
   if (!armors.empty()) {
     classifier_->extractNumbers(img, armors);
-    classifier_->xorClassify(armors, xor_img);
+    classifier_->threshold = get_parameter("classifier.threshold").as_double();
+    classifier_->fcClassify(armors);
   }
 
   // Publish debug info
@@ -194,7 +165,6 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
       cv::vconcat(number_imgs, all_num_img);
 
       number_pub_->publish(*cv_bridge::CvImage(img_msg->header, "mono8", all_num_img).toImageMsg());
-      xor_pub_->publish(*cv_bridge::CvImage(img_msg->header, "mono8", xor_img).toImageMsg());
     }
 
     drawLightsAndArmors(img, lights, armors);
@@ -236,7 +206,6 @@ void BaseDetectorNode::createDebugPublishers()
   binary_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/bin_img", 10);
   final_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/final_img", 10);
   number_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/number", 10);
-  xor_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/xor", 10);
 }
 
 void BaseDetectorNode::destroyDebugPublishers()
@@ -246,7 +215,6 @@ void BaseDetectorNode::destroyDebugPublishers()
   binary_img_pub_.reset();
   final_img_pub_.reset();
   number_pub_.reset();
-  xor_pub_.reset();
 }
 
 void BaseDetectorNode::publishMarkers()
