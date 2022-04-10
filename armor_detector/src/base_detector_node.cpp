@@ -40,10 +40,10 @@ BaseDetectorNode::BaseDetectorNode(
       std::string("number_classifier.similarity_threshold.") + number, value);
   };
   std::map<char, double> similarity_threshold = {
-    {'1', declare_similarity_threshold('1', 0.8)}, {'2', declare_similarity_threshold('2', 0.7)},
-    {'3', declare_similarity_threshold('3', 0.7)}, {'4', declare_similarity_threshold('4', 0.7)},
-    {'5', declare_similarity_threshold('5', 0.7)}, {'B', declare_similarity_threshold('B', 0.7)},
-    {'G', declare_similarity_threshold('G', 0.7)}, {'O', declare_similarity_threshold('O', 0.7)},
+    {'1', declare_similarity_threshold('1', 0.8)}, {'2', declare_similarity_threshold('2', 0.8)},
+    {'3', declare_similarity_threshold('3', 0.8)}, {'4', declare_similarity_threshold('4', 0.8)},
+    {'5', declare_similarity_threshold('5', 0.8)}, {'B', declare_similarity_threshold('B', 0.8)},
+    {'G', declare_similarity_threshold('G', 0.8)}, {'O', declare_similarity_threshold('O', 0.8)},
   };
   auto template_path =
     ament_index_cpp::get_package_share_directory("armor_detector") + "/template/";
