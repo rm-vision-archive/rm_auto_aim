@@ -19,7 +19,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>sensor_msgs</depend>
-  <depend>geomoetry_msgs</depend>
+  <depend>geometry_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>message_filters</depend>
   <depend>cv_bridge</depend>
