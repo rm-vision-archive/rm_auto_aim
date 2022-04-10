@@ -89,6 +89,7 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   velocity_marker_.scale.y = 0.05;
   velocity_marker_.color.a = 1.0;
   velocity_marker_.color.b = 1.0;
+  velocity_marker_.color.g = 1.0;
   marker_pub_ =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("/processor/marker", 10);
 
