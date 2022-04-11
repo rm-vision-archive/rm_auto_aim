@@ -167,14 +167,14 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
       number_pub_->publish(*cv_bridge::CvImage(img_msg->header, "mono8", all_num_img).toImageMsg());
     }
 
-    drawLightsAndArmors(img, lights, armors);
+    drawResults(img, lights, armors);
     final_img_pub_->publish(*cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg());
   }
 
   return armors;
 }
 
-void BaseDetectorNode::drawLightsAndArmors(
+void BaseDetectorNode::drawResults(
   cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors)
 {
   // Draw Lights
@@ -195,6 +195,9 @@ void BaseDetectorNode::drawLightsAndArmors(
       img, armor.classfication_result, armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 0.8,
       cv::Scalar(0, 255, 255), 2);
   }
+
+  // Draw camera center
+  cv::circle(img, cam_center_, 5, cv::Scalar(0, 0, 255), 2);
 }
 
 void BaseDetectorNode::createDebugPublishers()

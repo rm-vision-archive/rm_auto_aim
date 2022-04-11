@@ -46,6 +46,9 @@ protected:
   // Camera info subscription
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
 
+  // Camera center
+  cv::Point2f cam_center_;
+
   // Image subscriptions transport type
   std::string transport_;
 
@@ -65,7 +68,7 @@ private:
   void createDebugPublishers();
   void destroyDebugPublishers();
 
-  void drawLightsAndArmors(
+  void drawResults(
     cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
 
   // Armor Detector
