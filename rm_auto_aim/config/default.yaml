@@ -1,10 +1,13 @@
 /armor_detector:
   ros__parameters:
-    min_lightness: 170
+    use_depth: false
+    subscribe_compressed: false
+
+    min_lightness: 145
 
     light:
       max_angle: 40.0
-      max_ratio: 0.3
+      max_ratio: 0.4
       min_ratio: 0.1
 
     armor:
@@ -12,10 +15,13 @@
       max_center_ratio: 1.6
       min_center_ratio: 0.4
       min_light_ratio: 0.6
+      max_large_center_distance: 5.0
+      min_large_center_distance: 3.2
+      max_small_center_distance: 3.2
+      min_small_center_distance: 0.8
 
-    number_classifier:
-      height_ratio: 1.1
-      weight_ratio: 0.4
+    classifier:
+      similarity_threshold: 0.7
 
 /armor_processor:
   ros__parameters:

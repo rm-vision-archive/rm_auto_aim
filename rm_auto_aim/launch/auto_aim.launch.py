@@ -16,7 +16,7 @@ def generate_launch_description():
         DeclareLaunchArgument(name='camera_type',
                               default_value='rgb', description='rgb or rgbd'),
         DeclareLaunchArgument(name='detect_color',
-                              default_value='0', description='0-BLUE 1-Red'),
+                              default_value='1', description='0-Red 1-Blue'),
         DeclareLaunchArgument(name='debug',
                               default_value='true'),
         DeclareLaunchArgument(name='params_file',

@@ -130,7 +130,20 @@ void NumberClassifier::fcClassify(std::vector<Armor> & armors)
   armors.erase(
     std::remove_if(
       armors.begin(), armors.end(),
-      [this](const Armor & armor) { return armor.confidence < threshold || armor.number == 'N'; }),
+      [this](const Armor & armor) {
+        if (armor.confidence < threshold || armor.number == 'N') {
+          return true;
+        }
+
+        bool mismatch = false;
+        if (armor.armor_type == LARGE) {
+          mismatch = armor.number == 'O' || armor.number == '2' || armor.number == '3' ||
+                     armor.number == '4' || armor.number == '5';
+        } else if (armor.armor_type == SMALL) {
+          mismatch = armor.number == '1' || armor.number == 'B' || armor.number == 'G';
+        }
+        return mismatch;
+      }),
     armors.end());
 }
 
