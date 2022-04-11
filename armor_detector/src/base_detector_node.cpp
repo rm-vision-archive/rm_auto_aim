@@ -120,7 +120,7 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   // Detect armors
   detector_->min_lightness = get_parameter("min_lightness").as_int();
   detector_->detect_color = static_cast<Color>(get_parameter("detect_color").as_int());
-  
+
   auto binary_img = detector_->preprocessImage(img);
   auto lights = detector_->findLights(img, binary_img);
   auto armors = detector_->matchLights(lights);
