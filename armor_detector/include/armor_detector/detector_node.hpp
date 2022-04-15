@@ -8,6 +8,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/synchronizer.h>
 
+#include <image_transport/camera_publisher.hpp>
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber_filter.hpp>
 #include <rclcpp/publisher.hpp>
@@ -46,6 +47,9 @@ protected:
   // Camera info subscription
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
 
+  // Camera info
+  std::shared_ptr<sensor_msgs::msg::CameraInfo> cam_info_;
+
   // Camera center
   cv::Point2f cam_center_;
 
@@ -83,9 +87,9 @@ private:
   std::shared_ptr<rclcpp::ParameterCallbackHandle> debug_cb_handle_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugLights>::SharedPtr lights_data_pub_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugArmors>::SharedPtr armors_data_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr binary_img_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr final_img_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr number_pub_;
+  image_transport::CameraPublisher binary_img_pub_;
+  image_transport::CameraPublisher final_img_pub_;
 };
 
 class RgbDetectorNode : public BaseDetectorNode

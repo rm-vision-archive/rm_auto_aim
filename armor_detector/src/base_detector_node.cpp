@@ -141,8 +141,8 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
       img, "Latency: " + std::to_string(latency) + "ms", cv::Point(10, 30),
       cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
 
-    binary_img_pub_->publish(
-      *cv_bridge::CvImage(img_msg->header, "mono8", binary_img).toImageMsg());
+    binary_img_pub_.publish(
+      cv_bridge::CvImage(img_msg->header, "mono8", binary_img).toImageMsg(), cam_info_);
 
     std::sort(
       detector_->debug_lights.data.begin(), detector_->debug_lights.data.end(),
@@ -169,7 +169,8 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
     }
 
     drawResults(img, lights, armors);
-    final_img_pub_->publish(*cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg());
+    final_img_pub_.publish(
+      cv_bridge::CvImage(img_msg->header, "rgb8", img).toImageMsg(), cam_info_);
   }
 
   return armors;
@@ -207,18 +208,20 @@ void BaseDetectorNode::createDebugPublishers()
     this->create_publisher<auto_aim_interfaces::msg::DebugLights>("/detector/debug/lights", 10);
   armors_data_pub_ =
     this->create_publisher<auto_aim_interfaces::msg::DebugArmors>("/detector/debug/armors", 10);
-  binary_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/bin_img", 10);
-  final_img_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/final_img", 10);
   number_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/detector/debug/number", 10);
+
+  binary_img_pub_ = image_transport::create_camera_publisher(this, "debug/binary_img");
+  final_img_pub_ = image_transport::create_camera_publisher(this, "debug/final_img");
 }
 
 void BaseDetectorNode::destroyDebugPublishers()
 {
   lights_data_pub_.reset();
   armors_data_pub_.reset();
-  binary_img_pub_.reset();
-  final_img_pub_.reset();
   number_pub_.reset();
+
+  binary_img_pub_.shutdown();
+  final_img_pub_.shutdown();
 }
 
 void BaseDetectorNode::publishMarkers()

@@ -22,6 +22,7 @@ RgbDepthDetectorNode::RgbDepthDetectorNode(const rclcpp::NodeOptions & options)
     "/camera/aligned_depth_to_color/camera_info", 10,
     [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr camera_info) {
       cam_center_ = cv::Point2f(camera_info->k[2], camera_info->k[5]);
+      cam_info_ = std::make_shared<sensor_msgs::msg::CameraInfo>(*camera_info);
       depth_processor_ = std::make_unique<DepthProcessor>(camera_info->k);
       cam_info_sub_.reset();
     });
