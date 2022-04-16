@@ -10,7 +10,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     default_params_file = os.path.join(get_package_share_directory(
-        'rm_auto_aim'), 'config/default.yaml')
+        'auto_aim_bringup'), 'config/default.yaml')
 
     return LaunchDescription([
         DeclareLaunchArgument(name='camera_type',
