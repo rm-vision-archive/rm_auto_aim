@@ -8,8 +8,8 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/synchronizer.h>
 
-#include <image_transport/camera_publisher.hpp>
 #include <image_transport/image_transport.hpp>
+#include <image_transport/publisher.hpp>
 #include <image_transport/subscriber_filter.hpp>
 #include <rclcpp/publisher.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -88,8 +88,8 @@ private:
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugLights>::SharedPtr lights_data_pub_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugArmors>::SharedPtr armors_data_pub_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr number_pub_;
-  image_transport::CameraPublisher binary_img_pub_;
-  image_transport::CameraPublisher final_img_pub_;
+  image_transport::Publisher binary_img_pub_;
+  image_transport::Publisher final_img_pub_;
 };
 
 class RgbDetectorNode : public BaseDetectorNode
