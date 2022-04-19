@@ -52,11 +52,11 @@ ArmorDetector::ArmorDetector(
 
 cv::Mat ArmorDetector::preprocessImage(const cv::Mat & rgb_img)
 {
-  cv::Mat hsv_img;
-  cv::cvtColor(rgb_img, hsv_img, cv::COLOR_RGB2HLS);
+  cv::Mat gray_img;
+  cv::cvtColor(rgb_img, gray_img, cv::COLOR_RGB2GRAY);
 
   cv::Mat binary_img;
-  cv::inRange(hsv_img, cv::Scalar(0, min_lightness, 0), cv::Scalar(180, 255, 255), binary_img);
+  cv::threshold(gray_img, binary_img, min_lightness, 255, cv::THRESH_BINARY);
 
   return binary_img;
 }
