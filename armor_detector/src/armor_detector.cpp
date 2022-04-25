@@ -1,4 +1,5 @@
-// Copyright 2022 Chen Jun
+// Copyright (c) 2022 ChenJun
+// Licensed under the MIT License.
 
 // OpenCV
 #include <opencv2/core.hpp>
@@ -78,15 +79,26 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & rbg_img, const cv::
     auto light = Light(r_rect);
 
     if (isLight(light)) {
-      int sum_r = 0;
-      int sum_b = 0;
-      for (auto & point : contour) {
-        sum_r += rbg_img.at<cv::Vec3b>(point.y, point.x)[0];
-        sum_b += rbg_img.at<cv::Vec3b>(point.y, point.x)[2];
+      auto rect = light.boundingRect();
+      if (  // Avoid assertion failed
+        0 <= rect.x && 0 <= rect.width && rect.x + rect.width <= rbg_img.cols && 0 <= rect.y &&
+        0 <= rect.height && rect.y + rect.height <= rbg_img.rows) {
+        int sum_r = 0, sum_b = 0;
+        auto roi = rbg_img(rect);
+        // Iterate through the ROI
+        for (int i = 0; i < roi.rows; i++) {
+          for (int j = 0; j < roi.cols; j++) {
+            if (cv::pointPolygonTest(contour, cv::Point2f(j + rect.x, i + rect.y), false) >= 0) {
+              // if point is inside contour
+              sum_r += roi.at<cv::Vec3b>(i, j)[0];
+              sum_b += roi.at<cv::Vec3b>(i, j)[2];
+            }
+          }
+        }
+        // Sum of red pixels > sum of blue pixels ?
+        light.color = sum_r > sum_b ? Color::RED : Color::BULE;
+        lights.emplace_back(light);
       }
-      // Sum of red pixels > sum of blue pixels ?
-      light.color = sum_r > sum_b ? Color::RED : Color::BULE;
-      lights.emplace_back(light);
     }
   }
 
