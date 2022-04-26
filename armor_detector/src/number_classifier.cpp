@@ -79,7 +79,7 @@ void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & 
   }
 }
 
-void NumberClassifier::fcClassify(std::vector<Armor> & armors)
+void NumberClassifier::doClassify(std::vector<Armor> & armors)
 {
   for (auto & armor : armors) {
     cv::Mat image = armor.number_img.clone();

@@ -25,7 +25,7 @@ public:
 
   void extractNumbers(const cv::Mat & src, std::vector<Armor> & armors);
 
-  void fcClassify(std::vector<Armor> & armors);
+  void doClassify(std::vector<Armor> & armors);
 
   double threshold;
 

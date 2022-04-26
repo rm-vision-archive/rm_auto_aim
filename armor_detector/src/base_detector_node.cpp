@@ -130,7 +130,7 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   if (!armors.empty()) {
     classifier_->extractNumbers(img, armors);
     classifier_->threshold = get_parameter("classifier.threshold").as_double();
-    classifier_->fcClassify(armors);
+    classifier_->doClassify(armors);
   }
 
   // Publish debug info
