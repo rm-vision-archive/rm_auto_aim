@@ -42,11 +42,11 @@ public:
   };
 
   Detector(
-    const int & init_min_l, const Color & init_color, const LightParams & init_l,
+    const int & init_min_l, const int & init_color, const LightParams & init_l,
     const ArmorParams & init_a);
 
   int min_lightness;
-  Color detect_color;
+  int detect_color;
   LightParams l;
   ArmorParams a;
 

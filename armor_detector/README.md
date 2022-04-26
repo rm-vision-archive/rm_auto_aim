@@ -18,13 +18,43 @@
 ## BaseDetectorNode
 识别节点基类
 
-包含
+包含[Detector](#detector)及DebugMsgPublishers
+
+发布：
+- 识别目标 `/detector/armors`
+
+参数：
+- 识别目标颜色 `detect_color`
+- 二值化的最小阈值 `min_lightness`
+- 筛选灯条的参数 `light`
+  - 长宽比范围 `min/max_ratio` 
+  - 最大倾斜角度 `max_angle`
+- 筛选灯条匹配结果的参数 `armor`
+  - 两灯条的最小长度之比（短边/长边）`min_light_ratio `
+  - 装甲板两灯条中心的距离范围（大装甲板）`min/max_large_center_distance`
+  - 装甲板两灯条中心的距离范围（小装甲板）`min/max_small_center_distance`
+  - 装甲板的最大倾斜角度 `max_angle`
+- 数字分类器 `classifier`
+  - 置信度阈值 `threshold`
 
 ### RgbDetectorNode
 RGB识别节点
 
+包含[PnPSolver](#pnpsolver)
+
+订阅：
+- 相机参数 `/camera_info`
+- 彩色图像 `/image_raw`
+
 ### RgbDepthDetectorNode
 RGBD识别节点
+
+包含[DepthProcessor](#depthprocessor)
+
+订阅：
+- 彩色图像 `/camera/color/image_raw`
+- 深度相机参数 `/camera/aligned_depth_to_color/camera_info`
+- 深度图像 `/camera/aligned_depth_to_color/image_raw`
 
 ## Detector
 装甲板识别器

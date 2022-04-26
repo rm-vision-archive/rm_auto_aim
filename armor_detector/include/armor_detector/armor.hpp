@@ -12,7 +12,8 @@
 
 namespace rm_auto_aim
 {
-enum Color { RED = 0, BULE = 1 };
+const int RED = 0;
+const int BLUE = 1;
 
 enum ArmorType { SMALL = 0, LARGE = 1 };
 
@@ -34,7 +35,7 @@ struct Light : public cv::RotatedRect
     tilt_angle = tilt_angle / CV_PI * 180;
   }
 
-  Color color;
+  int color;
   cv::Point2f top, bottom;
   double length;
   double width;

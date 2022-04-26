@@ -20,7 +20,7 @@
 namespace rm_auto_aim
 {
 Detector::Detector(
-  const int & init_min_l, const Color & init_color, const LightParams & init_l,
+  const int & init_min_l, const int & init_color, const LightParams & init_l,
   const ArmorParams & init_a)
 : min_lightness(init_min_l), detect_color(init_color), l(init_l), a(init_a)
 {
@@ -71,7 +71,7 @@ std::vector<Light> Detector::findLights(const cv::Mat & rbg_img, const cv::Mat &
           }
         }
         // Sum of red pixels > sum of blue pixels ?
-        light.color = sum_r > sum_b ? Color::RED : Color::BULE;
+        light.color = sum_r > sum_b ? RED : BLUE;
         lights.emplace_back(light);
       }
     }

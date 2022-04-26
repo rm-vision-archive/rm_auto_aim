@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "armor_detector/armor.hpp"
 #include "armor_detector/detector_node.hpp"
 
 namespace rm_auto_aim
@@ -92,7 +93,7 @@ std::unique_ptr<Detector> BaseDetectorNode::initDetector()
   param_desc.description = "0-RED, 1-BLUE";
   param_desc.integer_range[0].from_value = 0;
   param_desc.integer_range[0].to_value = 1;
-  auto detect_color = static_cast<Color>(declare_parameter("detect_color", 0, param_desc));
+  auto detect_color = declare_parameter("detect_color", RED, param_desc);
 
   Detector::LightParams l_params = {
     .min_ratio = declare_parameter("light.min_ratio", 0.1),
@@ -119,7 +120,7 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
 
   // Detect armors
   detector_->min_lightness = get_parameter("min_lightness").as_int();
-  detector_->detect_color = static_cast<Color>(get_parameter("detect_color").as_int());
+  detector_->detect_color = get_parameter("detect_color").as_int();
 
   auto binary_img = detector_->preprocessImage(img);
   auto lights = detector_->findLights(img, binary_img);

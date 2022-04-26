@@ -16,7 +16,7 @@ The source code is released under a [MIT license](rm_auto_aim/LICENSE).
 
 **Maintainer: Chen Jun, chen.junn@outlook.com**
 
-The `rm_auto_aim` package has been tested **only** under [ROS] Galactic on Ubuntu 20.04.
+The `rm_auto_aim` package has been tested **only** under ROS Galactic on Ubuntu 20.04.
 
 ![Build Status](https://github.com/chenjunnn/rm_auto_aim/actions/workflows/ros_ci.yml/badge.svg)
 
@@ -55,5 +55,3 @@ Run the tests with
 ## Bugs & Feature Requests
 
 Please report bugs and request features using the [Issue Tracker](https://github.com/chenjunnn/rm_auto_aim/issues).
-
-[ROS]: http://www.ros.org
