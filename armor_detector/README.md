@@ -1,7 +1,8 @@
 # armor_detector
 
 - [armor_detector](#armor_detector)
-  - [BaseDetectorNode](#basedetectornode)
+  - [识别节点](#识别节点)
+    - [BaseDetectorNode](#basedetectornode)
     - [RgbDetectorNode](#rgbdetectornode)
     - [RgbDepthDetectorNode](#rgbdepthdetectornode)
   - [Detector](#detector)
@@ -11,11 +12,16 @@
   - [NumberClassifier](#numberclassifier)
     - [extractNumbers](#extractnumbers)
     - [doClassify](#doclassify)
-  - [三维位置解算](#三维位置解算)
+  - [三维位置解算器](#三维位置解算器)
     - [PnPSolver](#pnpsolver)
     - [DepthProcessor](#depthprocessor)
 
-## BaseDetectorNode
+
+## 识别节点
+
+识别节点订阅相机参数并用于构造相应的三维位置解算器，订阅来自相机或视频的图像流进行装甲板的识别，识别完成后发布识别到的装甲板目标。
+
+### BaseDetectorNode
 识别节点基类
 
 包含[Detector](#detector)
@@ -103,7 +109,7 @@ RGBD识别节点
 
 效果图：![](docs/result.png)
 
-## 三维位置解算
+## 三维位置解算器
 
 ### PnPSolver
 PnP解算器
