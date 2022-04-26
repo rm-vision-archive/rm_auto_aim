@@ -101,11 +101,20 @@ RGBD识别节点
 
 由于上一步对于数字的提取效果已经非常好，数字图案的特征非常清晰明显，装甲板的远近、旋转都不会使图案产生过多畸变，所以这里我们将二值化后的数字展平成 20x28=560 维的输入，使用多层感知机（三层全连接）进行分类。
 
+效果图：![](docs/result.png)
+
 ## 三维位置解算
 
 ### PnPSolver
 PnP解算器
 
+[Perspective-n-Point (PnP) pose computation](https://docs.opencv.org/4.x/d5/d1f/calib3d_solvePnP.html)
+
+PnP解算器将 `cv::solvePnP()` 封装，接口中传入 `Armor` 类型的数据即可得到 `geometry_msgs::msg::Point` 类型的三维坐标。
+
+考虑到装甲板的四个点在一个平面上，在PnP解算方法上我们选择了 `cv::SOLVEPNP_IPPE` (Method is based on the paper of T. Collins and A. Bartoli. ["Infinitesimal Plane-Based Pose Estimation"](https://link.springer.com/article/10.1007/s11263-014-0725-5). This method requires coplanar object points.)
+
 ### DepthProcessor
 深度图处理器
 
+深度图处理器提供了一个接口，传入深度图像和图像平面上的点即可得到对应的 `geometry_msgs::msg::Point` 类型的三维坐标。
