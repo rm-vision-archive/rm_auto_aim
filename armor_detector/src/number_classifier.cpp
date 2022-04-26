@@ -40,7 +40,7 @@ NumberClassifier::NumberClassifier(
 void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & armors)
 {
   // Light length in image
-  const int light_length = 14;
+  const int light_length = 12;
   // Image size after warp
   const int warp_height = 28;
   const int small_armor_width = 32;
