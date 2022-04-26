@@ -6,6 +6,8 @@ This is a package of Robomaster auto-aim task using ROS2.
 
 **Keywords:** Robomaster, auto-aim, ROS2
 
+![](armor_detector/docs/result.png)
+
 ### License
 
 The source code is released under a [MIT license](rm_auto_aim/LICENSE).
