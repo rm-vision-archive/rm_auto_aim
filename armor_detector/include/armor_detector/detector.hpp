@@ -1,7 +1,8 @@
 // Copyright 2022 Chen Jun
+// Licensed under the MIT License.
 
-#ifndef ARMOR_DETECTOR__ARMOR_DETECTOR_HPP_
-#define ARMOR_DETECTOR__ARMOR_DETECTOR_HPP_
+#ifndef ARMOR_DETECTOR__DETECTOR_HPP_
+#define ARMOR_DETECTOR__DETECTOR_HPP_
 
 // OpenCV
 #include <opencv2/core.hpp>
@@ -12,46 +13,13 @@
 #include <string>
 #include <vector>
 
+#include "armor_detector/armor.hpp"
 #include "auto_aim_interfaces/msg/debug_armors.hpp"
 #include "auto_aim_interfaces/msg/debug_lights.hpp"
 
 namespace rm_auto_aim
 {
-enum Color { RED = 0, BULE = 1 };
-
-enum ArmorType { SMALL = 0, LARGE = 1 };
-
-struct Light : public cv::RotatedRect
-{
-  Light() = default;
-  explicit Light(cv::RotatedRect box);
-
-  Color color;
-  cv::Point2f top, bottom;
-  double length;
-  double width;
-  float tilt_angle;
-};
-
-struct Armor
-{
-  Armor() = default;
-  Armor(const Light & l1, const Light & l2);
-
-  Light left_light, right_light;
-  cv::Point2f center;
-
-  cv::Mat number_img;
-
-  char number;
-  // std::string number;
-  float similarity;
-  float confidence;
-  std::string classfication_result;
-  ArmorType armor_type;
-};
-
-class ArmorDetector
+class Detector
 {
 public:
   struct LightParams
@@ -73,7 +41,7 @@ public:
     double max_angle;
   };
 
-  ArmorDetector(
+  Detector(
     const int & init_min_l, const Color & init_color, const LightParams & init_l,
     const ArmorParams & init_a);
 
@@ -103,4 +71,4 @@ private:
 
 }  // namespace rm_auto_aim
 
-#endif  // ARMOR_DETECTOR__ARMOR_DETECTOR_HPP_
+#endif  // ARMOR_DETECTOR__DETECTOR_HPP_

@@ -1,4 +1,5 @@
 // Copyright 2022 Chen Jun
+// Licensed under the MIT License.
 
 #ifndef ARMOR_DETECTOR__DEPTH_PROCESSOR_HPP_
 #define ARMOR_DETECTOR__DEPTH_PROCESSOR_HPP_

@@ -1,4 +1,5 @@
 // Copyright 2022 Chen Jun
+// Licensed under the MIT License.
 
 #ifndef ARMOR_DETECTOR__PNP_SOLVER_HPP_
 #define ARMOR_DETECTOR__PNP_SOLVER_HPP_
@@ -10,7 +11,7 @@
 #include <array>
 #include <vector>
 
-#include "armor_detector/armor_detector.hpp"
+#include "armor_detector/armor.hpp"
 
 namespace rm_auto_aim
 {

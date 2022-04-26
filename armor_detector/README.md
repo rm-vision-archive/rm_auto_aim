@@ -1,6 +1,32 @@
 # armor_detector
 
-## ArmorDetector
+![](docs/result.png)
+
+- [armor_detector](#armor_detector)
+  - [BaseDetectorNode](#basedetectornode)
+    - [RgbDetectorNode](#rgbdetectornode)
+    - [RgbDepthDetectorNode](#rgbdepthdetectornode)
+  - [Detector](#detector)
+    - [preprocessImage](#preprocessimage)
+    - [findLights](#findlights)
+    - [matchLights](#matchlights)
+  - [NumberClassifier](#numberclassifier)
+  - [三维位置解算](#三维位置解算)
+    - [PnPSolver](#pnpsolver)
+    - [DepthProcessor](#depthprocessor)
+
+## BaseDetectorNode
+识别节点基类
+
+包含
+
+### RgbDetectorNode
+RGB识别节点
+
+### RgbDepthDetectorNode
+RGBD识别节点
+
+## Detector
 装甲板识别器
 
 ### preprocessImage
@@ -38,15 +64,4 @@ PnP解算器
 
 ### DepthProcessor
 深度图处理器
-
-## 识别节点
-
-### BaseDetectorNode
-识别节点基类
-
-### RgbDetectorNode
-RGB识别节点
-
-### RgbDepthDetectorNode
-RGBD识别节点
 

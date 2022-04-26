@@ -13,45 +13,20 @@
 #include <cmath>
 #include <vector>
 
-#include "armor_detector/armor_detector.hpp"
+#include "armor_detector/detector.hpp"
 #include "auto_aim_interfaces/msg/debug_armor.hpp"
 #include "auto_aim_interfaces/msg/debug_light.hpp"
 
 namespace rm_auto_aim
 {
-Light::Light(cv::RotatedRect box) : cv::RotatedRect(box)
-{
-  cv::Point2f p[4];
-  box.points(p);
-  std::sort(p, p + 4, [](const cv::Point2f & a, const cv::Point2f & b) { return a.y < b.y; });
-  top = (p[0] + p[1]) / 2;
-  bottom = (p[2] + p[3]) / 2;
-
-  length = cv::norm(top - bottom);
-  width = cv::norm(p[0] - p[1]);
-
-  tilt_angle = std::atan2(std::abs(top.x - bottom.x), std::abs(top.y - bottom.y));
-  tilt_angle = tilt_angle / CV_PI * 180;
-}
-
-Armor::Armor(const Light & l1, const Light & l2)
-{
-  if (l1.center.x < l2.center.x) {
-    left_light = l1, right_light = l2;
-  } else {
-    left_light = l2, right_light = l1;
-  }
-  center = (left_light.center + right_light.center) / 2;
-}
-
-ArmorDetector::ArmorDetector(
+Detector::Detector(
   const int & init_min_l, const Color & init_color, const LightParams & init_l,
   const ArmorParams & init_a)
 : min_lightness(init_min_l), detect_color(init_color), l(init_l), a(init_a)
 {
 }
 
-cv::Mat ArmorDetector::preprocessImage(const cv::Mat & rgb_img)
+cv::Mat Detector::preprocessImage(const cv::Mat & rgb_img)
 {
   cv::Mat gray_img;
   cv::cvtColor(rgb_img, gray_img, cv::COLOR_RGB2GRAY);
@@ -62,7 +37,7 @@ cv::Mat ArmorDetector::preprocessImage(const cv::Mat & rgb_img)
   return binary_img;
 }
 
-std::vector<Light> ArmorDetector::findLights(const cv::Mat & rbg_img, const cv::Mat & binary_img)
+std::vector<Light> Detector::findLights(const cv::Mat & rbg_img, const cv::Mat & binary_img)
 {
   using std::vector;
   vector<vector<cv::Point>> contours;
@@ -105,7 +80,7 @@ std::vector<Light> ArmorDetector::findLights(const cv::Mat & rbg_img, const cv::
   return lights;
 }
 
-bool ArmorDetector::isLight(const Light & light)
+bool Detector::isLight(const Light & light)
 {
   // The ratio of light (short side / long side)
   float ratio = light.width / light.length;
@@ -126,7 +101,7 @@ bool ArmorDetector::isLight(const Light & light)
   return is_light;
 }
 
-std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
+std::vector<Armor> Detector::matchLights(const std::vector<Light> & lights)
 {
   std::vector<Armor> armors;
   this->debug_armors.data.clear();
@@ -150,7 +125,7 @@ std::vector<Armor> ArmorDetector::matchLights(const std::vector<Light> & lights)
 }
 
 // Check if there is another light in the boundingRect formed by the 2 lights
-bool ArmorDetector::containLight(
+bool Detector::containLight(
   const Light & light_1, const Light & light_2, const std::vector<Light> & lights)
 {
   auto points = std::vector<cv::Point2f>{light_1.top, light_1.bottom, light_2.top, light_2.bottom};
@@ -169,7 +144,7 @@ bool ArmorDetector::containLight(
   return false;
 }
 
-bool ArmorDetector::isArmor(Armor & armor)
+bool Detector::isArmor(Armor & armor)
 {
   Light light_1 = armor.left_light;
   Light light_2 = armor.right_light;

@@ -29,7 +29,7 @@ BaseDetectorNode::BaseDetectorNode(
   RCLCPP_INFO(this->get_logger(), "Starting DetectorNode!");
 
   // Detector
-  detector_ = initArmorDetector();
+  detector_ = initDetector();
 
   // Number classifier
   auto pkg_path = ament_index_cpp::get_package_share_directory("armor_detector");
@@ -80,7 +80,7 @@ BaseDetectorNode::BaseDetectorNode(
     });
 }
 
-std::unique_ptr<ArmorDetector> BaseDetectorNode::initArmorDetector()
+std::unique_ptr<Detector> BaseDetectorNode::initDetector()
 {
   rcl_interfaces::msg::ParameterDescriptor param_desc;
   param_desc.integer_range.resize(1);
@@ -94,12 +94,12 @@ std::unique_ptr<ArmorDetector> BaseDetectorNode::initArmorDetector()
   param_desc.integer_range[0].to_value = 1;
   auto detect_color = static_cast<Color>(declare_parameter("detect_color", 0, param_desc));
 
-  ArmorDetector::LightParams l_params = {
+  Detector::LightParams l_params = {
     .min_ratio = declare_parameter("light.min_ratio", 0.1),
     .max_ratio = declare_parameter("light.max_ratio", 0.55),
     .max_angle = declare_parameter("light.max_angle", 40.0)};
 
-  ArmorDetector::ArmorParams a_params = {
+  Detector::ArmorParams a_params = {
     .min_light_ratio = declare_parameter("armor.min_light_ratio", 0.6),
     .min_small_center_distance = declare_parameter("armor.min_small_center_distance", 0.8),
     .max_small_center_distance = declare_parameter("armor.max_small_center_distance", 2.8),
@@ -107,7 +107,7 @@ std::unique_ptr<ArmorDetector> BaseDetectorNode::initArmorDetector()
     .max_large_center_distance = declare_parameter("armor.max_large_center_distance", 4.3),
     .max_angle = declare_parameter("armor.max_angle", 35.0)};
 
-  return std::make_unique<ArmorDetector>(min_lightness, detect_color, l_params, a_params);
+  return std::make_unique<Detector>(min_lightness, detect_color, l_params, a_params);
 }
 
 std::vector<Armor> BaseDetectorNode::detectArmors(

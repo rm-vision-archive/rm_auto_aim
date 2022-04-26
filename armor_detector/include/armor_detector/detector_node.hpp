@@ -22,8 +22,8 @@
 #include <string>
 #include <vector>
 
-#include "armor_detector/armor_detector.hpp"
 #include "armor_detector/depth_processor.hpp"
+#include "armor_detector/detector.hpp"
 #include "armor_detector/number_classifier.hpp"
 #include "armor_detector/pnp_solver.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
@@ -67,7 +67,7 @@ protected:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 
 private:
-  std::unique_ptr<ArmorDetector> initArmorDetector();
+  std::unique_ptr<Detector> initDetector();
 
   void createDebugPublishers();
   void destroyDebugPublishers();
@@ -76,7 +76,7 @@ private:
     cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
 
   // Armor Detector
-  std::unique_ptr<ArmorDetector> detector_;
+  std::unique_ptr<Detector> detector_;
 
   // Number Classifier
   std::unique_ptr<NumberClassifier> classifier_;

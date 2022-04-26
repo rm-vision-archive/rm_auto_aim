@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "armor_detector/armor_detector.hpp"
+#include "armor_detector/armor.hpp"
 #include "armor_detector/number_classifier.hpp"
 
 namespace rm_auto_aim
