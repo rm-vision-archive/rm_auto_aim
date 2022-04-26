@@ -39,42 +39,32 @@ NumberClassifier::NumberClassifier(
 
 void NumberClassifier::extractNumbers(const cv::Mat & src, std::vector<Armor> & armors)
 {
-  // Height scaling factor
-  const float height_factor = 2.0;
-  // Image height after wrap
+  // Light length in image
+  const int light_length = 14;
+  // Image size after warp
   const int warp_height = 28;
-  // Image height after wrap
-  /// Large armor
-  const float large_warp_width = 50;
-  /// Small armor
-  const float small_warp_width = 35;
+  const int small_armor_width = 32;
+  const int large_armor_width = 54;
   // Number ROI size
   const cv::Size roi_size(20, 28);
 
   for (auto & armor : armors) {
-    // Scaling height
-    auto left_height_diff = armor.left_light.bottom - armor.left_light.top;
-    auto right_height_diff = armor.right_light.bottom - armor.right_light.top;
-
-    auto left_center = (armor.left_light.top + armor.left_light.bottom) / 2;
-    auto right_center = (armor.right_light.top + armor.right_light.bottom) / 2;
-
-    auto top_left = left_center - left_height_diff / 2 * height_factor;
-    auto top_right = right_center - right_height_diff / 2 * height_factor;
-    auto bottom_left = left_center + left_height_diff / 2 * height_factor;
-    auto bottom_right = right_center + right_height_diff / 2 * height_factor;
-
     // Warp perspective transform
-    cv::Point2f number_vertices[4] = {bottom_left, top_left, top_right, bottom_right};
-    const int warp_width = armor.armor_type == LARGE ? large_warp_width : small_warp_width;
+    cv::Point2f lights_vertices[4] = {
+      armor.left_light.bottom, armor.left_light.top, armor.right_light.top,
+      armor.right_light.bottom};
+
+    const int top_light_y = (warp_height - light_length) / 2 - 1;
+    const int bottom_light_y = top_light_y + light_length;
+    const int warp_width = armor.armor_type == SMALL ? small_armor_width : large_armor_width;
     cv::Point2f target_vertices[4] = {
-      cv::Point(0, warp_height - 1),
-      cv::Point(0, 0),
-      cv::Point(warp_width - 1, 0),
-      cv::Point(warp_width - 1, warp_height - 1),
+      cv::Point(0, bottom_light_y),
+      cv::Point(0, top_light_y),
+      cv::Point(warp_width - 1, top_light_y),
+      cv::Point(warp_width - 1, bottom_light_y),
     };
     cv::Mat number_image;
-    auto rotation_matrix = cv::getPerspectiveTransform(number_vertices, target_vertices);
+    auto rotation_matrix = cv::getPerspectiveTransform(lights_vertices, target_vertices);
     cv::warpPerspective(src, number_image, rotation_matrix, cv::Size(warp_width, warp_height));
 
     // Get ROI
