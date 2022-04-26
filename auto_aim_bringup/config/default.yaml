@@ -1,6 +1,5 @@
 /armor_detector:
   ros__parameters:
-    use_depth: false
     subscribe_compressed: false
 
     min_lightness: 145
