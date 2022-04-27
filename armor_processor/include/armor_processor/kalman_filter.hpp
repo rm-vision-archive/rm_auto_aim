@@ -9,7 +9,7 @@ namespace rm_auto_aim
 {
 struct KalmanFilterMatrices
 {
-  Eigen::MatrixXd A;  // state transition matrix
+  Eigen::MatrixXd F;  // state transition matrix
   Eigen::MatrixXd H;  // measurement matrix
   Eigen::MatrixXd Q;  // process noise covariance matrix
   Eigen::MatrixXd R;  // measurement noise covariance matrix
@@ -25,28 +25,33 @@ public:
   void init(const Eigen::VectorXd & x0);
 
   // Computes a predicted state
-  Eigen::MatrixXd predict(const Eigen::MatrixXd & A);
+  Eigen::MatrixXd predict(const Eigen::MatrixXd & F);
 
   // Update the estimated state based on measurement
-  Eigen::MatrixXd update(const Eigen::VectorXd & measurement);
+  Eigen::MatrixXd update(const Eigen::VectorXd & z);
 
 private:
-  // Matrices
-  Eigen::MatrixXd A_, H_, Q_, R_, P_;
+  // Invariant matrices
+  Eigen::MatrixXd F, H, Q, R;
 
-  // Kalman Gain
-  Eigen::MatrixXd K_;
+  // Priori error estimate covariance matrix
+  Eigen::MatrixXd P_pre;
+  // Posteriori error estimate covariance matrix
+  Eigen::MatrixXd P_post;
+
+  // Kalman gain
+  Eigen::MatrixXd K;
 
   // System dimensions
-  int n_;
+  int n;
 
-  // n-size identity
-  Eigen::MatrixXd I_;
+  // N-size identity
+  Eigen::MatrixXd I;
 
-  // predicted state
-  Eigen::VectorXd x_pre_;
-  // corrected state
-  Eigen::VectorXd x_post_;
+  // Predicted state
+  Eigen::VectorXd x_pre;
+  // Updated state
+  Eigen::VectorXd x_post;
 };
 
 }  // namespace rm_auto_aim

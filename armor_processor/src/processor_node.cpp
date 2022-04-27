@@ -18,8 +18,8 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   // Kalman Filter initial matrix
   // A - state transition matrix
   // clang-format off
-  Eigen::Matrix<double, 6, 6> a;
-  a <<  1,  0,  0, dt_, 0,  0,
+  Eigen::Matrix<double, 6, 6> f;
+  f <<  1,  0,  0, dt_, 0,  0,
         0,  1,  0,  0, dt_, 0,
         0,  0,  1,  0,  0, dt_,
         0,  0,  0,  1,  0,  0,
@@ -43,7 +43,7 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   Eigen::DiagonalMatrix<double, 6> p;
   p.setIdentity();
 
-  kf_matrices_ = KalmanFilterMatrices{a, h, q, r, p};
+  kf_matrices_ = KalmanFilterMatrices{f, h, q, r, p};
 
   // Tracker
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.2);

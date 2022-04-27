@@ -52,8 +52,8 @@ void Tracker::init(const Armors::SharedPtr & armors_msg)
 void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
 {
   // KF predict
-  kf_matrices_.A(0, 3) = kf_matrices_.A(1, 4) = kf_matrices_.A(2, 5) = dt;
-  Eigen::VectorXd kf_prediction = kf_->predict(kf_matrices_.A);
+  kf_matrices_.F(0, 3) = kf_matrices_.F(1, 4) = kf_matrices_.F(2, 5) = dt;
+  Eigen::VectorXd kf_prediction = kf_->predict(kf_matrices_.F);
   auto predicted_position = kf_prediction.head(3);
 
   bool matched = false;
@@ -63,8 +63,8 @@ void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
     double min_position_diff = DBL_MAX;
     auto matched_armor = armors_msg->armors[0];
     for (const auto & armor : armors_msg->armors) {
-      // Difference of the current armor position and tracked armor's predicted position
       Eigen::Vector3d position_vec(armor.position.x, armor.position.y, armor.position.z);
+      // Difference of the current armor position and tracked armor's predicted position
       position_diff = (predicted_position - position_vec).norm();
       if (position_diff < min_position_diff) {
         min_position_diff = position_diff;

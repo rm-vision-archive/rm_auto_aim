@@ -11,7 +11,7 @@
 int N = 2;  // Number of states
 int M = 1;  // Number of measurements
 
-Eigen::MatrixXd A(N, N);  // state transition matrix
+Eigen::MatrixXd F(N, N);  // state transition matrix
 Eigen::MatrixXd H(M, N);  // measurement matrix
 Eigen::MatrixXd Q(N, N);  // process noise covariance matrix
 Eigen::MatrixXd R(M, M);  // measurement noise covariance matrix
@@ -23,35 +23,35 @@ TEST(KalmanFilterTest, init)
 {
   // Test x = x0 + v*t
   double dt = 1.0;
-  A << 1, dt, 0, 1;
+  F << 1, dt, 0, 1;
   H << 1, 0;
 
   Q << .05, .05, .0, .05;
   R << 0.1;
   P.setIdentity();
 
-  auto matrices = rm_auto_aim::KalmanFilterMatrices{A, H, Q, R, P};
+  auto matrices = rm_auto_aim::KalmanFilterMatrices{F, H, Q, R, P};
 
   KF = std::make_unique<rm_auto_aim::KalmanFilter>(matrices);
 
-  std::cout << "A: \n" << A << std::endl;
+  std::cout << "F: \n" << F << std::endl;
   std::cout << "H: \n" << H << std::endl;
   std::cout << "Q: \n" << Q << std::endl;
   std::cout << "R: \n" << R << std::endl;
   std::cout << "P: \n" << P << std::endl;
 }
 
-TEST(KalmanFilterTest, estimate)
+TEST(KalmanFilterTest, predict_update)
 {
   std::vector<double> measurements{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
   // Add noise
   std::default_random_engine e;
   std::uniform_real_distribution<double> u(-0.1, 0.1);
-  std::cout << "measurement: \n" << std::endl;
+  std::cout << "measurement:" << std::endl;
   for (auto & measurement : measurements) {
     measurement += u(e);
-    std::cout << measurement << "\n" << std::endl;
+    std::cout << measurement << std::endl;
   }
 
   // Init
@@ -60,12 +60,19 @@ TEST(KalmanFilterTest, estimate)
   KF->init(x0);
 
   // Estimate
-  std::cout << "result: \n" << std::endl;
+  std::cout << "Estimate based on measurement:" << std::endl;
   Eigen::VectorXd measurement_vector(M);
   for (const auto & measurement : measurements) {
-    KF->predict(A);
+    KF->predict(F);
     measurement_vector << measurement;
     auto result = KF->update(measurement_vector);
     std::cout << result.transpose() << std::endl;
+  }
+
+  // Predict only
+  std::cout << "Predict only:" << std::endl;
+  for (size_t i = 0; i < 10; ++i) {
+    auto prediction = KF->predict(F);
+    std::cout << prediction.transpose() << std::endl;
   }
 }
