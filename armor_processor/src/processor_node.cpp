@@ -166,25 +166,25 @@ void ArmorProcessorNode::deleteMarkers()
   marker_pub_->publish(marker_array_);
 }
 
-void ArmorProcessorNode::publishMarkers(const rclcpp::Time & time, const Eigen::VectorXd & state)
+void ArmorProcessorNode::publishMarkers(const rclcpp::Time & time, const Eigen::VectorXd & target_state)
 {
   position_marker_.action = visualization_msgs::msg::Marker::ADD;
   position_marker_.header.stamp = time;
-  position_marker_.pose.position.x = state(0);
-  position_marker_.pose.position.y = state(1);
-  position_marker_.pose.position.z = state(2);
+  position_marker_.pose.position.x = target_state(0);
+  position_marker_.pose.position.y = target_state(1);
+  position_marker_.pose.position.z = target_state(2);
 
   velocity_marker_.action = visualization_msgs::msg::Marker::ADD;
   velocity_marker_.header.stamp = time;
   velocity_marker_.points.clear();
   geometry_msgs::msg::Point p;
-  p.x = state(0);
-  p.y = state(1);
-  p.z = state(2);
+  p.x = target_state(0);
+  p.y = target_state(1);
+  p.z = target_state(2);
   velocity_marker_.points.emplace_back(p);
-  p.x += state(3);
-  p.y += state(4);
-  p.z += state(5);
+  p.x += target_state(3);
+  p.y += target_state(4);
+  p.z += target_state(5);
   velocity_marker_.points.emplace_back(p);
 
   marker_array_.markers.clear();
@@ -193,14 +193,14 @@ void ArmorProcessorNode::publishMarkers(const rclcpp::Time & time, const Eigen::
   marker_pub_->publish(marker_array_);
 }
 
-void ArmorProcessorNode::publishTarget(const Eigen::VectorXd & kf_state)
+void ArmorProcessorNode::publishTarget(const Eigen::VectorXd & target_state)
 {
-  target_msg_.position.x = kf_state(0);
-  target_msg_.position.y = kf_state(1);
-  target_msg_.position.z = kf_state(2);
-  target_msg_.velocity.x = kf_state(3);
-  target_msg_.velocity.y = kf_state(4);
-  target_msg_.velocity.z = kf_state(5);
+  target_msg_.position.x = target_state(0);
+  target_msg_.position.y = target_state(1);
+  target_msg_.position.z = target_state(2);
+  target_msg_.velocity.x = target_state(3);
+  target_msg_.velocity.y = target_state(4);
+  target_msg_.velocity.z = target_state(5);
   target_pub_->publish(target_msg_);
 }
 
