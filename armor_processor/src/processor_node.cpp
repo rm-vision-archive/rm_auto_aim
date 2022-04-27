@@ -166,7 +166,8 @@ void ArmorProcessorNode::deleteMarkers()
   marker_pub_->publish(marker_array_);
 }
 
-void ArmorProcessorNode::publishMarkers(const rclcpp::Time & time, const Eigen::VectorXd & target_state)
+void ArmorProcessorNode::publishMarkers(
+  const rclcpp::Time & time, const Eigen::VectorXd & target_state)
 {
   position_marker_.action = visualization_msgs::msg::Marker::ADD;
   position_marker_.header.stamp = time;
