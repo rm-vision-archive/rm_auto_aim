@@ -111,7 +111,7 @@ RGBD识别节点
 
 网络结构可视化：
 
-![](docs/model.png)
+![](docs/model.svg)
 
 训练过程可视化：
 
