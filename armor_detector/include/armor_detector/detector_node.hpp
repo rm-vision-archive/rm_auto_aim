@@ -66,6 +66,10 @@ protected:
   visualization_msgs::msg::MarkerArray marker_array_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 
+  bool active_;
+  std::shared_ptr<rclcpp::ParameterEventHandler> active_param_sub_;
+  std::shared_ptr<rclcpp::ParameterCallbackHandle> active_cb_handle_;
+
 private:
   std::unique_ptr<Detector> initDetector();
 
@@ -100,7 +104,7 @@ public:
 private:
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
 
-  image_transport::Subscriber img_sub_;
+  std::shared_ptr<image_transport::Subscriber> img_sub_;
   std::unique_ptr<PnPSolver> pnp_solver_;
 };
 

@@ -26,9 +26,26 @@ RgbDetectorNode::RgbDetectorNode(const rclcpp::NodeOptions & options)
       cam_info_sub_.reset();
     });
 
-  img_sub_ = image_transport::create_subscription(
+  img_sub_ = std::make_shared<image_transport::Subscriber>(image_transport::create_subscription(
     this, "/image_raw", std::bind(&RgbDetectorNode::imageCallback, this, _1), transport_,
-    rmw_qos_profile_sensor_data);
+    rmw_qos_profile_sensor_data));
+
+  active_ = this->declare_parameter("active", true);
+  active_param_sub_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
+  active_cb_handle_ =
+    active_param_sub_->add_parameter_callback("active", [this](const rclcpp::Parameter & p) {
+      active_ = p.as_bool();
+      if (active_) {
+        if (img_sub_ == nullptr) {
+          img_sub_ =
+            std::make_shared<image_transport::Subscriber>(image_transport::create_subscription(
+              this, "/image_raw", std::bind(&RgbDetectorNode::imageCallback, this, _1), transport_,
+              rmw_qos_profile_sensor_data));
+        }
+      } else if (img_sub_ != nullptr) {
+        img_sub_.reset();
+      }
+    });
 }
 
 void RgbDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg)

@@ -19,7 +19,7 @@ RgbDepthDetectorNode::RgbDepthDetectorNode(const rclcpp::NodeOptions & options)
 : BaseDetectorNode("rgb_depth_detector", options)
 {
   cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-    "/camera/aligned_depth_to_color/camera_info", 10,
+    "/aligned_depth_to_color/camera_info", 10,
     [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr camera_info) {
       cam_center_ = cv::Point2f(camera_info->k[2], camera_info->k[5]);
       cam_info_ = std::make_shared<sensor_msgs::msg::CameraInfo>(*camera_info);
@@ -29,13 +29,30 @@ RgbDepthDetectorNode::RgbDepthDetectorNode(const rclcpp::NodeOptions & options)
 
   // Synchronize color and depth image
   color_img_sub_filter_.subscribe(
-    this, "/camera/color/image_raw", transport_, rmw_qos_profile_sensor_data);
+    this, "/color/image_raw", transport_, rmw_qos_profile_sensor_data);
   // Use "raw" because https://github.com/ros-perception/image_common/issues/222
   depth_img_sub_filter_.subscribe(
-    this, "/camera/aligned_depth_to_color/image_raw", "raw", rmw_qos_profile_sensor_data);
+    this, "/aligned_depth_to_color/image_raw", "raw", rmw_qos_profile_sensor_data);
   sync_ =
     std::make_unique<ColorDepthSync>(SyncPolicy(10), color_img_sub_filter_, depth_img_sub_filter_);
   sync_->registerCallback(std::bind(&RgbDepthDetectorNode::colorDepthCallback, this, _1, _2));
+
+  active_ = this->declare_parameter("active", true);
+  active_param_sub_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
+  active_cb_handle_ =
+    active_param_sub_->add_parameter_callback("active", [this](const rclcpp::Parameter & p) {
+      active_ = p.as_bool();
+      if (active_) {
+        if (sync_ == nullptr) {
+          sync_ = std::make_unique<ColorDepthSync>(
+            SyncPolicy(10), color_img_sub_filter_, depth_img_sub_filter_);
+          sync_->registerCallback(
+            std::bind(&RgbDepthDetectorNode::colorDepthCallback, this, _1, _2));
+        }
+      } else if (sync_ != nullptr) {
+        sync_.reset();
+      }
+    });
 }
 
 void RgbDepthDetectorNode::colorDepthCallback(
