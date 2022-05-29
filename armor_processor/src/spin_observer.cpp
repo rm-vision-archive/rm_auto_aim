@@ -4,8 +4,13 @@
 
 namespace rm_auto_aim
 {
-SpinObserver::SpinObserver(const rclcpp::Clock::SharedPtr clock)
-: max_jump_distance_(0.3), max_jump_period_(0.6), allow_following_range(0.3), fire_delay(0.05)
+SpinObserver::SpinObserver(
+  const rclcpp::Clock::SharedPtr clock, double max_jump_distance, double max_jump_period,
+  double allow_following_range, double fire_delay)
+: max_jump_distance_(max_jump_distance),
+  max_jump_period_(max_jump_period),
+  allow_following_range(allow_following_range),
+  fire_delay(fire_delay)
 {
   target_spinning_ = false;
   jump_period_ = 0.0;

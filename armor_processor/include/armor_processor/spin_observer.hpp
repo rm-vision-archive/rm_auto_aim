@@ -18,7 +18,9 @@ namespace rm_auto_aim
 class SpinObserver
 {
 public:
-  SpinObserver(const rclcpp::Clock::SharedPtr clock);
+  SpinObserver(
+    const rclcpp::Clock::SharedPtr clock, double max_jump_distance, double max_jump_period,
+    double allow_following_range, double fire_delay);
 
   void update(auto_aim_interfaces::msg::Target & target_msg);
 

@@ -52,8 +52,14 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
 
   // Spin Observer
   allow_spin_observer_ = this->declare_parameter("spin_observer.allow", true);
+  double max_jump_distance = this->declare_parameter("spin_observer.max_jump_distance", 0.3);
+  double max_jump_period = this->declare_parameter("spin_observer.max_jump_period", 0.6);
+  double allow_following_range =
+    this->declare_parameter("spin_observer.allow_following_range", 0.3);
+  double fire_delay = this->declare_parameter("spin_observer.fire_delay", 0.05);
   if (allow_spin_observer_) {
-    spin_observer_ = std::make_unique<SpinObserver>(this->get_clock());
+    spin_observer_ = std::make_unique<SpinObserver>(
+      this->get_clock(), max_jump_distance, max_jump_period, allow_following_range, fire_delay);
     spin_info_pub_ =
       this->create_publisher<auto_aim_interfaces::msg::SpinInfo>("/debug/spin_info", 10);
   }
