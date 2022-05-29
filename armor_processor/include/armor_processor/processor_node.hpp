@@ -37,8 +37,6 @@ public:
 private:
   void armorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armors_ptr);
 
-  void publishTarget(
-    const Eigen::VectorXd & target_state, auto_aim_interfaces::msg::Target & target_msg);
   void publishMarkers(const auto_aim_interfaces::msg::Target & target_msg);
 
   // Last time received msg

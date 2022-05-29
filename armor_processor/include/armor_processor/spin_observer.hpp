@@ -7,6 +7,7 @@
 #include <Eigen/Eigen>
 
 // ROS
+#include <rclcpp/clock.hpp>
 #include <rclcpp/time.hpp>
 
 #include "auto_aim_interfaces/msg/spin_info.hpp"
@@ -17,7 +18,7 @@ namespace rm_auto_aim
 class SpinObserver
 {
 public:
-  SpinObserver();
+  SpinObserver(const rclcpp::Clock::SharedPtr clock);
 
   void update(auto_aim_interfaces::msg::Target & target_msg);
 

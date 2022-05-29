@@ -53,7 +53,7 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   // Spin Observer
   allow_spin_observer_ = this->declare_parameter("spin_observer.allow", true);
   if (allow_spin_observer_) {
-    spin_observer_ = std::make_unique<SpinObserver>();
+    spin_observer_ = std::make_unique<SpinObserver>(this->get_clock());
     spin_info_pub_ =
       this->create_publisher<auto_aim_interfaces::msg::SpinInfo>("/debug/spin_info", 10);
   }
@@ -149,12 +149,22 @@ void ArmorProcessorNode::armorsCallback(
     }
   }
 
+  if (target_msg.tracking) {
+    target_msg.position.x = tracker_->target_state(0);
+    target_msg.position.y = tracker_->target_state(1);
+    target_msg.position.z = tracker_->target_state(2);
+    target_msg.velocity.x = tracker_->target_state(3);
+    target_msg.velocity.y = tracker_->target_state(4);
+    target_msg.velocity.z = tracker_->target_state(5);
+  }
+
   if (allow_spin_observer_ && spin_observer_) {
     spin_observer_->update(target_msg);
     spin_info_pub_->publish(spin_observer_->spin_info_msg);
   }
 
-  publishTarget(tracker_->target_state, target_msg);
+  target_pub_->publish(target_msg);
+
   publishMarkers(target_msg);
 
   last_time_ = time;
@@ -162,20 +172,6 @@ void ArmorProcessorNode::armorsCallback(
   if (debug_) {
     RCLCPP_INFO_STREAM(this->get_logger(), "Tracker state:" << tracker_->tracker_state);
   }
-}
-
-void ArmorProcessorNode::publishTarget(
-  const Eigen::VectorXd & target_state, auto_aim_interfaces::msg::Target & target_msg)
-{
-  if (target_msg.tracking) {
-    target_msg.position.x = target_state(0);
-    target_msg.position.y = target_state(1);
-    target_msg.position.z = target_state(2);
-    target_msg.velocity.x = target_state(3);
-    target_msg.velocity.y = target_state(4);
-    target_msg.velocity.z = target_state(5);
-  }
-  target_pub_->publish(target_msg);
 }
 
 void ArmorProcessorNode::publishMarkers(const auto_aim_interfaces::msg::Target & target_msg)
