@@ -1,0 +1,5 @@
+std_msgs/Header header
+bool target_spinning
+bool suggest_fire
+float64 jump_period
+float64 time_after_jumping

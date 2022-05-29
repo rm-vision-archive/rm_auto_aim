@@ -20,8 +20,10 @@
 #include <vector>
 
 #include "armor_processor/kalman_filter.hpp"
+#include "armor_processor/spin_observer.hpp"
 #include "armor_processor/tracker.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
+#include "auto_aim_interfaces/msg/spin_info.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
 
 namespace rm_auto_aim
@@ -35,9 +37,9 @@ public:
 private:
   void armorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armors_ptr);
 
-  void deleteMarkers();
-  void publishMarkers(const rclcpp::Time & time, const Eigen::VectorXd & target_state);
-  void publishTarget(const Eigen::VectorXd & target_state);
+  void publishTarget(
+    const Eigen::VectorXd & target_state, auto_aim_interfaces::msg::Target & target_msg);
+  void publishMarkers(const auto_aim_interfaces::msg::Target & target_msg);
 
   // Last time received msg
   rclcpp::Time last_time_;
@@ -46,7 +48,13 @@ private:
   KalmanFilterMatrices kf_matrices_;
   double dt_;
 
+  // Armor tracker
   std::unique_ptr<Tracker> tracker_;
+
+  // Spin observer
+  bool allow_spin_observer_;
+  std::unique_ptr<SpinObserver> spin_observer_;
+  rclcpp::Publisher<auto_aim_interfaces::msg::SpinInfo>::SharedPtr spin_info_pub_;
 
   // Subscriber with tf2 message_filter
   std::string target_frame_;
@@ -56,13 +64,11 @@ private:
   std::shared_ptr<tf2_filter> tf2_filter_;
 
   // Publisher
-  auto_aim_interfaces::msg::Target target_msg_;
   rclcpp::Publisher<auto_aim_interfaces::msg::Target>::SharedPtr target_pub_;
 
   // Visualization marker publisher
   visualization_msgs::msg::Marker position_marker_;
   visualization_msgs::msg::Marker velocity_marker_;
-  visualization_msgs::msg::MarkerArray marker_array_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 
   // Debug information publishers

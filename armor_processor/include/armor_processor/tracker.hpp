@@ -34,19 +34,19 @@ public:
   void update(const Armors::SharedPtr & armors_msg, const double & dt);
 
   enum State {
-    NO_FOUND,
+    LOST,
     DETECTING,
     TRACKING,
-    LOST,
+    TEMP_LOST,
   } tracker_state;
 
+  char tracking_id;
   Eigen::VectorXd target_state;
 
 private:
   KalmanFilterMatrices kf_matrices_;
   std::unique_ptr<KalmanFilter> kf_;
 
-  char tracking_number_;
   Eigen::Vector3d tracking_velocity_;
 
   double max_match_distance_;

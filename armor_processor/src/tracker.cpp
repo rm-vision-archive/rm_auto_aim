@@ -11,9 +11,9 @@ namespace rm_auto_aim
 Tracker::Tracker(
   const KalmanFilterMatrices & kf_matrices, double max_match_distance, int tracking_threshold,
   int lost_threshold)
-: tracker_state(NO_FOUND),
+: tracker_state(LOST),
+  tracking_id(0),
   kf_matrices_(kf_matrices),
-  tracking_number_(0),
   tracking_velocity_(Eigen::Vector3d::Zero()),
   max_match_distance_(max_match_distance),
   tracking_threshold_(tracking_threshold),
@@ -45,7 +45,7 @@ void Tracker::init(const Armors::SharedPtr & armors_msg)
   init_state << position.x, position.y, position.z, 0, 0, 0;
   kf_->init(init_state);
 
-  tracking_number_ = chosen_armor.number;
+  tracking_id = chosen_armor.number;
   tracker_state = DETECTING;
 }
 
@@ -82,7 +82,7 @@ void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
     } else {
       // Check if there is same id armor in current frame
       for (const auto & armor : armors_msg->armors) {
-        if (armor.number == tracking_number_) {
+        if (armor.number == tracking_id) {
           matched = true;
           // Reset KF
           kf_ = std::make_unique<KalmanFilter>(kf_matrices_);
@@ -111,23 +111,23 @@ void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
       }
     } else {
       detect_count_ = 0;
-      tracker_state = NO_FOUND;
+      tracker_state = LOST;
     }
 
   } else if (tracker_state == TRACKING) {
     // TRACKING
     if (!matched) {
-      tracker_state = LOST;
+      tracker_state = TEMP_LOST;
       lost_count_++;
     }
 
-  } else if (tracker_state == LOST) {
+  } else if (tracker_state == TEMP_LOST) {
     // LOST
     if (!matched) {
       lost_count_++;
       if (lost_count_ > lost_threshold_) {
         lost_count_ = 0;
-        tracker_state = NO_FOUND;
+        tracker_state = LOST;
       }
     } else {
       tracker_state = TRACKING;

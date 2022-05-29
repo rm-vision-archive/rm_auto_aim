@@ -1,4 +1,6 @@
 std_msgs/Header header
-bool target_found
+uint8 id
+bool tracking
+bool suggest_fire
 geometry_msgs/Point position
 geometry_msgs/Vector3 velocity

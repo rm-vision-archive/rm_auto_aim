@@ -6,8 +6,6 @@
 #include <memory>
 #include <vector>
 
-#include "armor_processor/kalman_filter.hpp"
-
 namespace rm_auto_aim
 {
 ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
@@ -52,6 +50,14 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   tracker_ =
     std::make_unique<Tracker>(kf_matrices_, max_match_distance, tracking_threshold, lost_threshold);
 
+  // Spin Observer
+  allow_spin_observer_ = this->declare_parameter("spin_observer.allow", true);
+  if (allow_spin_observer_) {
+    spin_observer_ = std::make_unique<SpinObserver>();
+    spin_info_pub_ =
+      this->create_publisher<auto_aim_interfaces::msg::SpinInfo>("/debug/spin_info", 10);
+  }
+
   // Subscriber with tf2 message_filter
   // tf2 relevant
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
@@ -76,13 +82,11 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
 
   // Visualization Marker Publisher
   // See http://wiki.ros.org/rviz/DisplayTypes/Marker
-  position_marker_.header.frame_id = target_frame_;
   position_marker_.ns = "position";
   position_marker_.type = visualization_msgs::msg::Marker::SPHERE;
   position_marker_.scale.x = position_marker_.scale.y = position_marker_.scale.z = 0.1;
   position_marker_.color.a = 1.0;
   position_marker_.color.g = 1.0;
-  velocity_marker_.header.frame_id = target_frame_;
   velocity_marker_.type = visualization_msgs::msg::Marker::ARROW;
   position_marker_.ns = "velocity";
   velocity_marker_.scale.x = 0.03;
@@ -121,33 +125,37 @@ void ArmorProcessorNode::armorsCallback(
     }
   }
 
+  auto_aim_interfaces::msg::Target target_msg;
   rclcpp::Time time = armors_msg->header.stamp;
-  target_msg_.header.stamp = time;
+  target_msg.header.stamp = time;
+  target_msg.header.frame_id = target_frame_;
 
-  if (tracker_->tracker_state == Tracker::NO_FOUND) {
+  if (tracker_->tracker_state == Tracker::LOST) {
     tracker_->init(armors_msg);
-    target_msg_.target_found = false;
-    target_pub_->publish(target_msg_);
-    deleteMarkers();
-
+    target_msg.tracking = false;
   } else {
     // Set dt
     dt_ = (time - last_time_).seconds();
-
+    // Update state
     tracker_->update(armors_msg, dt_);
 
     if (tracker_->tracker_state == Tracker::DETECTING) {
-      target_msg_.target_found = false;
-      target_pub_->publish(target_msg_);
-      deleteMarkers();
-
+      target_msg.tracking = false;
     } else if (
-      tracker_->tracker_state == Tracker::TRACKING || tracker_->tracker_state == Tracker::LOST) {
-      target_msg_.target_found = true;
-      publishTarget(tracker_->target_state);
-      publishMarkers(time, tracker_->target_state);
+      tracker_->tracker_state == Tracker::TRACKING ||
+      tracker_->tracker_state == Tracker::TEMP_LOST) {
+      target_msg.tracking = true;
+      target_msg.id = tracker_->tracking_id;
     }
   }
+
+  if (allow_spin_observer_ && spin_observer_) {
+    spin_observer_->update(target_msg);
+    spin_info_pub_->publish(spin_observer_->spin_info_msg);
+  }
+
+  publishTarget(tracker_->target_state, target_msg);
+  publishMarkers(target_msg);
 
   last_time_ = time;
 
@@ -156,53 +164,46 @@ void ArmorProcessorNode::armorsCallback(
   }
 }
 
-void ArmorProcessorNode::deleteMarkers()
+void ArmorProcessorNode::publishTarget(
+  const Eigen::VectorXd & target_state, auto_aim_interfaces::msg::Target & target_msg)
 {
-  position_marker_.action = visualization_msgs::msg::Marker::DELETE;
-  velocity_marker_.action = visualization_msgs::msg::Marker::DELETE;
-  marker_array_.markers.clear();
-  marker_array_.markers.emplace_back(position_marker_);
-  marker_array_.markers.emplace_back(velocity_marker_);
-  marker_pub_->publish(marker_array_);
+  if (target_msg.tracking) {
+    target_msg.position.x = target_state(0);
+    target_msg.position.y = target_state(1);
+    target_msg.position.z = target_state(2);
+    target_msg.velocity.x = target_state(3);
+    target_msg.velocity.y = target_state(4);
+    target_msg.velocity.z = target_state(5);
+  }
+  target_pub_->publish(target_msg);
 }
 
-void ArmorProcessorNode::publishMarkers(
-  const rclcpp::Time & time, const Eigen::VectorXd & target_state)
+void ArmorProcessorNode::publishMarkers(const auto_aim_interfaces::msg::Target & target_msg)
 {
-  position_marker_.action = visualization_msgs::msg::Marker::ADD;
-  position_marker_.header.stamp = time;
-  position_marker_.pose.position.x = target_state(0);
-  position_marker_.pose.position.y = target_state(1);
-  position_marker_.pose.position.z = target_state(2);
+  position_marker_.header = target_msg.header;
+  velocity_marker_.header = target_msg.header;
 
-  velocity_marker_.action = visualization_msgs::msg::Marker::ADD;
-  velocity_marker_.header.stamp = time;
-  velocity_marker_.points.clear();
-  geometry_msgs::msg::Point p;
-  p.x = target_state(0);
-  p.y = target_state(1);
-  p.z = target_state(2);
-  velocity_marker_.points.emplace_back(p);
-  p.x += target_state(3);
-  p.y += target_state(4);
-  p.z += target_state(5);
-  velocity_marker_.points.emplace_back(p);
+  if (target_msg.tracking) {
+    position_marker_.action = visualization_msgs::msg::Marker::ADD;
+    position_marker_.pose.position = target_msg.position;
 
-  marker_array_.markers.clear();
-  marker_array_.markers.emplace_back(position_marker_);
-  marker_array_.markers.emplace_back(velocity_marker_);
-  marker_pub_->publish(marker_array_);
-}
+    velocity_marker_.action = visualization_msgs::msg::Marker::ADD;
+    velocity_marker_.points.clear();
+    velocity_marker_.points.emplace_back(target_msg.position);
+    geometry_msgs::msg::Point arrow_end = target_msg.position;
+    arrow_end.x += target_msg.velocity.x;
+    arrow_end.y += target_msg.velocity.y;
+    arrow_end.z += target_msg.velocity.z;
+    velocity_marker_.points.emplace_back(arrow_end);
+  } else {
+    position_marker_.action = visualization_msgs::msg::Marker::DELETE;
+    velocity_marker_.action = visualization_msgs::msg::Marker::DELETE;
+  }
 
-void ArmorProcessorNode::publishTarget(const Eigen::VectorXd & target_state)
-{
-  target_msg_.position.x = target_state(0);
-  target_msg_.position.y = target_state(1);
-  target_msg_.position.z = target_state(2);
-  target_msg_.velocity.x = target_state(3);
-  target_msg_.velocity.y = target_state(4);
-  target_msg_.velocity.z = target_state(5);
-  target_pub_->publish(target_msg_);
+  visualization_msgs::msg::MarkerArray marker_array;
+  marker_array.markers.emplace_back(position_marker_);
+  marker_array.markers.emplace_back(velocity_marker_);
+  marker_pub_->publish(marker_array);
 }
 
 }  // namespace rm_auto_aim

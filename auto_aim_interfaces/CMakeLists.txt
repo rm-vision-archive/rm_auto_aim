@@ -20,6 +20,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DebugArmor.msg"
   "msg/DebugArmors.msg"
 
+  "msg/SpinInfo.msg"
+
   DEPENDENCIES
     std_msgs
     geometry_msgs
