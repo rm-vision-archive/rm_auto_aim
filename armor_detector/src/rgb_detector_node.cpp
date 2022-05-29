@@ -47,8 +47,8 @@ void RgbDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPt
       // Fill the armor msg
       geometry_msgs::msg::Point position;
       bool success = pnp_solver_->solvePnP(armor, position);
-
       if (success) {
+        armor_msg.number = armor.number;
         armor_msg.position = position;
         armor_msg.distance_to_image_center = pnp_solver_->calculateDistanceToCenter(armor.center);
 
