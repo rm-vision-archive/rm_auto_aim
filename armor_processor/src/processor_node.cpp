@@ -188,6 +188,7 @@ void ArmorProcessorNode::publishMarkers(const auto_aim_interfaces::msg::Target &
   if (target_msg.tracking) {
     position_marker_.action = visualization_msgs::msg::Marker::ADD;
     position_marker_.pose.position = target_msg.position;
+    position_marker_.color.r = target_msg.suggest_fire ? 0. : 1.;
 
     velocity_marker_.action = visualization_msgs::msg::Marker::ADD;
     velocity_marker_.points.clear();
