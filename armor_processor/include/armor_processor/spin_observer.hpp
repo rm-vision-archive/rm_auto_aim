@@ -19,7 +19,7 @@ class SpinObserver
 {
 public:
   SpinObserver(
-    const rclcpp::Clock::SharedPtr clock, double max_jump_distance, double max_jump_period,
+    const rclcpp::Clock::SharedPtr clock, double max_jump_angle, double max_jump_period,
     double allow_following_range, double fire_delay);
 
   void update(auto_aim_interfaces::msg::Target & target_msg);
@@ -27,7 +27,7 @@ public:
   auto_aim_interfaces::msg::SpinInfo spin_info_msg;
 
 private:
-  double max_jump_distance_;
+  double max_jump_angle_;
   double max_jump_period_;
   double allow_following_range;
   double fire_delay;
@@ -37,10 +37,11 @@ private:
   double jump_period_;
   int jump_count_;
 
+  double last_yaw_;
+  double last_jump_yaw_diff_;
+
   rclcpp::Time last_jump_time_;
   Eigen::Vector3d last_jump_position_;
-
-  Eigen::Vector3d last_position_;
 };
 }  // namespace rm_auto_aim
 
