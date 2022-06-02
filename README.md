@@ -46,19 +46,19 @@ Run the tests with
 
 ## Packages
 
-- [armor_detector](armor_detector/README.md)
+- [armor_detector](armor_detector)
 
 	支持RGB及RGBD输入，订阅相机参数并用于构造相应的三维位置解算器，订阅来自相机或视频的图像流进行装甲板的识别，识别完成后发布识别到的装甲板目标
 
-- [armor_processor](armor_processor/README.md)
+- [armor_processor](armor_processor)
 
 	订阅识别节点发布的装甲板目标及机器人的坐标转换信息，将装甲板目标通过 `tf` 其变换到世界坐标系下，然后将目标送入跟踪器中得到最终目标在世界坐标系下的位置及速度并发布出来
 
-- [auto_aim_interfaces](auto_aim_interfaces/README.md)
+- [auto_aim_interfaces](auto_aim_interfaces)
 
 	定义了识别节点和处理节点的接口，以及定义了灯条和装甲板的 Debug 信息
 
-- [auto_aim_bringup](auto_aim_bringup/README.md)
+- [auto_aim_bringup](auto_aim_bringup)
 
 	包含启动识别节点和处理节点的默认参数文件及 launch 文件
 
