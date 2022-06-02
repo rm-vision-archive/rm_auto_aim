@@ -56,10 +56,9 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   double max_jump_period = this->declare_parameter("spin_observer.max_jump_period", 0.8);
   double allow_following_range =
     this->declare_parameter("spin_observer.allow_following_range", 0.3);
-  double fire_delay = this->declare_parameter("spin_observer.fire_delay", 0.05);
   if (allow_spin_observer_) {
     spin_observer_ = std::make_unique<SpinObserver>(
-      this->get_clock(), max_jump_angle, max_jump_period, allow_following_range, fire_delay);
+      this->get_clock(), max_jump_angle, max_jump_period, allow_following_range);
     spin_info_pub_ =
       this->create_publisher<auto_aim_interfaces::msg::SpinInfo>("/debug/spin_info", 10);
   }
@@ -165,6 +164,11 @@ void ArmorProcessorNode::armorsCallback(
   }
 
   if (allow_spin_observer_ && spin_observer_) {
+    spin_observer_->max_jump_angle = get_parameter("spin_observer.max_jump_angle").as_double();
+    spin_observer_->max_jump_period = get_parameter("spin_observer.max_jump_period").as_double();
+    spin_observer_->allow_following_range =
+      get_parameter("spin_observer.allow_following_range").as_double();
+
     spin_observer_->update(target_msg);
     spin_info_pub_->publish(spin_observer_->spin_info_msg);
   }

@@ -20,18 +20,17 @@ class SpinObserver
 public:
   SpinObserver(
     const rclcpp::Clock::SharedPtr clock, double max_jump_angle, double max_jump_period,
-    double allow_following_range, double fire_delay);
+    double allow_following_range);
 
   void update(auto_aim_interfaces::msg::Target & target_msg);
+
+  double max_jump_angle;
+  double max_jump_period;
+  double allow_following_range;
 
   auto_aim_interfaces::msg::SpinInfo spin_info_msg;
 
 private:
-  double max_jump_angle_;
-  double max_jump_period_;
-  double allow_following_range;
-  double fire_delay;
-
   bool target_spinning_;
 
   double jump_period_;

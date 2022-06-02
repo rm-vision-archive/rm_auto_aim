@@ -10,11 +10,10 @@ namespace rm_auto_aim
 {
 SpinObserver::SpinObserver(
   const rclcpp::Clock::SharedPtr clock, double max_jump_angle, double max_jump_period,
-  double allow_following_range, double fire_delay)
-: max_jump_angle_(max_jump_angle),
-  max_jump_period_(max_jump_period),
-  allow_following_range(allow_following_range),
-  fire_delay(fire_delay)
+  double allow_following_range)
+: max_jump_angle(max_jump_angle),
+  max_jump_period(max_jump_period),
+  allow_following_range(allow_following_range)
 {
   target_spinning_ = false;
   jump_period_ = 0.0;
@@ -31,7 +30,7 @@ void SpinObserver::update(auto_aim_interfaces::msg::Target & target_msg)
 
   double time_after_jumping = (current_time - last_jump_time_).seconds();
 
-  if (time_after_jumping > max_jump_period_) {
+  if (time_after_jumping > max_jump_period) {
     target_spinning_ = false;
     jump_count_ = 0;
   }
@@ -42,7 +41,7 @@ void SpinObserver::update(auto_aim_interfaces::msg::Target & target_msg)
     current_yaw = std::atan2(current_position.y(), current_position.x());
     yaw_diff = angles::shortest_angular_distance(last_yaw_, current_yaw);
 
-    if (std::abs(yaw_diff) > max_jump_angle_) {
+    if (std::abs(yaw_diff) > max_jump_angle) {
       jump_count_++;
       if (jump_count_ > 1 && std::signbit(yaw_diff) == std::signbit(last_jump_yaw_diff_)) {
         target_spinning_ = true;
@@ -68,7 +67,7 @@ void SpinObserver::update(auto_aim_interfaces::msg::Target & target_msg)
       target_msg.velocity.y = 0;
       target_msg.velocity.z = 0;
 
-      target_msg.suggest_fire = jump_period_ - time_after_jumping < fire_delay;
+      target_msg.suggest_fire = false;
     }
   } else {
     target_msg.suggest_fire = target_msg.tracking;
