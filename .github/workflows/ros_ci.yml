@@ -15,7 +15,7 @@ jobs:
       - name: Build rm_auto_aim
         uses: ros-tooling/action-ros-ci@v0.2
         with:
-          package-name: auto_aim_bringup
+          package-name: rm_auto_aim
           import-token: ${{ secrets.GITHUB_TOKEN }}
           target-ros2-distro: galactic
           skip-tests: true
