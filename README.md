@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a package of Robomaster auto-aim task using ROS2.
+This is a suite of Robomaster auto-aim task using ROS2.
 
 **Keywords:** Robomaster, auto-aim, ROS2
 
@@ -36,13 +36,13 @@ To build from source, clone the latest version from this repository into your co
 	git clone https://github.com/chenjunnn/rm_auto_aim.git
 	cd ..
 	rosdep install --from-paths src --ignore-src -r -y
-	colcon build --symlink-install --packages-up-to auto_aim_bringup
+	colcon build --symlink-install --packages-up-to rm_auto_aim
 
 ### Testing
 
 Run the tests with
 
-	colcon test --packages-up-to auto_aim_bringup
+	colcon test --packages-up-to rm_auto_aim
 
 ## Packages
 
