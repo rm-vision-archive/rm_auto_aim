@@ -23,8 +23,7 @@
 
 namespace rm_auto_aim
 {
-ArmorDetectorNode::ArmorDetectorNode(
-  const rclcpp::NodeOptions & options)
+ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
 : Node("armor_detector", options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting DetectorNode!");
