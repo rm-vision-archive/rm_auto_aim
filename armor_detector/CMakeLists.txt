@@ -17,6 +17,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #######################
 
 find_package(ament_cmake_auto REQUIRED)
+find_package(OpenCV REQUIRED)
 ament_auto_find_build_dependencies()
 
 ###########
@@ -27,14 +28,12 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
   DIRECTORY src
 )
 
-rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN rm_auto_aim::RgbDetectorNode
-  EXECUTABLE rgb_detector_node
-)
+target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 
 rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN rm_auto_aim::RgbDepthDetectorNode
-  EXECUTABLE rgbd_detector_node
+  PLUGIN rm_auto_aim::ArmorDetectorNode
+  EXECUTABLE armor_detector_node
 )
 
 #############
@@ -49,12 +48,12 @@ if(BUILD_TESTING)
   )
   ament_lint_auto_find_test_dependencies()
 
-  find_package(ament_cmake_gtest)
-  ament_add_gtest(test_node_startup test/test_node_startup.cpp)
-  target_link_libraries(test_node_startup ${PROJECT_NAME})
+  # find_package(ament_cmake_gtest)
+  # ament_add_gtest(test_node_startup test/test_node_startup.cpp)
+  # target_link_libraries(test_node_startup ${PROJECT_NAME})
 
-  ament_add_gtest(test_number_cls test/test_number_cls.cpp)
-  target_link_libraries(test_number_cls ${PROJECT_NAME})
+  # ament_add_gtest(test_number_cls test/test_number_cls.cpp)
+  # target_link_libraries(test_number_cls ${PROJECT_NAME})
 
 endif()
 

@@ -6,7 +6,6 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
 #include <opencv2/dnn.hpp>
-#include <opencv2/dnn/all_layers.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -15,6 +14,7 @@
 // STL
 #include <algorithm>
 #include <cstddef>
+#include <fstream>
 #include <map>
 #include <string>
 #include <vector>

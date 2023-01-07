@@ -13,8 +13,6 @@ def generate_launch_description():
         'auto_aim_bringup'), 'config/default.yaml')
 
     return LaunchDescription([
-        DeclareLaunchArgument(name='camera_type',
-                              default_value='rgb', description='rgb or rgbd'),
         DeclareLaunchArgument(name='detect_color',
                               default_value='1', description='0-Red 1-Blue'),
         DeclareLaunchArgument(name='debug',
@@ -24,7 +22,7 @@ def generate_launch_description():
 
         Node(
             package='armor_detector',
-            executable=[LaunchConfiguration('camera_type'), '_detector_node'],
+            executable='armor_detector_node',
             name='armor_detector',
             output='screen',
             emulate_tty=True,

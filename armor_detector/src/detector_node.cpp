@@ -23,9 +23,9 @@
 
 namespace rm_auto_aim
 {
-BaseDetectorNode::BaseDetectorNode(
-  const std::string & node_name, const rclcpp::NodeOptions & options)
-: Node(node_name, options)
+ArmorDetectorNode::ArmorDetectorNode(
+  const rclcpp::NodeOptions & options)
+: Node("armor_detector", options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting DetectorNode!");
 
@@ -79,9 +79,63 @@ BaseDetectorNode::BaseDetectorNode(
       debug_ = p.as_bool();
       debug_ ? createDebugPublishers() : destroyDebugPublishers();
     });
+
+  cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
+    "/camera_info", rclcpp::SensorDataQoS(),
+    [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr camera_info) {
+      cam_center_ = cv::Point2f(camera_info->k[2], camera_info->k[5]);
+      cam_info_ = std::make_shared<sensor_msgs::msg::CameraInfo>(*camera_info);
+      pnp_solver_ = std::make_unique<PnPSolver>(camera_info->k, camera_info->d);
+      cam_info_sub_.reset();
+    });
+
+  img_sub_ = std::make_shared<image_transport::Subscriber>(image_transport::create_subscription(
+    this, "/image_raw", std::bind(&ArmorDetectorNode::imageCallback, this, std::placeholders::_1),
+    transport_, rmw_qos_profile_sensor_data));
 }
 
-std::unique_ptr<Detector> BaseDetectorNode::initDetector()
+void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg)
+{
+  auto armors = detectArmors(img_msg);
+
+  if (pnp_solver_ != nullptr) {
+    armors_msg_.header = position_marker_.header = text_marker_.header = img_msg->header;
+    armors_msg_.armors.clear();
+    marker_array_.markers.clear();
+    position_marker_.points.clear();
+    text_marker_.id = 0;
+
+    auto_aim_interfaces::msg::Armor armor_msg;
+    for (const auto & armor : armors) {
+      geometry_msgs::msg::Point position;
+      bool success = pnp_solver_->solvePnP(armor, position);
+      if (success) {
+        armor_msg.number = armor.number;
+        armor_msg.position = position;
+        armor_msg.distance_to_image_center = pnp_solver_->calculateDistanceToCenter(armor.center);
+
+        armors_msg_.armors.emplace_back(armor_msg);
+        position_marker_.points.emplace_back(armor_msg.position);
+
+        text_marker_.id++;
+        text_marker_.pose.position = armor_msg.position;
+        text_marker_.pose.position.y -= 0.1;
+        text_marker_.text = armor.classfication_result;
+        marker_array_.markers.emplace_back(text_marker_);
+      } else {
+        RCLCPP_WARN(this->get_logger(), "PnP failed!");
+      }
+    }
+
+    // Publishing detected armors
+    armors_pub_->publish(armors_msg_);
+
+    // Publishing marker
+    publishMarkers();
+  }
+}
+
+std::unique_ptr<Detector> ArmorDetectorNode::initDetector()
 {
   rcl_interfaces::msg::ParameterDescriptor param_desc;
   param_desc.integer_range.resize(1);
@@ -111,7 +165,7 @@ std::unique_ptr<Detector> BaseDetectorNode::initDetector()
   return std::make_unique<Detector>(min_lightness, detect_color, l_params, a_params);
 }
 
-std::vector<Armor> BaseDetectorNode::detectArmors(
+std::vector<Armor> ArmorDetectorNode::detectArmors(
   const sensor_msgs::msg::Image::ConstSharedPtr & img_msg)
 {
   auto start_time = this->now();
@@ -175,7 +229,7 @@ std::vector<Armor> BaseDetectorNode::detectArmors(
   return armors;
 }
 
-void BaseDetectorNode::drawResults(
+void ArmorDetectorNode::drawResults(
   cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors)
 {
   // Draw Lights
@@ -201,7 +255,7 @@ void BaseDetectorNode::drawResults(
   cv::circle(img, cam_center_, 5, cv::Scalar(255, 0, 0), 2);
 }
 
-void BaseDetectorNode::createDebugPublishers()
+void ArmorDetectorNode::createDebugPublishers()
 {
   lights_data_pub_ =
     this->create_publisher<auto_aim_interfaces::msg::DebugLights>("/debug/lights", 10);
@@ -213,7 +267,7 @@ void BaseDetectorNode::createDebugPublishers()
   final_img_pub_ = image_transport::create_publisher(this, "/final_img");
 }
 
-void BaseDetectorNode::destroyDebugPublishers()
+void ArmorDetectorNode::destroyDebugPublishers()
 {
   lights_data_pub_.reset();
   armors_data_pub_.reset();
@@ -223,7 +277,7 @@ void BaseDetectorNode::destroyDebugPublishers()
   final_img_pub_.shutdown();
 }
 
-void BaseDetectorNode::publishMarkers()
+void ArmorDetectorNode::publishMarkers()
 {
   using Marker = visualization_msgs::msg::Marker;
   position_marker_.action = armors_msg_.armors.empty() ? Marker::DELETE : Marker::ADD;
@@ -232,3 +286,10 @@ void BaseDetectorNode::publishMarkers()
 }
 
 }  // namespace rm_auto_aim
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(rm_auto_aim::ArmorDetectorNode)

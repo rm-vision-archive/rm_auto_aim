@@ -11,17 +11,10 @@
 
 #include "armor_detector/detector_node.hpp"
 
-TEST(RgbDetectorNodeTest, NodeStartupTest)
+TEST(ArmorDetectorNodeTest, NodeStartupTest)
 {
   rclcpp::NodeOptions options;
-  auto node = std::make_shared<rm_auto_aim::RgbDetectorNode>(options);
-  node.reset();
-}
-
-TEST(RgbDepthDetectorNodeTest, NodeStartupTest)
-{
-  rclcpp::NodeOptions options;
-  auto node = std::make_shared<rm_auto_aim::RgbDepthDetectorNode>(options);
+  auto node = std::make_shared<rm_auto_aim::ArmorDetectorNode>(options);
   node.reset();
 }
 

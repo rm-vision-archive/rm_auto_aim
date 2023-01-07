@@ -26,6 +26,7 @@
   <depend>image_transport</depend>
   <depend>image_transport_plugins</depend>
   <depend>auto_aim_interfaces</depend>
+  <depend>vision_opencv</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
