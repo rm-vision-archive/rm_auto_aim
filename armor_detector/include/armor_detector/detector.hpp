@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "armor_detector/armor.hpp"
+#include "armor_detector/number_classifier.hpp"
 #include "auto_aim_interfaces/msg/debug_armors.hpp"
 #include "auto_aim_interfaces/msg/debug_lights.hpp"
 
@@ -50,22 +51,28 @@ public:
   LightParams l;
   ArmorParams a;
 
+  std::unique_ptr<NumberClassifier> classifier;
+
   // Debug msgs
+  cv::Mat binary_img;
   auto_aim_interfaces::msg::DebugLights debug_lights;
   auto_aim_interfaces::msg::DebugArmors debug_armors;
 
-  cv::Mat preprocessImage(const cv::Mat & rbg_img);
+  std::vector<Armor> detect(const cv::Mat & input);
+  void drawResults(cv::Mat & img);
+  cv::Mat getAllNumbersImage();
 
+  cv::Mat preprocessImage(const cv::Mat & input);
   std::vector<Light> findLights(const cv::Mat & rbg_img, const cv::Mat & binary_img);
-
   std::vector<Armor> matchLights(const std::vector<Light> & lights);
 
 private:
-  bool isLight(const Light & light);
+  std::vector<Light> lights_;
+  std::vector<Armor> armors_;
 
+  bool isLight(const Light & light);
   bool containLight(
     const Light & light_1, const Light & light_2, const std::vector<Light> & lights);
-
   bool isArmor(Armor & armor);
 };
 

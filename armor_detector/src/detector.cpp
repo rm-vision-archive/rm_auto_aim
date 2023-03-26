@@ -26,6 +26,62 @@ Detector::Detector(
 {
 }
 
+std::vector<Armor> Detector::detect(const cv::Mat & input)
+{
+  binary_img = preprocessImage(input);
+  lights_ = findLights(input, binary_img);
+  armors_ = matchLights(lights_);
+
+  if (!armors_.empty()) {
+    classifier->extractNumbers(input, armors_);
+    classifier->classify(armors_);
+  }
+
+  return armors_;
+}
+
+cv::Mat Detector::getAllNumbersImage()
+{
+  if (armors_.empty()) {
+    return cv::Mat();
+  } else {
+    // Combine all number images to one
+    std::vector<cv::Mat> number_imgs;
+    number_imgs.reserve(armors_.size());
+    for (auto & armor : armors_) {
+      cv::resize(armor.number_img, armor.number_img, cv::Size(20, 28));
+      number_imgs.emplace_back(armor.number_img);
+    }
+    cv::Mat all_num_img;
+    cv::vconcat(number_imgs, all_num_img);
+    return all_num_img;
+  }
+}
+
+void Detector::drawResults(cv::Mat & img)
+{
+  // Draw Lights
+  for (const auto & light : lights_) {
+    cv::circle(img, light.top, 2, cv::Scalar(255, 255, 255), 2);
+    cv::circle(img, light.bottom, 2, cv::Scalar(255, 255, 255), 2);
+    auto line_color = light.color == RED ? cv::Scalar(255, 255, 0) : cv::Scalar(255, 0, 255);
+    cv::line(img, light.top, light.bottom, line_color, 2);
+  }
+
+  // Draw armors
+  for (const auto & armor : armors_) {
+    cv::line(img, armor.left_light.top, armor.right_light.bottom, cv::Scalar(0, 255, 0), 2);
+    cv::line(img, armor.left_light.bottom, armor.right_light.top, cv::Scalar(0, 255, 0), 2);
+  }
+
+  // Show numbers and confidence
+  for (const auto & armor : armors_) {
+    cv::putText(
+      img, armor.classfication_result, armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 0.8,
+      cv::Scalar(0, 255, 255), 2);
+  }
+}
+
 cv::Mat Detector::preprocessImage(const cv::Mat & rgb_img)
 {
   cv::Mat gray_img;

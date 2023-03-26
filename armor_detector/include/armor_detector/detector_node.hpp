@@ -46,9 +46,6 @@ private:
   // Camera center
   cv::Point2f cam_center_;
 
-  // Image subscriptions transport type
-  std::string transport_;
-
   // Detected armors publisher
   auto_aim_interfaces::msg::Armors armors_msg_;
   rclcpp::Publisher<auto_aim_interfaces::msg::Armors>::SharedPtr armors_pub_;
@@ -61,22 +58,16 @@ private:
 
   std::unique_ptr<Detector> initDetector();
 
+  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr img_sub_;
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
 
-  std::shared_ptr<image_transport::Subscriber> img_sub_;
   std::unique_ptr<PnPSolver> pnp_solver_;
 
   void createDebugPublishers();
   void destroyDebugPublishers();
 
-  void drawResults(
-    cv::Mat & img, const std::vector<Light> & lights, const std::vector<Armor> & armors);
-
   // Armor Detector
   std::unique_ptr<Detector> detector_;
-
-  // Number Classifier
-  std::unique_ptr<NumberClassifier> classifier_;
 
   // Debug information publishers
   bool debug_;
@@ -84,9 +75,9 @@ private:
   std::shared_ptr<rclcpp::ParameterCallbackHandle> debug_cb_handle_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugLights>::SharedPtr lights_data_pub_;
   rclcpp::Publisher<auto_aim_interfaces::msg::DebugArmors>::SharedPtr armors_data_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr number_pub_;
   image_transport::Publisher binary_img_pub_;
-  image_transport::Publisher final_img_pub_;
+  image_transport::Publisher number_img_pub_;
+  image_transport::Publisher result_img_pub_;
 };
 
 }  // namespace rm_auto_aim
