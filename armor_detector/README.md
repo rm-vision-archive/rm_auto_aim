@@ -1,37 +1,35 @@
 # armor_detector
 
 - [armor_detector](#armor_detector)
-  - [识别节点](#识别节点)
-    - [BaseDetectorNode](#basedetectornode)
-    - [RgbDetectorNode](#rgbdetectornode)
-    - [RgbDepthDetectorNode](#rgbdepthdetectornode)
+  - [DetectorNode](#basedetectornode)
   - [Detector](#detector)
-    - [preprocessImage](#preprocessimage)
-    - [findLights](#findlights)
-    - [matchLights](#matchlights)
   - [NumberClassifier](#numberclassifier)
-    - [extractNumbers](#extractnumbers)
-    - [doClassify](#doclassify)
-  - [三维位置解算器](#三维位置解算器)
     - [PnPSolver](#pnpsolver)
+    - [PnPSolver](#pnpsolver)
+    - [DepthProcessor](#depthprocessor)
+
+  - [PnPSolver](#pnpsolver)
     - [DepthProcessor](#depthprocessor)
 
 
 ## 识别节点
 
-识别节点订阅相机参数并用于构造相应的三维位置解算器，订阅来自相机或视频的图像流进行装甲板的识别，识别完成后发布识别到的装甲板目标。
+订阅相机参数及图像流进行装甲板的识别并解算三维位置，输出识别到的装甲板在输入frame下的三维位置 (一般是以相机光心为原点的相机坐标系)
 
-### BaseDetectorNode
-识别节点基类
+### DetectorNode
+装甲板识别节点
 
 包含[Detector](#detector)
+包含[PnPSolver](#pnpsolver)
+
+订阅：
+- 相机参数 `/camera_info`
+- 彩色图像 `/image_raw`
 
 发布：
 - 识别目标 `/detector/armors`
 
-参数：
-- 识别目标颜色 `detect_color`
-- 二值化的最小阈值 `min_lightness`
+静态参数：
 - 筛选灯条的参数 `light`
   - 长宽比范围 `min/max_ratio` 
   - 最大倾斜角度 `max_angle`
@@ -40,27 +38,13 @@
   - 装甲板两灯条中心的距离范围（大装甲板）`min/max_large_center_distance`
   - 装甲板两灯条中心的距离范围（小装甲板）`min/max_small_center_distance`
   - 装甲板的最大倾斜角度 `max_angle`
+
+动态参数：
+- 是否发布 debug 信息 `debug`
+- 识别目标颜色 `detect_color`
+- 二值化的最小阈值 `min_lightness`
 - 数字分类器 `classifier`
   - 置信度阈值 `threshold`
-
-### RgbDetectorNode
-RGB识别节点
-
-包含[PnPSolver](#pnpsolver)
-
-订阅：
-- 相机参数 `/camera_info`
-- 彩色图像 `/image_raw`
-
-### RgbDepthDetectorNode
-RGBD识别节点
-
-包含[DepthProcessor](#depthprocessor)
-
-订阅：
-- 彩色图像 `/camera/color/image_raw`
-- 深度相机参数 `/camera/aligned_depth_to_color/camera_info`
-- 深度图像 `/camera/aligned_depth_to_color/image_raw`
 
 ## Detector
 装甲板识别器
@@ -72,7 +56,7 @@ RGBD识别节点
 | :---------------: | :-------------------: | :--------------------: |
 |       原图        |    通过颜色二值化     |     通过灰度二值化     |
 
-由于一般工业相机的动态范围不够大，导致若要能够清晰分辨装甲板的数字，得到的相机图像中灯条中心就会过曝，灯条中心的像素点的值往往都是 R=B。根据颜色信息来进行二值化效果不佳，并且将图像变换到 HSV 或 HLS 颜色空间都会比变换到灰度图耗时大，因此此处选择了直接通过灰度图进行二值化，将灯条的颜色判断放到后续处理中。
+由于一般工业相机的动态范围不够大，导致若要能够清晰分辨装甲板的数字，得到的相机图像中灯条中心就会过曝，灯条中心的像素点的值往往都是 R=B。根据颜色信息来进行二值化效果不佳，因此此处选择了直接通过灰度图进行二值化，将灯条的颜色判断放到后续处理中。
 
 ### findLights
 寻找灯条
@@ -100,36 +84,24 @@ RGBD识别节点
 | :-------------------: | :--------------------: | :-------------------: | :-------------------: |
 |         原图          |        透视变换        |         取ROI         |        二值化         |
 
-考虑到数字图案实质上就是黑色背景+白色图案，所以此处使用了大津法进行二值化，测试发现效果非常好。
+考虑到数字图案实质上就是黑色背景+白色图案，所以此处使用了大津法进行二值化。
 
-### doClassify
+### Classify
 分类
 
 由于上一步对于数字的提取效果已经非常好，数字图案的特征非常清晰明显，装甲板的远近、旋转都不会使图案产生过多畸变，且图案像素点少，所以我们使用多层感知机（MLP）进行分类。
 
 网络结构中定义了两个隐藏层和一个分类层，将二值化后的数字展平成 20x28=560 维的输入，送入网络进行分类。
 
-网络结构可视化：
+网络结构：
 
 ![](docs/model.svg)
 
-训练过程可视化：
-
-| ![](docs/train_loss.png) | ![](docs/train_acc.png) |
-| :----------------------: | :---------------------: |
-|   每个epoch的训练集损失   |  每个epoch的训练集准确率 |
-
-|  ![](docs/val_loss.png)  |  ![](docs/val_acc.png)  |
-| :----------------------: | :---------------------: |
-|   每个epoch的验证集损失   |  每个epoch的验证集准确率 |
-
 效果图：
 
-![](docs/result.png)
+<!-- ![](docs/result.png) -->
 
-## 三维位置解算器
-
-### PnPSolver
+## PnPSolver
 PnP解算器
 
 [Perspective-n-Point (PnP) pose computation](https://docs.opencv.org/4.x/d5/d1f/calib3d_solvePnP.html)
@@ -137,8 +109,3 @@ PnP解算器
 PnP解算器将 `cv::solvePnP()` 封装，接口中传入 `Armor` 类型的数据即可得到 `geometry_msgs::msg::Point` 类型的三维坐标。
 
 考虑到装甲板的四个点在一个平面上，在PnP解算方法上我们选择了 `cv::SOLVEPNP_IPPE` (Method is based on the paper of T. Collins and A. Bartoli. ["Infinitesimal Plane-Based Pose Estimation"](https://link.springer.com/article/10.1007/s11263-014-0725-5). This method requires coplanar object points.)
-
-### DepthProcessor
-深度图处理器
-
-深度图处理器提供了一个接口，传入深度图像和图像平面上的点即可得到对应的 `geometry_msgs::msg::Point` 类型的三维坐标。
