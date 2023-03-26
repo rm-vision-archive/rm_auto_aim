@@ -38,7 +38,7 @@ public:
     TEMP_LOST,
   } tracker_state;
 
-  char tracking_id;
+  std::string tracking_id;
   Eigen::VectorXd target_state;
 
 private:

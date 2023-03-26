@@ -31,7 +31,7 @@ public:
 
 private:
   cv::dnn::Net net_;
-  std::vector<char> class_names_;
+  std::vector<std::string> class_names_;
 };
 }  // namespace rm_auto_aim
 

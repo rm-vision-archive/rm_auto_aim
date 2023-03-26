@@ -1,5 +1,5 @@
 std_msgs/Header header
-uint8 id
+string id
 bool tracking
 bool suggest_fire
 geometry_msgs/Point position

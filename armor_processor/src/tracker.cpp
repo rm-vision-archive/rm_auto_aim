@@ -8,11 +8,9 @@
 
 namespace rm_auto_aim
 {
-Tracker::Tracker(
-  double max_match_distance, int tracking_threshold,
-  int lost_threshold)
+Tracker::Tracker(double max_match_distance, int tracking_threshold, int lost_threshold)
 : tracker_state(LOST),
-  tracking_id(0),
+  tracking_id(nullptr),
   tracking_velocity_(Eigen::Vector3d::Zero()),
   max_match_distance_(max_match_distance),
   tracking_threshold_(tracking_threshold),

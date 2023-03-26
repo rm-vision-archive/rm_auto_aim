@@ -33,7 +33,7 @@ NumberClassifier::NumberClassifier(
   std::ifstream label_file(label_path);
   std::string line;
   while (std::getline(label_file, line)) {
-    class_names_.push_back(line[0]);
+    class_names_.push_back(line);
   }
 }
 
@@ -112,8 +112,8 @@ void NumberClassifier::classify(std::vector<Armor> & armors)
     armor.number = class_names_[label_id];
 
     std::stringstream result_ss;
-    result_ss << armor.number << std::fixed << std::setprecision(1)
-              << armor.confidence * 100.0 << "%";
+    result_ss << armor.number << std::fixed << std::setprecision(1) << armor.confidence * 100.0
+              << "%";
     armor.classfication_result = result_ss.str();
   }
 
@@ -121,15 +121,16 @@ void NumberClassifier::classify(std::vector<Armor> & armors)
     std::remove_if(
       armors.begin(), armors.end(),
       [this](const Armor & armor) {
-        if (armor.confidence < threshold || armor.number == 'N') {
+        if (armor.confidence < threshold || armor.number == "Negative") {
           return true;
         }
 
         bool mismatch_armor_type = false;
         if (armor.armor_type == LARGE) {
-          mismatch_armor_type = armor.number == 'O' || armor.number == '2' || armor.number == 'G';
+          mismatch_armor_type =
+            armor.number == "Outpost" || armor.number == "2" || armor.number == "Guard";
         } else if (armor.armor_type == SMALL) {
-          mismatch_armor_type = armor.number == '1' || armor.number == 'B';
+          mismatch_armor_type = armor.number == "1" || armor.number == "Base";
         }
         return mismatch_armor_type;
       }),

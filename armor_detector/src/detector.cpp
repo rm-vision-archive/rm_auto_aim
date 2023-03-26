@@ -231,7 +231,7 @@ bool Detector::isArmor(Armor & armor)
   armor_data.center_distance = center_distance;
   armor_data.angle = angle;
   armor_data.is_armor = is_armor;
-  armor_data.armor_type = (armor.armor_type == SMALL);
+  armor_data.armor_type = armor.armor_type == LARGE ? "large" : "small";
   this->debug_armors.data.emplace_back(armor_data);
 
   return is_armor;
