@@ -9,16 +9,45 @@
 namespace rm_auto_aim
 {
 Tracker::Tracker(
-  const KalmanFilterMatrices & kf_matrices, double max_match_distance, int tracking_threshold,
+  double max_match_distance, int tracking_threshold,
   int lost_threshold)
 : tracker_state(LOST),
   tracking_id(0),
-  kf_matrices_(kf_matrices),
   tracking_velocity_(Eigen::Vector3d::Zero()),
   max_match_distance_(max_match_distance),
   tracking_threshold_(tracking_threshold),
   lost_threshold_(lost_threshold)
 {
+  // Kalman Filter initial matrix
+  // A - state transition matrix
+  // clang-format off
+  double dt = 0; // Just for initialization, will be updated in Tracker::update()
+  Eigen::Matrix<double, 6, 6> f;
+  f <<  1,  0,  0,  dt, 0,  0,
+        0,  1,  0,  0,  dt, 0,
+        0,  0,  1,  0,  0,  dt,
+        0,  0,  0,  1,  0,  0,
+        0,  0,  0,  0,  1,  0,
+        0,  0,  0,  0,  0,  1;
+  // clang-format on
+
+  // H - measurement matrix
+  Eigen::Matrix<double, 3, 6> h;
+  h.setIdentity();
+
+  // Q - process noise covariance matrix
+  Eigen::DiagonalMatrix<double, 6> q;
+  q.diagonal() << 0.01, 0.01, 0.01, 0.1, 0.1, 0.1;
+
+  // R - measurement noise covariance matrix
+  Eigen::DiagonalMatrix<double, 3> r;
+  r.diagonal() << 0.05, 0.05, 0.05;
+
+  // P - error estimate covariance matrix
+  Eigen::DiagonalMatrix<double, 6> p;
+  p.setIdentity();
+
+  kf_matrices_ = KalmanFilterMatrices{f, h, q, r, p};
 }
 
 void Tracker::init(const Armors::SharedPtr & armors_msg)

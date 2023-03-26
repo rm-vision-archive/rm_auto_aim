@@ -15,10 +15,10 @@
 
 namespace rm_auto_aim
 {
-class SpinObserver
+class SpinDetector
 {
 public:
-  SpinObserver(
+  SpinDetector(
     const rclcpp::Clock::SharedPtr clock, double max_jump_angle, double max_jump_period,
     double allow_following_range);
 

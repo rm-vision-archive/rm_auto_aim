@@ -1,6 +1,6 @@
 // Copyright 2022 Chen Jun
 
-#include "armor_processor/spin_observer.hpp"
+#include "armor_processor/spin_detector.hpp"
 
 #include <angles/angles.h>
 
@@ -8,7 +8,7 @@
 
 namespace rm_auto_aim
 {
-SpinObserver::SpinObserver(
+SpinDetector::SpinDetector(
   const rclcpp::Clock::SharedPtr clock, double max_jump_angle, double max_jump_period,
   double allow_following_range)
 : max_jump_angle(max_jump_angle),
@@ -22,7 +22,7 @@ SpinObserver::SpinObserver(
   last_jump_position_ = Eigen::Vector3d(0, 0, 0);
 }
 
-void SpinObserver::update(auto_aim_interfaces::msg::Target & target_msg)
+void SpinDetector::update(auto_aim_interfaces::msg::Target & target_msg)
 {
   rclcpp::Time current_time = target_msg.header.stamp;
   Eigen::Vector3d current_position(

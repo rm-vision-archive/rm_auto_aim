@@ -13,51 +13,20 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting ProcessorNode!");
 
-  // Kalman Filter initial matrix
-  // A - state transition matrix
-  // clang-format off
-  Eigen::Matrix<double, 6, 6> f;
-  f <<  1,  0,  0, dt_, 0,  0,
-        0,  1,  0,  0, dt_, 0,
-        0,  0,  1,  0,  0, dt_,
-        0,  0,  0,  1,  0,  0,
-        0,  0,  0,  0,  1,  0,
-        0,  0,  0,  0,  0,  1;
-  // clang-format on
-
-  // H - measurement matrix
-  Eigen::Matrix<double, 3, 6> h;
-  h.setIdentity();
-
-  // Q - process noise covariance matrix
-  Eigen::DiagonalMatrix<double, 6> q;
-  q.diagonal() << 0.01, 0.01, 0.01, 0.1, 0.1, 0.1;
-
-  // R - measurement noise covariance matrix
-  Eigen::DiagonalMatrix<double, 3> r;
-  r.diagonal() << 0.05, 0.05, 0.05;
-
-  // P - error estimate covariance matrix
-  Eigen::DiagonalMatrix<double, 6> p;
-  p.setIdentity();
-
-  kf_matrices_ = KalmanFilterMatrices{f, h, q, r, p};
-
   // Tracker
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.2);
   int tracking_threshold = this->declare_parameter("tracker.tracking_threshold", 5);
   int lost_threshold = this->declare_parameter("tracker.lost_threshold", 5);
-  tracker_ =
-    std::make_unique<Tracker>(kf_matrices_, max_match_distance, tracking_threshold, lost_threshold);
+  tracker_ = std::make_unique<Tracker>(max_match_distance, tracking_threshold, lost_threshold);
 
   // Spin Observer
-  allow_spin_observer_ = this->declare_parameter("spin_observer.allow", true);
-  double max_jump_angle = this->declare_parameter("spin_observer.max_jump_angle", 0.2);
-  double max_jump_period = this->declare_parameter("spin_observer.max_jump_period", 0.8);
+  allow_spin_detector_ = this->declare_parameter("spin_detector.allow", true);
+  double max_jump_angle = this->declare_parameter("spin_detector.max_jump_angle", 0.2);
+  double max_jump_period = this->declare_parameter("spin_detector.max_jump_period", 0.8);
   double allow_following_range =
-    this->declare_parameter("spin_observer.allow_following_range", 0.3);
-  if (allow_spin_observer_) {
-    spin_observer_ = std::make_unique<SpinObserver>(
+    this->declare_parameter("spin_detector.allow_following_range", 0.3);
+  if (allow_spin_detector_) {
+    spin_detector_ = std::make_unique<SpinDetector>(
       this->get_clock(), max_jump_angle, max_jump_period, allow_following_range);
     spin_info_pub_ =
       this->create_publisher<auto_aim_interfaces::msg::SpinInfo>("/debug/spin_info", 10);
@@ -74,7 +43,7 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
   // subscriber and filter
   armors_sub_.subscribe(this, "/detector/armors", rmw_qos_profile_sensor_data);
-  target_frame_ = this->declare_parameter("target_frame", "shooter_link");
+  target_frame_ = this->declare_parameter("target_frame", "odom");
   tf2_filter_ = std::make_shared<tf2_filter>(
     armors_sub_, *tf2_buffer_, target_frame_, 10, this->get_node_logging_interface(),
     this->get_node_clock_interface(), std::chrono::duration<int>(1));
@@ -100,18 +69,6 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   velocity_marker_.color.b = 1.0;
   marker_pub_ =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("/processor/marker", 10);
-
-  // Debug Publishers
-  debug_ = this->declare_parameter("debug", true);
-  // if (debug_) {
-  // }
-
-  debug_param_sub_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
-  debug_cb_handle_ =
-    debug_param_sub_->add_parameter_callback("debug", [this](const rclcpp::Parameter & p) {
-      debug_ = p.as_bool();
-      // debug_ ? createDebugPublishers() : destroyDebugPublishers();
-    });
 }
 
 void ArmorProcessorNode::armorsCallback(
@@ -163,14 +120,14 @@ void ArmorProcessorNode::armorsCallback(
     target_msg.velocity.z = tracker_->target_state(5);
   }
 
-  if (allow_spin_observer_ && spin_observer_) {
-    spin_observer_->max_jump_angle = get_parameter("spin_observer.max_jump_angle").as_double();
-    spin_observer_->max_jump_period = get_parameter("spin_observer.max_jump_period").as_double();
-    spin_observer_->allow_following_range =
-      get_parameter("spin_observer.allow_following_range").as_double();
+  if (allow_spin_detector_ && spin_detector_) {
+    spin_detector_->max_jump_angle = get_parameter("spin_detector.max_jump_angle").as_double();
+    spin_detector_->max_jump_period = get_parameter("spin_detector.max_jump_period").as_double();
+    spin_detector_->allow_following_range =
+      get_parameter("spin_detector.allow_following_range").as_double();
 
-    spin_observer_->update(target_msg);
-    spin_info_pub_->publish(spin_observer_->spin_info_msg);
+    spin_detector_->update(target_msg);
+    spin_info_pub_->publish(spin_detector_->spin_info_msg);
   }
 
   target_pub_->publish(target_msg);
@@ -178,10 +135,6 @@ void ArmorProcessorNode::armorsCallback(
   publishMarkers(target_msg);
 
   last_time_ = time;
-
-  if (debug_) {
-    RCLCPP_INFO_STREAM(this->get_logger(), "Tracker state:" << tracker_->tracker_state);
-  }
 }
 
 void ArmorProcessorNode::publishMarkers(const auto_aim_interfaces::msg::Target & target_msg)

@@ -22,9 +22,7 @@ namespace rm_auto_aim
 class Tracker
 {
 public:
-  Tracker(
-    const KalmanFilterMatrices & kf_matrices, double max_match_distance, int tracking_threshold,
-    int lost_threshold);
+  Tracker(double max_match_distance, int tracking_threshold, int lost_threshold);
 
   using Armors = auto_aim_interfaces::msg::Armors;
   using Armor = auto_aim_interfaces::msg::Armor;
