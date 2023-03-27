@@ -5,12 +5,13 @@
 #include <cfloat>
 #include <iostream>
 #include <memory>
+#include <string>
 
 namespace rm_auto_aim
 {
 Tracker::Tracker(double max_match_distance, int tracking_threshold, int lost_threshold)
 : tracker_state(LOST),
-  tracking_id(nullptr),
+  tracking_id(std::string("")),
   tracking_velocity_(Eigen::Vector3d::Zero()),
   max_match_distance_(max_match_distance),
   tracking_threshold_(tracking_threshold),

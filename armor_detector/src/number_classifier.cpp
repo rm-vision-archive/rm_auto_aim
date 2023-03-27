@@ -112,8 +112,8 @@ void NumberClassifier::classify(std::vector<Armor> & armors)
     armor.number = class_names_[label_id];
 
     std::stringstream result_ss;
-    result_ss << armor.number << std::fixed << std::setprecision(1) << armor.confidence * 100.0
-              << "%";
+    result_ss << armor.number << ": " << std::fixed << std::setprecision(1)
+              << armor.confidence * 100.0 << "%";
     armor.classfication_result = result_ss.str();
   }
 

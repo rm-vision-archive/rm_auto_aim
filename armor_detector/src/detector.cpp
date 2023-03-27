@@ -62,10 +62,10 @@ void Detector::drawResults(cv::Mat & img)
 {
   // Draw Lights
   for (const auto & light : lights_) {
-    cv::circle(img, light.top, 2, cv::Scalar(255, 255, 255), 2);
-    cv::circle(img, light.bottom, 2, cv::Scalar(255, 255, 255), 2);
+    cv::circle(img, light.top, 3, cv::Scalar(255, 255, 255), 1);
+    cv::circle(img, light.bottom, 3, cv::Scalar(255, 255, 255), 1);
     auto line_color = light.color == RED ? cv::Scalar(255, 255, 0) : cv::Scalar(255, 0, 255);
-    cv::line(img, light.top, light.bottom, line_color, 2);
+    cv::line(img, light.top, light.bottom, line_color, 1);
   }
 
   // Draw armors
