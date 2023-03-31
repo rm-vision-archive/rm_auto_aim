@@ -43,13 +43,11 @@ std::vector<Armor> Detector::detect(const cv::Mat & input)
 cv::Mat Detector::getAllNumbersImage()
 {
   if (armors_.empty()) {
-    return cv::Mat();
+    return cv::Mat(cv::Size(20, 28), CV_8UC1);
   } else {
-    // Combine all number images to one
     std::vector<cv::Mat> number_imgs;
     number_imgs.reserve(armors_.size());
     for (auto & armor : armors_) {
-      cv::resize(armor.number_img, armor.number_img, cv::Size(20, 28));
       number_imgs.emplace_back(armor.number_img);
     }
     cv::Mat all_num_img;

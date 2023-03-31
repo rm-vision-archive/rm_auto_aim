@@ -1,8 +1,7 @@
 /armor_detector:
   ros__parameters:
-    subscribe_compressed: false
-
     min_lightness: 145
+    classifier_threshold: 0.7
 
     light:
       max_angle: 40.0
@@ -18,9 +17,6 @@
       min_large_center_distance: 3.2
       max_small_center_distance: 3.2
       min_small_center_distance: 0.8
-
-    classifier:
-      similarity_threshold: 0.7
 
 /armor_processor:
   ros__parameters:
