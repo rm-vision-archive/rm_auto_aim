@@ -51,7 +51,7 @@ private:
   rclcpp::Publisher<auto_aim_interfaces::msg::Armors>::SharedPtr armors_pub_;
 
   // Visualization marker publisher
-  visualization_msgs::msg::Marker position_marker_;
+  visualization_msgs::msg::Marker armor_marker_;
   visualization_msgs::msg::Marker text_marker_;
   visualization_msgs::msg::MarkerArray marker_array_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;

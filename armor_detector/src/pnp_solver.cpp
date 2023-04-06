@@ -12,24 +12,26 @@ PnPSolver::PnPSolver(
 : camera_matrix_(cv::Mat(3, 3, CV_64F, const_cast<double *>(camera_matrix.data())).clone()),
   dist_coeffs_(cv::Mat(1, 5, CV_64F, const_cast<double *>(dist_coeffs.data())).clone())
 {
-  double small_half_x = kSmallArmorWidth / 2.0;
-  double small_half_y = kSmallArmorHeight / 2.0;
-  double large_half_x = kLargeArmorWidth / 2.0;
-  double large_half_y = kLargeArmorHeight / 2.0;
+  // Unit: m
+  constexpr double small_half_y = SMALL_ARMOR_WIDTH / 2.0 / 1000.0;
+  constexpr double small_half_z = SMALL_ARMOR_HEIGHT / 2.0 / 1000.0;
+  constexpr double large_half_y = LARGE_ARMOR_WIDTH / 2.0 / 1000.0;
+  constexpr double large_half_z = LARGE_ARMOR_HEIGHT / 2.0 / 1000.0;
 
   // Start from bottom left in clockwise order
-  small_armor_points_.emplace_back(cv::Point3f(-small_half_x, small_half_y, 0));
-  small_armor_points_.emplace_back(cv::Point3f(-small_half_x, -small_half_y, 0));
-  small_armor_points_.emplace_back(cv::Point3f(small_half_x, -small_half_y, 0));
-  small_armor_points_.emplace_back(cv::Point3f(small_half_x, small_half_y, 0));
+  // Model coordinate: x forward, y left, z up
+  small_armor_points_.emplace_back(cv::Point3f(0, small_half_y, -small_half_z));
+  small_armor_points_.emplace_back(cv::Point3f(0, small_half_y, small_half_z));
+  small_armor_points_.emplace_back(cv::Point3f(0, -small_half_y, small_half_z));
+  small_armor_points_.emplace_back(cv::Point3f(0, -small_half_y, -small_half_z));
 
-  large_armor_points_.emplace_back(cv::Point3f(-large_half_x, large_half_y, 0));
-  large_armor_points_.emplace_back(cv::Point3f(-large_half_x, -large_half_y, 0));
-  large_armor_points_.emplace_back(cv::Point3f(large_half_x, -large_half_y, 0));
-  large_armor_points_.emplace_back(cv::Point3f(large_half_x, large_half_y, 0));
+  large_armor_points_.emplace_back(cv::Point3f(0, large_half_y, -large_half_z));
+  large_armor_points_.emplace_back(cv::Point3f(0, large_half_y, large_half_z));
+  large_armor_points_.emplace_back(cv::Point3f(0, -large_half_y, large_half_z));
+  large_armor_points_.emplace_back(cv::Point3f(0, -large_half_y, -large_half_z));
 }
 
-bool PnPSolver::solvePnP(const Armor & armor, geometry_msgs::msg::Point & point)
+bool PnPSolver::solvePnP(const Armor & armor, cv::Mat & rvec, cv::Mat & tvec)
 {
   std::vector<cv::Point2f> image_armor_points;
 
@@ -40,21 +42,10 @@ bool PnPSolver::solvePnP(const Armor & armor, geometry_msgs::msg::Point & point)
   image_armor_points.emplace_back(armor.right_light.bottom);
 
   // Solve pnp
-  cv::Mat rvec, tvec;
   auto object_points = armor.armor_type == SMALL ? small_armor_points_ : large_armor_points_;
-  bool success = cv::solvePnP(
+  return cv::solvePnP(
     object_points, image_armor_points, camera_matrix_, dist_coeffs_, rvec, tvec, false,
     cv::SOLVEPNP_IPPE);
-
-  if (success) {
-    // Convert to geometry_msgs::msg::Point
-    point.x = tvec.at<double>(0) * 0.001;
-    point.y = tvec.at<double>(1) * 0.001;
-    point.z = tvec.at<double>(2) * 0.001;
-    return true;
-  } else {
-    return false;
-  }
 }
 
 float PnPSolver::calculateDistanceToCenter(const cv::Point2f & image_point)
