@@ -17,12 +17,10 @@ KalmanFilter::KalmanFilter(const KalmanFilterMatrices & matrices)
 {
 }
 
-void KalmanFilter::init(const Eigen::VectorXd & x0) { x_post = x0; }
+void KalmanFilter::setState(const Eigen::VectorXd & x0) { x_post = x0; }
 
-Eigen::MatrixXd KalmanFilter::predict(const Eigen::MatrixXd & F)
+Eigen::MatrixXd KalmanFilter::predict()
 {
-  this->F = F;
-
   x_pre = F * x_post;
   P_pre = F * P_post * F.transpose() + Q;
 
