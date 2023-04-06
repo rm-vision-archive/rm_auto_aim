@@ -20,10 +20,8 @@
 #include <vector>
 
 #include "armor_processor/kalman_filter.hpp"
-#include "armor_processor/spin_observer.hpp"
 #include "armor_processor/tracker.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
-#include "auto_aim_interfaces/msg/spin_info.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
 
 namespace rm_auto_aim
@@ -49,11 +47,6 @@ private:
   // Armor tracker
   std::unique_ptr<Tracker> tracker_;
 
-  // Spin observer
-  bool allow_spin_observer_;
-  std::unique_ptr<SpinObserver> spin_observer_;
-  rclcpp::Publisher<auto_aim_interfaces::msg::SpinInfo>::SharedPtr spin_info_pub_;
-
   // Subscriber with tf2 message_filter
   std::string target_frame_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
@@ -66,13 +59,10 @@ private:
 
   // Visualization marker publisher
   visualization_msgs::msg::Marker position_marker_;
-  visualization_msgs::msg::Marker velocity_marker_;
+  visualization_msgs::msg::Marker linear_v_marker_;
+  visualization_msgs::msg::Marker angular_v_marker_;
+  visualization_msgs::msg::Marker armors_marker_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
-
-  // Debug information publishers
-  bool debug_;
-  std::shared_ptr<rclcpp::ParameterEventHandler> debug_param_sub_;
-  std::shared_ptr<rclcpp::ParameterCallbackHandle> debug_cb_handle_;
 };
 
 }  // namespace rm_auto_aim

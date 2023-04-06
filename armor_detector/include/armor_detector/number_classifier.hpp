@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "armor_detector/detector.hpp"
+#include "armor_detector/armor.hpp"
 
 namespace rm_auto_aim
 {
@@ -25,13 +25,13 @@ public:
 
   void extractNumbers(const cv::Mat & src, std::vector<Armor> & armors);
 
-  void doClassify(std::vector<Armor> & armors);
+  void classify(std::vector<Armor> & armors);
 
   double threshold;
 
 private:
   cv::dnn::Net net_;
-  std::vector<char> class_names_;
+  std::vector<std::string> class_names_;
 };
 }  // namespace rm_auto_aim
 

@@ -1,13 +1,14 @@
 /armor_detector:
   ros__parameters:
-    subscribe_compressed: false
-
-    min_lightness: 145
+    debug: true
+    detect_color: 0
+    min_lightness: 120
+    classifier_threshold: 0.9
 
     light:
       max_angle: 40.0
       max_ratio: 0.4
-      min_ratio: 0.1
+      min_ratio: 0.05
 
     armor:
       max_angle: 35.0
@@ -19,14 +20,17 @@
       max_small_center_distance: 3.2
       min_small_center_distance: 0.8
 
-    classifier:
-      similarity_threshold: 0.7
-
 /armor_processor:
   ros__parameters:
-    target_frame: shooter_link
+    target_frame: odom
+
+    kf:
+      #   xc    yc    zc    yaw   vxc   vyc   vzc   vyaw  r
+      q: [1e-2, 1e-2, 1e-2, 2e-2, 5e-2, 5e-2, 1e-4, 4e-2, 1e-3]
+      #   xa    ya    za    yaw
+      r: [1e-1, 1e-1, 1e-1, 2e-1]
 
     tracker:
       max_match_distance: 0.2
       tracking_threshold: 5
-      lost_threshold: 5
+      lost_threshold: 25

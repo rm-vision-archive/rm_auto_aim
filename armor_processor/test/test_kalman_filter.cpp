@@ -57,13 +57,13 @@ TEST(KalmanFilterTest, predict_update)
   // Init
   Eigen::VectorXd x0(N);
   x0 << 0, 0;
-  KF->init(x0);
+  KF->setState(x0);
 
   // Estimate
   std::cout << "Estimate based on measurement:" << std::endl;
   Eigen::VectorXd measurement_vector(M);
   for (const auto & measurement : measurements) {
-    KF->predict(F);
+    KF->predict();
     measurement_vector << measurement;
     auto result = KF->update(measurement_vector);
     std::cout << result.transpose() << std::endl;
@@ -72,7 +72,7 @@ TEST(KalmanFilterTest, predict_update)
   // Predict only
   std::cout << "Predict only:" << std::endl;
   for (size_t i = 0; i < 10; ++i) {
-    auto prediction = KF->predict(F);
+    auto prediction = KF->predict();
     std::cout << prediction.transpose() << std::endl;
   }
 }

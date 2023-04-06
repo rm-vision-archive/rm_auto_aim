@@ -22,18 +22,21 @@ public:
   explicit KalmanFilter(const KalmanFilterMatrices & matrices);
 
   // Initialize the filter with a guess for initial states.
-  void init(const Eigen::VectorXd & x0);
+  void setState(const Eigen::VectorXd & x0);
 
   // Computes a predicted state
-  Eigen::MatrixXd predict(const Eigen::MatrixXd & F);
+  Eigen::MatrixXd predict();
 
   // Update the estimated state based on measurement
   Eigen::MatrixXd update(const Eigen::VectorXd & z);
 
-private:
-  // Invariant matrices
+  // F: State transition matrix
+  // H: Measurement matrix
+  // Q: Process noise covariance matrix
+  // R: Measurement noise covariance matrix
   Eigen::MatrixXd F, H, Q, R;
 
+private:
   // Priori error estimate covariance matrix
   Eigen::MatrixXd P_pre;
   // Posteriori error estimate covariance matrix

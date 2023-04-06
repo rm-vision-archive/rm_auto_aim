@@ -8,6 +8,7 @@
 
 // ROS
 #include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
 
 // STD
@@ -23,8 +24,8 @@ class Tracker
 {
 public:
   Tracker(
-    const KalmanFilterMatrices & kf_matrices, double max_match_distance, int tracking_threshold,
-    int lost_threshold);
+    double max_match_distance, int tracking_threshold, int lost_threshold,
+    Eigen::DiagonalMatrix<double, 9> q, Eigen::DiagonalMatrix<double, 4> r);
 
   using Armors = auto_aim_interfaces::msg::Armors;
   using Armor = auto_aim_interfaces::msg::Armor;
@@ -40,14 +41,23 @@ public:
     TEMP_LOST,
   } tracker_state;
 
-  char tracking_id;
+  Armor tracked_armor;
+  std::string tracked_id;
   Eigen::VectorXd target_state;
 
+  double last_z, last_r;
+
 private:
+  void initEKF(const Armor & a);
+
+  void handleArmorJump(const Armor & a);
+
+  double orientationToYaw(const geometry_msgs::msg::Quaternion & q);
+
+  Eigen::Vector3d getArmorPositionFromRobotState(const Eigen::VectorXd & x);
+
   KalmanFilterMatrices kf_matrices_;
   std::unique_ptr<KalmanFilter> kf_;
-
-  Eigen::Vector3d tracking_velocity_;
 
   double max_match_distance_;
 
@@ -56,6 +66,8 @@ private:
 
   int detect_count_;
   int lost_count_;
+
+  double last_yaw_;
 };
 
 }  // namespace rm_auto_aim
