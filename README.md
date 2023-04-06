@@ -2,7 +2,9 @@
 
 ## Overview
 
-基于传统视觉方法及 ROS2 框架实现的 RoboMaster 装甲板自瞄算法模块
+RoboMaster 装甲板自瞄算法模块
+
+若有帮助请Star这个项目，感谢~
 
 <!-- ![](armor_detector/docs/result.png) -->
 
