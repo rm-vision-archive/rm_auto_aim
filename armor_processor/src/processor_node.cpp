@@ -1,5 +1,4 @@
 // Copyright 2022 Chen Jun
-
 #include "armor_processor/processor_node.hpp"
 
 // STD
@@ -17,20 +16,20 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.2);
   int tracking_threshold = this->declare_parameter("tracker.tracking_threshold", 5);
   int lost_threshold = this->declare_parameter("tracker.lost_threshold", 5);
-  tracker_ = std::make_unique<Tracker>(max_match_distance, tracking_threshold, lost_threshold);
-
-  // Spin Observer
-  allow_spin_detector_ = this->declare_parameter("spin_detector.allow", true);
-  double max_jump_angle = this->declare_parameter("spin_detector.max_jump_angle", 0.2);
-  double max_jump_period = this->declare_parameter("spin_detector.max_jump_period", 0.8);
-  double allow_following_range =
-    this->declare_parameter("spin_detector.allow_following_range", 0.3);
-  if (allow_spin_detector_) {
-    spin_detector_ = std::make_unique<SpinDetector>(
-      this->get_clock(), max_jump_angle, max_jump_period, allow_following_range);
-    spin_info_pub_ =
-      this->create_publisher<auto_aim_interfaces::msg::SpinInfo>("/debug/spin_info", 10);
-  }
+  // Q - process noise covariance matrix
+  auto q_v = this->declare_parameter(
+    "kf.q", std::vector<double>{//xc  yc    zc    yaw   vxc   vyc   vzc   vyaw  r
+                                1e-2, 1e-2, 1e-2, 2e-2, 5e-2, 5e-2, 1e-4, 4e-2, 1e-3});
+  Eigen::DiagonalMatrix<double, 9> q;
+  q.diagonal() << q_v[0], q_v[1], q_v[2], q_v[3], q_v[4], q_v[5], q_v[6], q_v[7], q_v[8];
+  // R - measurement noise covariance matrix
+  auto r_v = this->declare_parameter(
+    "kf.r", std::vector<double>{//xa  ya    za    yaw
+                                1e-1, 1e-1, 1e-1, 2e-1});
+  Eigen::DiagonalMatrix<double, 4> r;
+  r.diagonal() << r_v[0], r_v[1], r_v[2], r_v[3];
+  tracker_ =
+    std::make_unique<Tracker>(max_match_distance, tracking_threshold, lost_threshold, q, r);
 
   // Subscriber with tf2 message_filter
   // tf2 relevant
@@ -61,12 +60,25 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   position_marker_.scale.x = position_marker_.scale.y = position_marker_.scale.z = 0.1;
   position_marker_.color.a = 1.0;
   position_marker_.color.g = 1.0;
-  velocity_marker_.type = visualization_msgs::msg::Marker::ARROW;
-  velocity_marker_.ns = "velocity";
-  velocity_marker_.scale.x = 0.03;
-  velocity_marker_.scale.y = 0.05;
-  velocity_marker_.color.a = 1.0;
-  velocity_marker_.color.b = 1.0;
+  linear_v_marker_.type = visualization_msgs::msg::Marker::ARROW;
+  linear_v_marker_.ns = "linear_v";
+  linear_v_marker_.scale.x = 0.03;
+  linear_v_marker_.scale.y = 0.05;
+  linear_v_marker_.color.a = 1.0;
+  linear_v_marker_.color.r = 1.0;
+  linear_v_marker_.color.g = 1.0;
+  angular_v_marker_.type = visualization_msgs::msg::Marker::ARROW;
+  angular_v_marker_.ns = "angular_v";
+  angular_v_marker_.scale.x = 0.03;
+  angular_v_marker_.scale.y = 0.05;
+  angular_v_marker_.color.a = 1.0;
+  angular_v_marker_.color.b = 1.0;
+  angular_v_marker_.color.g = 1.0;
+  armors_marker_.ns = "armors";
+  armors_marker_.type = visualization_msgs::msg::Marker::SPHERE_LIST;
+  armors_marker_.scale.x = armors_marker_.scale.y = armors_marker_.scale.z = 0.1;
+  armors_marker_.color.a = 1.0;
+  armors_marker_.color.r = 1.0;
   marker_pub_ =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("/processor/marker", 10);
 }
@@ -76,11 +88,11 @@ void ArmorProcessorNode::armorsCallback(
 {
   // Tranform armor position from image frame to world coordinate
   for (auto & armor : armors_msg->armors) {
-    geometry_msgs::msg::PointStamped ps;
+    geometry_msgs::msg::PoseStamped ps;
     ps.header = armors_msg->header;
-    ps.point = armor.position;
+    ps.pose = armor.pose;
     try {
-      armor.position = tf2_buffer_->transform(ps, target_frame_).point;
+      armor.pose = tf2_buffer_->transform(ps, target_frame_).pose;
     } catch (const tf2::ExtrapolationException & ex) {
       RCLCPP_ERROR(get_logger(), "Error while transforming %s", ex.what());
       return;
@@ -107,29 +119,22 @@ void ArmorProcessorNode::armorsCallback(
       tracker_->tracker_state == Tracker::TRACKING ||
       tracker_->tracker_state == Tracker::TEMP_LOST) {
       target_msg.tracking = true;
-      target_msg.id = tracker_->tracking_id;
+      target_msg.id = tracker_->tracked_id;
     }
   }
 
-  if (target_msg.tracking) {
-    target_msg.position.x = tracker_->target_state(0);
-    target_msg.position.y = tracker_->target_state(1);
-    target_msg.position.z = tracker_->target_state(2);
-    target_msg.velocity.x = tracker_->target_state(3);
-    target_msg.velocity.y = tracker_->target_state(4);
-    target_msg.velocity.z = tracker_->target_state(5);
-  }
-
-  if (allow_spin_detector_ && spin_detector_) {
-    spin_detector_->max_jump_angle = get_parameter("spin_detector.max_jump_angle").as_double();
-    spin_detector_->max_jump_period = get_parameter("spin_detector.max_jump_period").as_double();
-    spin_detector_->allow_following_range =
-      get_parameter("spin_detector.allow_following_range").as_double();
-
-    spin_detector_->update(target_msg);
-    spin_info_pub_->publish(spin_detector_->spin_info_msg);
-  }
-
+  const auto state = tracker_->target_state;
+  target_msg.position.x = state(0);
+  target_msg.position.y = state(1);
+  target_msg.position.z = state(2);
+  target_msg.yaw = state(3);
+  target_msg.velocity.x = state(4);
+  target_msg.velocity.y = state(5);
+  target_msg.velocity.z = state(6);
+  target_msg.v_yaw = state(7);
+  target_msg.radius_1 = state(8);
+  target_msg.radius_2 = tracker_->last_r;
+  target_msg.z_2 = tracker_->last_z;
   target_pub_->publish(target_msg);
 
   publishMarkers(target_msg);
@@ -140,29 +145,63 @@ void ArmorProcessorNode::armorsCallback(
 void ArmorProcessorNode::publishMarkers(const auto_aim_interfaces::msg::Target & target_msg)
 {
   position_marker_.header = target_msg.header;
-  velocity_marker_.header = target_msg.header;
+  linear_v_marker_.header = target_msg.header;
+  angular_v_marker_.header = target_msg.header;
+  armors_marker_.header = target_msg.header;
 
   if (target_msg.tracking) {
+    auto state = tracker_->target_state;
+    double yaw = target_msg.yaw, r1 = target_msg.radius_1, r2 = target_msg.radius_2;
+    double xc = target_msg.position.x, yc = target_msg.position.y, zc = target_msg.position.z;
+    double z2 = target_msg.z_2;
     position_marker_.action = visualization_msgs::msg::Marker::ADD;
-    position_marker_.pose.position = target_msg.position;
-    position_marker_.color.r = target_msg.suggest_fire ? 0. : 1.;
+    position_marker_.pose.position.x = xc;
+    position_marker_.pose.position.y = yc;
+    position_marker_.pose.position.z = (zc + z2) / 2;
 
-    velocity_marker_.action = visualization_msgs::msg::Marker::ADD;
-    velocity_marker_.points.clear();
-    velocity_marker_.points.emplace_back(target_msg.position);
-    geometry_msgs::msg::Point arrow_end = target_msg.position;
-    arrow_end.x += target_msg.velocity.x;
-    arrow_end.y += target_msg.velocity.y;
-    arrow_end.z += target_msg.velocity.z;
-    velocity_marker_.points.emplace_back(arrow_end);
+    linear_v_marker_.action = visualization_msgs::msg::Marker::ADD;
+    linear_v_marker_.points.clear();
+    linear_v_marker_.points.emplace_back(position_marker_.pose.position);
+    geometry_msgs::msg::Point arrow_end = position_marker_.pose.position;
+    arrow_end.x += state(4);
+    arrow_end.y += state(5);
+    arrow_end.z += state(6);
+    linear_v_marker_.points.emplace_back(arrow_end);
+
+    angular_v_marker_.action = visualization_msgs::msg::Marker::ADD;
+    angular_v_marker_.points.clear();
+    angular_v_marker_.points.emplace_back(position_marker_.pose.position);
+    arrow_end = position_marker_.pose.position;
+    arrow_end.z += state(7) / M_PI;
+    angular_v_marker_.points.emplace_back(arrow_end);
+
+    armors_marker_.action = visualization_msgs::msg::Marker::ADD;
+    armors_marker_.points.clear();
+    // auto info = tracker_->getTargetInfo();
+    geometry_msgs::msg::Point p_a;
+    bool use_1 = true;
+    for (size_t i = 0; i < 4; i++) {
+      double tmp_yaw = yaw + i * M_PI_2;
+      double r = use_1 ? r1 : r2;
+      p_a.x = xc - r * cos(tmp_yaw);
+      p_a.y = yc - r * sin(tmp_yaw);
+      p_a.z = use_1 ? zc : z2;
+      armors_marker_.points.emplace_back(p_a);
+      use_1 = !use_1;
+    }
   } else {
     position_marker_.action = visualization_msgs::msg::Marker::DELETE;
-    velocity_marker_.action = visualization_msgs::msg::Marker::DELETE;
+    linear_v_marker_.action = visualization_msgs::msg::Marker::DELETE;
+    angular_v_marker_.action = visualization_msgs::msg::Marker::DELETE;
+    armors_marker_.action = visualization_msgs::msg::Marker::DELETE;
   }
 
   visualization_msgs::msg::MarkerArray marker_array;
+
   marker_array.markers.emplace_back(position_marker_);
-  marker_array.markers.emplace_back(velocity_marker_);
+  marker_array.markers.emplace_back(linear_v_marker_);
+  marker_array.markers.emplace_back(angular_v_marker_);
+  marker_array.markers.emplace_back(armors_marker_);
   marker_pub_->publish(marker_array);
 }
 
