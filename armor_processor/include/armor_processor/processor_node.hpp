@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 
-#include "armor_processor/kalman_filter.hpp"
 #include "armor_processor/tracker.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
@@ -37,11 +36,8 @@ private:
 
   void publishMarkers(const auto_aim_interfaces::msg::Target & target_msg);
 
-  // Last time received msg
+  // The time when the last message was received
   rclcpp::Time last_time_;
-
-  // Initial KF matrices
-  KalmanFilterMatrices kf_matrices_;
   double dt_;
 
   // Armor tracker

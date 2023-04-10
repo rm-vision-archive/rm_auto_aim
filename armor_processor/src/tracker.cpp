@@ -17,9 +17,7 @@
 
 namespace rm_auto_aim
 {
-Tracker::Tracker(
-  double max_match_distance, int tracking_threshold, int lost_threshold,
-  Eigen::DiagonalMatrix<double, 9> q, Eigen::DiagonalMatrix<double, 4> r)
+Tracker::Tracker(double max_match_distance, int tracking_threshold, int lost_threshold)
 : tracker_state(LOST),
   tracked_id(std::string("")),
   target_state(Eigen::VectorXd::Zero(9)),
@@ -27,40 +25,6 @@ Tracker::Tracker(
   tracking_threshold_(tracking_threshold),
   lost_threshold_(lost_threshold)
 {
-  // Extended Kalman Filter
-  // xa = x_armor, xc = x_robot_center
-  // state: xc, yc, zc, yaw, v_xc, v_yc, v_zc, v_yaw, r
-  // measurement: xa, ya, za, yaw
-  // F - state transition matrix
-  double dt = 0;  // Just for indication
-  Eigen::Matrix<double, 9, 9> f;
-  // clang-format off
-  //    xc   yc   zc   yaw  vxc  vyc  vzc  vyaw r
-  f <<  1,   0,   0,   0,   dt,  0,   0,   0,   0,
-        0,   1,   0,   0,   0,   dt,  0,   0,   0,
-        0,   0,   1,   0,   0,   0,   dt,  0,   0, 
-        0,   0,   0,   1,   0,   0,   0,   dt,  0,
-        0,   0,   0,   0,   1,   0,   0,   0,   0,
-        0,   0,   0,   0,   0,   1,   0,   0,   0,
-        0,   0,   0,   0,   0,   0,   1,   0,   0,
-        0,   0,   0,   0,   0,   0,   0,   1,   0,
-        0,   0,   0,   0,   0,   0,   0,   0,   1;
-
-  // H - measurement matrix
-  double yaw = 0;
-  Eigen::Matrix<double, 4, 9> h;
-  //          xc   yc   zc   yaw   vxc  vyc  vzc  vyaw r
-  h << /*xa*/ 1,   0,   0,   0,    0,   0,   0,   0,   -cos(yaw),
-       /*ya*/ 0,   1,   0,   0,    0,   0,   0,   0,   -sin(yaw),
-       /*za*/ 0,   0,   1,   0,    0,   0,   0,   0,   0,
-      /*yaw*/ 0,   0,   0,   1,    0,   0,   0,   0,   0;
-  // clang-format on
-
-  // P - error estimate covariance matrix
-  Eigen::DiagonalMatrix<double, 9> p;
-  p.setIdentity();
-
-  kf_matrices_ = KalmanFilterMatrices{f, h, q, r, p};
 }
 
 void Tracker::init(const Armors::SharedPtr & armors_msg)
@@ -85,22 +49,19 @@ void Tracker::init(const Armors::SharedPtr & armors_msg)
   tracker_state = DETECTING;
 }
 
-void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
+void Tracker::update(const Armors::SharedPtr & armors_msg)
 {
   // KF predict
-  kf_->F(0, 4) = kf_->F(1, 5) = kf_->F(2, 6) = kf_->F(3, 7) = dt;
-  // Prevent radius changed too much when target movement only has translation
-  kf_->Q(8, 8) = abs(target_state(7)) > 0.2 ? kf_matrices_.Q(8, 8) : 0;
-  Eigen::VectorXd kf_prediction = kf_->predict();
-  RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "KF predict");
+  Eigen::VectorXd ekf_prediction = ekf.predict();
+  RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "EKF predict");
 
   bool matched = false;
   // Use KF prediction as default target state if no matched armor is found
-  target_state = kf_prediction;
+  target_state = ekf_prediction;
 
   if (!armors_msg->armors.empty()) {
     double min_position_diff = DBL_MAX;
-    auto predicted_position = getArmorPositionFromState(kf_prediction);
+    auto predicted_position = getArmorPositionFromState(ekf_prediction);
     for (const auto & armor : armors_msg->armors) {
       auto p = armor.pose.position;
       Eigen::Vector3d position_vec(p.x, p.y, p.z);
@@ -117,13 +78,10 @@ void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
       matched = true;
       auto p = tracked_armor.pose.position;
       // Update EKF
-      double pre_yaw = kf_prediction(3);
-      kf_->H(0, 8) = -cos(pre_yaw);
-      kf_->H(1, 8) = -sin(pre_yaw);
       double measured_yaw = orientationToYaw(tracked_armor.pose.orientation);
-      Eigen::Vector4d v(p.x, p.y, p.z, measured_yaw);
-      target_state = kf_->update(v);
-      RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "KF update");
+      Eigen::Vector4d z(p.x, p.y, p.z, measured_yaw);
+      target_state = ekf.update(z);
+      RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "EKF update");
     } else {
       // Check if there is same id armor in current frame
       for (const auto & armor : armors_msg->armors) {
@@ -141,7 +99,7 @@ void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
   // Suppress R from converging to zero
   if (target_state(8) < 0.2) {
     target_state(8) = 0.2;
-    kf_->setState(target_state);
+    ekf.setState(target_state);
   }
 
   // Tracking state machine
@@ -192,8 +150,8 @@ void Tracker::initEKF(const Armor & a)
   last_z = zc, last_r = r;
   target_state << xc, yc, zc, yaw, 0, 0, 0, 0, r;
 
-  kf_ = std::make_unique<KalmanFilter>(kf_matrices_);
-  kf_->setState(target_state);
+  ekf.setState(target_state);
+  RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "Init EKF!");
 }
 
 void Tracker::handleArmorJump(const Armor & a)
@@ -222,7 +180,7 @@ void Tracker::handleArmorJump(const Armor & a)
     RCLCPP_ERROR(rclcpp::get_logger("armor_processor"), "State wrong!");
   }
 
-  kf_->setState(target_state);
+  ekf.setState(target_state);
 }
 
 double Tracker::orientationToYaw(const geometry_msgs::msg::Quaternion & q)
