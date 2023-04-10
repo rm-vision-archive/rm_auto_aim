@@ -49,11 +49,11 @@ Tracker::Tracker(
   // H - measurement matrix
   double yaw = 0;
   Eigen::Matrix<double, 4, 9> h;
-  //    xc   yc   zc   yaw   vxc  vyc  vzc  vyaw r
-  h <<  1,   0,   0,   0,    0,   0,   0,   0,   -cos(yaw),
-        0,   1,   0,   0,    0,   0,   0,   0,   -sin(yaw),
-        0,   0,   1,   0,    0,   0,   0,   0,   0,
-        0,   0,   0,   1,    0,   0,   0,   0,   0;
+  //          xc   yc   zc   yaw   vxc  vyc  vzc  vyaw r
+  h << /*xa*/ 1,   0,   0,   0,    0,   0,   0,   0,   -cos(yaw),
+       /*ya*/ 0,   1,   0,   0,    0,   0,   0,   0,   -sin(yaw),
+       /*za*/ 0,   0,   1,   0,    0,   0,   0,   0,   0,
+      /*yaw*/ 0,   0,   0,   1,    0,   0,   0,   0,   0;
   // clang-format on
 
   // P - error estimate covariance matrix
@@ -89,6 +89,8 @@ void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
 {
   // KF predict
   kf_->F(0, 4) = kf_->F(1, 5) = kf_->F(2, 6) = kf_->F(3, 7) = dt;
+  // Prevent radius changed too much when target movement only has translation
+  kf_->Q(8, 8) = abs(target_state(7)) > 0.2 ? kf_matrices_.Q(8, 8) : 0;
   Eigen::VectorXd kf_prediction = kf_->predict();
   RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "KF predict");
 
@@ -98,11 +100,11 @@ void Tracker::update(const Armors::SharedPtr & armors_msg, const double & dt)
 
   if (!armors_msg->armors.empty()) {
     double min_position_diff = DBL_MAX;
+    auto predicted_position = getArmorPositionFromState(kf_prediction);
     for (const auto & armor : armors_msg->armors) {
       auto p = armor.pose.position;
       Eigen::Vector3d position_vec(p.x, p.y, p.z);
       // Difference of the current armor position and tracked armor's predicted position
-      auto predicted_position = getArmorPositionFromRobotState(kf_prediction);
       double position_diff = (predicted_position - position_vec).norm();
       if (position_diff < min_position_diff) {
         min_position_diff = position_diff;
@@ -209,7 +211,7 @@ void Tracker::handleArmorJump(const Armor & a)
 
   auto p = a.pose.position;
   Eigen::Vector3d current_p(p.x, p.y, p.z);
-  Eigen::Vector3d infer_p = getArmorPositionFromRobotState(target_state);
+  Eigen::Vector3d infer_p = getArmorPositionFromState(target_state);
 
   if ((current_p - infer_p).norm() > max_match_distance_) {
     double r = target_state(8);
@@ -217,7 +219,7 @@ void Tracker::handleArmorJump(const Armor & a)
     target_state(1) = p.y + r * sin(yaw);
     target_state(4) = 0;
     target_state(5) = 0;
-    RCLCPP_ERROR(rclcpp::get_logger("armor_processor"), "Center wrong!");
+    RCLCPP_ERROR(rclcpp::get_logger("armor_processor"), "State wrong!");
   }
 
   kf_->setState(target_state);
@@ -236,7 +238,7 @@ double Tracker::orientationToYaw(const geometry_msgs::msg::Quaternion & q)
   return yaw;
 }
 
-Eigen::Vector3d Tracker::getArmorPositionFromRobotState(const Eigen::VectorXd & x)
+Eigen::Vector3d Tracker::getArmorPositionFromState(const Eigen::VectorXd & x)
 {
   // Calculate predicted position of the current armor
   double xc = x(0), yc = x(1), zc = x(2);

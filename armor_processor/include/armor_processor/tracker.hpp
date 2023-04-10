@@ -54,7 +54,7 @@ private:
 
   double orientationToYaw(const geometry_msgs::msg::Quaternion & q);
 
-  Eigen::Vector3d getArmorPositionFromRobotState(const Eigen::VectorXd & x);
+  Eigen::Vector3d getArmorPositionFromState(const Eigen::VectorXd & x);
 
   KalmanFilterMatrices kf_matrices_;
   std::unique_ptr<KalmanFilter> kf_;

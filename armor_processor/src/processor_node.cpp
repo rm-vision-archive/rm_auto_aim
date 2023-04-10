@@ -177,7 +177,6 @@ void ArmorProcessorNode::publishMarkers(const auto_aim_interfaces::msg::Target &
 
     armors_marker_.action = visualization_msgs::msg::Marker::ADD;
     armors_marker_.points.clear();
-    // auto info = tracker_->getTargetInfo();
     geometry_msgs::msg::Point p_a;
     bool use_1 = true;
     for (size_t i = 0; i < 4; i++) {

@@ -16,7 +16,7 @@ def generate_launch_description():
         emulate_tty=True,
         output='screen',
         parameters=[params_file],
-        arguments=['--ros-args', '--log-level', 'armor_detector:=DEBUG'],
+        ros_arguments=['--log-level', 'armor_detector:=DEBUG'],
     )
 
     processor_node = Node(
@@ -25,7 +25,7 @@ def generate_launch_description():
         output='screen',
         emulate_tty=True,
         parameters=[params_file],
-        arguments=['--ros-args', '--log-level', 'armor_processor:=DEBUG'],
+        ros_arguments=['--log-level', 'armor_processor:=DEBUG'],
     )
 
     return LaunchDescription([
