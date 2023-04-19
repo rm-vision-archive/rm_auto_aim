@@ -96,9 +96,12 @@ void Tracker::update(const Armors::SharedPtr & armors_msg)
     }
   }
 
-  // Suppress R from converging to zero
+  // Prevent radius from spreading
   if (target_state(8) < 0.2) {
     target_state(8) = 0.2;
+    ekf.setState(target_state);
+  } else if (target_state(8) > 0.4) {
+    target_state(8) = 0.4;
     ekf.setState(target_state);
   }
 
@@ -177,6 +180,7 @@ void Tracker::handleArmorJump(const Armor & a)
     target_state(1) = p.y + r * sin(yaw);
     target_state(4) = 0;
     target_state(5) = 0;
+    target_state(6) = 0;
     RCLCPP_ERROR(rclcpp::get_logger("armor_processor"), "State wrong!");
   }
 
