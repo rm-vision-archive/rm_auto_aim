@@ -185,7 +185,10 @@ std::unique_ptr<Detector> ArmorDetectorNode::initDetector()
   auto model_path = pkg_path + "/model/fc.onnx";
   auto label_path = pkg_path + "/model/label.txt";
   double threshold = this->declare_parameter("classifier_threshold", 0.7);
-  detector->classifier = std::make_unique<NumberClassifier>(model_path, label_path, threshold);
+  std::vector<std::string> ignore_classes =
+    this->declare_parameter("ignore_classes", std::vector<std::string>{});
+  detector->classifier =
+    std::make_unique<NumberClassifier>(model_path, label_path, threshold, ignore_classes);
 
   return detector;
 }

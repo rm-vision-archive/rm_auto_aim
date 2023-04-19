@@ -25,8 +25,9 @@
 namespace rm_auto_aim
 {
 NumberClassifier::NumberClassifier(
-  const std::string & model_path, const std::string & label_path, const double thre)
-: threshold(thre)
+  const std::string & model_path, const std::string & label_path, const double thre,
+  const std::vector<std::string> & ignore_classes)
+: threshold(thre), ignore_classes_(ignore_classes)
 {
   net_ = cv::dnn::readNetFromONNX(model_path);
 
@@ -123,6 +124,12 @@ void NumberClassifier::classify(std::vector<Armor> & armors)
       [this](const Armor & armor) {
         if (armor.confidence < threshold || armor.number == "Negative") {
           return true;
+        }
+
+        for (const auto & ignore_class : ignore_classes_) {
+          if (armor.number == ignore_class) {
+            return true;
+          }
         }
 
         bool mismatch_armor_type = false;

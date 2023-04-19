@@ -4,6 +4,7 @@
     detect_color: 0
     min_lightness: 120
     classifier_threshold: 0.9
+    ignore_classes: ["Outpost", "2"]
 
     light:
       max_angle: 40.0
