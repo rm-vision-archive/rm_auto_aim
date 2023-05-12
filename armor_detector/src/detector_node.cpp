@@ -226,9 +226,11 @@ std::vector<Armor> ArmorDetectorNode::detectArmors(
     lights_data_pub_->publish(detector_->debug_lights);
     armors_data_pub_->publish(detector_->debug_armors);
 
-    auto all_num_img = detector_->getAllNumbersImage();
-    number_img_pub_.publish(
-      *cv_bridge::CvImage(img_msg->header, "mono8", all_num_img).toImageMsg());
+    if (!armors.empty()) {
+      auto all_num_img = detector_->getAllNumbersImage();
+      number_img_pub_.publish(
+        *cv_bridge::CvImage(img_msg->header, "mono8", all_num_img).toImageMsg());
+    }
 
     detector_->drawResults(img);
     // Draw camera center
