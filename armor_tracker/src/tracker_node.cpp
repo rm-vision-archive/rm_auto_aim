@@ -135,12 +135,10 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
   armors_marker_.scale.x = armors_marker_.scale.y = armors_marker_.scale.z = 0.1;
   armors_marker_.color.a = 1.0;
   armors_marker_.color.r = 1.0;
-  marker_pub_ =
-    this->create_publisher<visualization_msgs::msg::MarkerArray>("/tracker/marker", 10);
+  marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/tracker/marker", 10);
 }
 
-void ArmorTrackerNode::armorsCallback(
-  const auto_aim_interfaces::msg::Armors::SharedPtr armors_msg)
+void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armors_msg)
 {
   // Tranform armor position from image frame to world coordinate
   for (auto & armor : armors_msg->armors) {
