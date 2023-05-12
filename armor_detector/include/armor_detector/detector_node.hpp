@@ -59,7 +59,7 @@ private:
   std::unique_ptr<Detector> initDetector();
 
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr img_sub_;
-  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
+  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
 
   std::unique_ptr<PnPSolver> pnp_solver_;
 

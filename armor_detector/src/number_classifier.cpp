@@ -90,7 +90,7 @@ void NumberClassifier::classify(std::vector<Armor> & armors)
 
     // Create blob from image
     cv::Mat blob;
-    cv::dnn::blobFromImage(image, blob, 1., cv::Size(28, 20));
+    cv::dnn::blobFromImage(image, blob);
 
     // Set the input blob for the neural network
     net_.setInput(blob);
@@ -122,7 +122,7 @@ void NumberClassifier::classify(std::vector<Armor> & armors)
     std::remove_if(
       armors.begin(), armors.end(),
       [this](const Armor & armor) {
-        if (armor.confidence < threshold || armor.number == "Negative") {
+        if (armor.confidence < threshold) {
           return true;
         }
 

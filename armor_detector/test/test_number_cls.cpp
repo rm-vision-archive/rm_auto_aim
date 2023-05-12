@@ -19,7 +19,7 @@ using hrc = std::chrono::high_resolution_clock;
 TEST(test_nc, benchmark)
 {
   auto pkg_path = ament_index_cpp::get_package_share_directory("armor_detector");
-  auto model_path = pkg_path + "/model/fc.onnx";
+  auto model_path = pkg_path + "/model/mlp.onnx";
   auto label_path = pkg_path + "/model/label.txt";
   rm_auto_aim::NumberClassifier nc(model_path, label_path, 0.5);
 
