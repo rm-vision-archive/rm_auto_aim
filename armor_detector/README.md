@@ -1,16 +1,9 @@
 # armor_detector
 
-- [armor_detector](#armor_detector)
-  - [DetectorNode](#basedetectornode)
+- [DetectorNode](#basedetectornode)
   - [Detector](#detector)
-  - [NumberClassifier](#numberclassifier)
-    - [PnPSolver](#pnpsolver)
-    - [PnPSolver](#pnpsolver)
-    - [DepthProcessor](#depthprocessor)
-
+    - [NumberClassifier](#numberclassifier)
   - [PnPSolver](#pnpsolver)
-    - [DepthProcessor](#depthprocessor)
-
 
 ## 识别节点
 
@@ -84,7 +77,7 @@
 | :-------------------: | :--------------------: | :-------------------: | :-------------------: |
 |         原图          |        透视变换        |         取ROI         |        二值化         |
 
-考虑到数字图案实质上就是黑色背景+白色图案，所以此处使用了大津法进行二值化。
+将每条灯条上下的角点拉伸到装甲板的上下边缘作为待变换点，进行透视变换，再对变换后的图像取ROI。考虑到数字图案实质上就是黑色背景+白色图案，所以此处使用了大津法进行二值化。
 
 ### Classify
 分类
@@ -97,7 +90,7 @@
 
 ![](docs/model.svg)
 
-效果图：
+<!-- 效果图： -->
 
 <!-- ![](docs/result.png) -->
 

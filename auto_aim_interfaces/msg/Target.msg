@@ -1,6 +1,7 @@
 std_msgs/Header header
-string id
 bool tracking
+string id
+string type
 geometry_msgs/Point position
 float64 yaw
 geometry_msgs/Vector3 velocity

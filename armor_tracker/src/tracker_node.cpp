@@ -1,5 +1,5 @@
 // Copyright 2022 Chen Jun
-#include "armor_processor/processor_node.hpp"
+#include "armor_tracker/tracker_node.hpp"
 
 // STD
 #include <memory>
@@ -7,10 +7,10 @@
 
 namespace rm_auto_aim
 {
-ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
-: Node("armor_processor", options), last_time_(0), dt_(0.0)
+ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
+: Node("armor_tracker", options), last_time_(0), dt_(0.0)
 {
-  RCLCPP_INFO(this->get_logger(), "Starting ProcessorNode!");
+  RCLCPP_INFO(this->get_logger(), "Starting TrackerNode!");
 
   // Tracker
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.2);
@@ -103,11 +103,11 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
     armors_sub_, *tf2_buffer_, target_frame_, 10, this->get_node_logging_interface(),
     this->get_node_clock_interface(), std::chrono::duration<int>(1));
   // Register a callback with tf2_ros::MessageFilter to be called when transforms are available
-  tf2_filter_->registerCallback(&ArmorProcessorNode::armorsCallback, this);
+  tf2_filter_->registerCallback(&ArmorTrackerNode::armorsCallback, this);
 
   // Publisher
   target_pub_ = this->create_publisher<auto_aim_interfaces::msg::Target>(
-    "/processor/target", rclcpp::SensorDataQoS());
+    "/tracker/target", rclcpp::SensorDataQoS());
 
   // Visualization Marker Publisher
   // See http://wiki.ros.org/rviz/DisplayTypes/Marker
@@ -136,10 +136,10 @@ ArmorProcessorNode::ArmorProcessorNode(const rclcpp::NodeOptions & options)
   armors_marker_.color.a = 1.0;
   armors_marker_.color.r = 1.0;
   marker_pub_ =
-    this->create_publisher<visualization_msgs::msg::MarkerArray>("/processor/marker", 10);
+    this->create_publisher<visualization_msgs::msg::MarkerArray>("/tracker/marker", 10);
 }
 
-void ArmorProcessorNode::armorsCallback(
+void ArmorTrackerNode::armorsCallback(
   const auto_aim_interfaces::msg::Armors::SharedPtr armors_msg)
 {
   // Tranform armor position from image frame to world coordinate
@@ -196,7 +196,7 @@ void ArmorProcessorNode::armorsCallback(
   publishMarkers(target_msg);
 }
 
-void ArmorProcessorNode::publishMarkers(const auto_aim_interfaces::msg::Target & target_msg)
+void ArmorTrackerNode::publishMarkers(const auto_aim_interfaces::msg::Target & target_msg)
 {
   position_marker_.header = target_msg.header;
   linear_v_marker_.header = target_msg.header;
@@ -265,4 +265,4 @@ void ArmorProcessorNode::publishMarkers(const auto_aim_interfaces::msg::Target &
 // Register the component with class_loader.
 // This acts as a sort of entry point, allowing the component to be discoverable when its library
 // is being loaded into a running process.
-RCLCPP_COMPONENTS_REGISTER_NODE(rm_auto_aim::ArmorProcessorNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(rm_auto_aim::ArmorTrackerNode)

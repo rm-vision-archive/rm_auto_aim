@@ -15,7 +15,7 @@ jobs:
       - name: Build rm_auto_aim
         uses: ros-tooling/action-ros-ci@v0.2
         with:
-          package-name: auto_aim_bringup
+          package-name: rm_auto_aim
           import-token: ${{ secrets.GITHUB_TOKEN }}
           target-ros2-distro: humble
           skip-tests: true
@@ -24,8 +24,8 @@ jobs:
           source /opt/ros/humble/setup.sh
           cd ros_ws
           colcon test --packages-select armor_detector --event-handlers console_cohesion+ --return-code-on-test-failure
-      - name: Test armor_processor
+      - name: Test armor_tracker
         run: |
           source /opt/ros/humble/setup.sh
           cd ros_ws
-          colcon test --packages-select armor_processor --event-handlers console_cohesion+ --return-code-on-test-failure
+          colcon test --packages-select armor_tracker --event-handlers console_cohesion+ --return-code-on-test-failure

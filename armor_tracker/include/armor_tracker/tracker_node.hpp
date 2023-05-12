@@ -19,17 +19,17 @@
 #include <string>
 #include <vector>
 
-#include "armor_processor/tracker.hpp"
+#include "armor_tracker/tracker.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
 
 namespace rm_auto_aim
 {
 using tf2_filter = tf2_ros::MessageFilter<auto_aim_interfaces::msg::Armors>;
-class ArmorProcessorNode : public rclcpp::Node
+class ArmorTrackerNode : public rclcpp::Node
 {
 public:
-  explicit ArmorProcessorNode(const rclcpp::NodeOptions & options);
+  explicit ArmorTrackerNode(const rclcpp::NodeOptions & options);
 
 private:
   void armorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armors_ptr);

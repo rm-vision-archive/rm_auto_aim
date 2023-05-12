@@ -1,6 +1,6 @@
 // Copyright 2022 Chen Jun
 
-#include "armor_processor/tracker.hpp"
+#include "armor_tracker/tracker.hpp"
 
 #include <angles/angles.h>
 #include <tf2/LinearMath/Matrix3x3.h>
@@ -53,7 +53,7 @@ void Tracker::update(const Armors::SharedPtr & armors_msg)
 {
   // KF predict
   Eigen::VectorXd ekf_prediction = ekf.predict();
-  RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "EKF predict");
+  RCLCPP_DEBUG(rclcpp::get_logger("armor_tracker"), "EKF predict");
 
   bool matched = false;
   // Use KF prediction as default target state if no matched armor is found
@@ -81,7 +81,7 @@ void Tracker::update(const Armors::SharedPtr & armors_msg)
       double measured_yaw = orientationToYaw(tracked_armor.pose.orientation);
       Eigen::Vector4d z(p.x, p.y, p.z, measured_yaw);
       target_state = ekf.update(z);
-      RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "EKF update");
+      RCLCPP_DEBUG(rclcpp::get_logger("armor_tracker"), "EKF update");
     } else {
       // Check if there is same id armor in current frame
       for (const auto & armor : armors_msg->armors) {
@@ -154,7 +154,7 @@ void Tracker::initEKF(const Armor & a)
   target_state << xc, yc, zc, yaw, 0, 0, 0, 0, r;
 
   ekf.setState(target_state);
-  RCLCPP_DEBUG(rclcpp::get_logger("armor_processor"), "Init EKF!");
+  RCLCPP_DEBUG(rclcpp::get_logger("armor_tracker"), "Init EKF!");
 }
 
 void Tracker::handleArmorJump(const Armor & a)
@@ -167,7 +167,7 @@ void Tracker::handleArmorJump(const Armor & a)
     target_state(2) = a.pose.position.z;
     target_state(3) = yaw;
     std::swap(target_state(8), last_r);
-    RCLCPP_WARN(rclcpp::get_logger("armor_processor"), "Armor jump!");
+    RCLCPP_WARN(rclcpp::get_logger("armor_tracker"), "Armor jump!");
   }
 
   auto p = a.pose.position;
@@ -181,7 +181,7 @@ void Tracker::handleArmorJump(const Armor & a)
     target_state(4) = 0;
     target_state(5) = 0;
     target_state(6) = 0;
-    RCLCPP_ERROR(rclcpp::get_logger("armor_processor"), "State wrong!");
+    RCLCPP_ERROR(rclcpp::get_logger("armor_tracker"), "State wrong!");
   }
 
   ekf.setState(target_state);

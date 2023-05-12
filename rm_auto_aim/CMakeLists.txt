@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(auto_aim_bringup)
+project(rm_auto_aim)
 
 find_package(ament_cmake_auto REQUIRED)
 
@@ -9,8 +9,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_auto_package(
-  INSTALL_TO_SHARE
-  config
-  launch
-)
+ament_auto_package()
