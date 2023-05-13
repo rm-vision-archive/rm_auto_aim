@@ -20,28 +20,28 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
 
   // EKF
   // xa = x_armor, xc = x_robot_center
-  // state: xc, yc, zc, yaw, v_xc, v_yc, v_zc, v_yaw, r
+  // state: xc, v_xc, yc, v_yc, za, v_za, yaw, v_yaw, r
   // measurement: xa, ya, za, yaw
   // f - Process function
   auto f = [this](const Eigen::VectorXd & x) {
     Eigen::VectorXd x_new = x;
-    x_new(0) += x(4) * dt_;
-    x_new(1) += x(5) * dt_;
-    x_new(2) += x(6) * dt_;
-    x_new(3) += x(7) * dt_;
+    x_new(0) += x(1) * dt_;
+    x_new(2) += x(3) * dt_;
+    x_new(4) += x(5) * dt_;
+    x_new(6) += x(7) * dt_;
     return x_new;
   };
   // J_f - Jacobian of process function
   auto j_f = [this](const Eigen::VectorXd &) {
     Eigen::MatrixXd f(9, 9);
     // clang-format off
-    f <<  1,   0,   0,   0,   dt_, 0,   0,   0,   0,
-          0,   1,   0,   0,   0,   dt_, 0,   0,   0,
-          0,   0,   1,   0,   0,   0,   dt_, 0,   0, 
-          0,   0,   0,   1,   0,   0,   0,   dt_, 0,
-          0,   0,   0,   0,   1,   0,   0,   0,   0,
+    f <<  1,   dt_, 0,   0,   0,   0,   0,   0,   0,
+          0,   1,   0,   0,   0,   0,   0,   0,   0,
+          0,   0,   1,   dt_, 0,   0,   0,   0,   0, 
+          0,   0,   0,   1,   0,   0,   0,   0,   0,
+          0,   0,   0,   0,   1,   dt_, 0,   0,   0,
           0,   0,   0,   0,   0,   1,   0,   0,   0,
-          0,   0,   0,   0,   0,   0,   1,   0,   0,
+          0,   0,   0,   0,   0,   0,   1,   dt_, 0,
           0,   0,   0,   0,   0,   0,   0,   1,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   1;
     // clang-format on
@@ -50,42 +50,65 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
   // h - Observation function
   auto h = [](const Eigen::VectorXd & x) {
     Eigen::VectorXd z(4);
-    double xc = x(0), yc = x(1), yaw = x(3), r = x(8);
+    double xc = x(0), yc = x(2), yaw = x(6), r = x(8);
     z(0) = xc - r * cos(yaw);  // xa
     z(1) = yc - r * sin(yaw);  // ya
-    z(2) = x(2);               // za
-    z(3) = x(3);               // yaw
+    z(2) = x(4);               // za
+    z(3) = x(6);               // yaw
     return z;
   };
   // J_h - Jacobian of observation function
   auto j_h = [](const Eigen::VectorXd & x) {
     Eigen::MatrixXd h(4, 9);
-    double yaw = x(3), r = x(8);
+    double yaw = x(6), r = x(8);
     // clang-format off
-    //    xc   yc   zc   yaw         vxc  vyc  vzc  vyaw r
-    h <<  1,   0,   0,   r*sin(yaw), 0,   0,   0,   0,   -cos(yaw),
-          0,   1,   0,   -r*cos(yaw),0,   0,   0,   0,   -sin(yaw),
-          0,   0,   1,   0,          0,   0,   0,   0,   0,
-          0,   0,   0,   1,          0,   0,   0,   0,   0;
+    //    xc   v_xc yc   v_yc za   v_za yaw         v_yaw r
+    h <<  1,   0,   0,   0,   0,   0,   r*sin(yaw), 0,   -cos(yaw),
+          0,   0,   1,   0,   0,   0,   -r*cos(yaw),0,   -sin(yaw),
+          0,   0,   0,   0,   1,   0,   0,          0,   0,
+          0,   0,   0,   0,   0,   0,   1,          0,   0;
     // clang-format on
     return h;
   };
-  // Q - process noise covariance matrix
-  auto q_v = this->declare_parameter(
-    "kf.q", std::vector<double>{//xc  yc    zc    yaw   vxc   vyc   vzc   vyaw  r
-                                1e-2, 1e-2, 1e-2, 2e-2, 5e-2, 5e-2, 1e-4, 4e-2, 1e-3});
-  Eigen::DiagonalMatrix<double, 9> q;
-  q.diagonal() << q_v[0], q_v[1], q_v[2], q_v[3], q_v[4], q_v[5], q_v[6], q_v[7], q_v[8];
-  // R - measurement noise covariance matrix
-  auto r_v = this->declare_parameter(
-    "kf.r", std::vector<double>{//xa  ya    za    yaw
-                                1e-1, 1e-1, 1e-1, 2e-1});
-  Eigen::DiagonalMatrix<double, 4> r;
-  r.diagonal() << r_v[0], r_v[1], r_v[2], r_v[3];
+  // update_Q - process noise covariance matrix
+  s2qxyz_ = declare_parameter("ekf.sigma2_q_xyz", 1e-2);
+  s2qyaw_ = declare_parameter("ekf.sigma2_q_yaw", 1e-2);
+  s2qr_ = declare_parameter("ekf.sigma2_q_r", 2e-2);
+  auto u_q = [this]() {
+    Eigen::MatrixXd q(9, 9);
+    double t = dt_, x = s2qxyz_, y = s2qyaw_, r = s2qr_;
+    double q_x_x = pow(t, 4) / 4 * x, q_x_vx = pow(t, 3) / 2 * x, q_vx_vx = pow(t, 2) * x;
+    double q_y_y = pow(t, 4) / 4 * y, q_y_vy = pow(t, 3) / 2 * x, q_vy_vy = pow(t, 2) * y;
+    double q_r = pow(t, 4) / 4 * r;
+    // clang-format off
+    //    xc      v_xc    yc      v_yc    za      v_za    yaw     v_yaw   r
+    q <<  q_x_x,  q_x_vx, 0,      0,      0,      0,      0,      0,      0,
+          q_x_vx, q_vx_vx,0,      0,      0,      0,      0,      0,      0,
+          0,      0,      q_x_x,  q_x_vx, 0,      0,      0,      0,      0,
+          0,      0,      q_x_vx, q_vx_vx,0,      0,      0,      0,      0,
+          0,      0,      0,      0,      q_x_x,  q_x_vx, 0,      0,      0,
+          0,      0,      0,      0,      q_x_vx, q_vx_vx,0,      0,      0,
+          0,      0,      0,      0,      0,      0,      q_y_y,  q_y_vy, 0,
+          0,      0,      0,      0,      0,      0,      q_y_vy, q_vy_vy,0,
+          0,      0,      0,      0,      0,      0,      0,      0,      q_r;
+    // clang-format on
+    return q;
+  };
+  // update_R - measurement noise covariance matrix
+  r_xyz_factor = declare_parameter("ekf.r_xyz_factor", 0.05);
+  r_yaw = declare_parameter("ekf.r_yaw", 0.01);
+  auto u_r = [this](const Eigen::VectorXd & z) {
+    Eigen::DiagonalMatrix<double, 4> r;
+    double x = r_xyz_factor;
+    // clang-format off
+    r.diagonal() << abs(x*z[0]), abs(x*z[1]), abs(x*z[2]), r_yaw;
+    return r;
+  };
+
   // P - error estimate covariance matrix
   Eigen::DiagonalMatrix<double, 9> p0;
   p0.setIdentity();
-  tracker_->ekf = ExtendedKalmanFilter{f, h, j_f, j_h, q, r, p0};
+  tracker_->ekf = ExtendedKalmanFilter{f, h, j_f, j_h, u_q, u_r, p0};
 
   // Subscriber with tf2 message_filter
   // tf2 relevant
@@ -187,12 +210,12 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
       target_msg.id = tracker_->tracked_id;
       target_msg.armors_num = static_cast<int>(tracker_->tracked_armors_num);
       target_msg.position.x = state(0);
-      target_msg.position.y = state(1);
-      target_msg.position.z = state(2);
-      target_msg.yaw = state(3);
-      target_msg.velocity.x = state(4);
-      target_msg.velocity.y = state(5);
-      target_msg.velocity.z = state(6);
+      target_msg.velocity.x = state(1);
+      target_msg.position.y = state(2);
+      target_msg.velocity.y = state(3);
+      target_msg.position.z = state(4);
+      target_msg.velocity.z = state(5);
+      target_msg.yaw = state(6);
       target_msg.v_yaw = state(7);
       target_msg.radius_1 = state(8);
       target_msg.radius_2 = tracker_->another_r;
@@ -215,9 +238,9 @@ void ArmorTrackerNode::publishMarkers(const auto_aim_interfaces::msg::Target & t
   armors_marker_.header = target_msg.header;
 
   if (target_msg.tracking) {
-    auto state = tracker_->target_state;
     double yaw = target_msg.yaw, r1 = target_msg.radius_1, r2 = target_msg.radius_2;
     double xc = target_msg.position.x, yc = target_msg.position.y, za = target_msg.position.z;
+    double vx = target_msg.velocity.x, vy = target_msg.velocity.y, vz = target_msg.velocity.z;
     double dz = target_msg.dz;
     position_marker_.action = visualization_msgs::msg::Marker::ADD;
     position_marker_.pose.position.x = xc;
@@ -228,16 +251,16 @@ void ArmorTrackerNode::publishMarkers(const auto_aim_interfaces::msg::Target & t
     linear_v_marker_.points.clear();
     linear_v_marker_.points.emplace_back(position_marker_.pose.position);
     geometry_msgs::msg::Point arrow_end = position_marker_.pose.position;
-    arrow_end.x += state(4);
-    arrow_end.y += state(5);
-    arrow_end.z += state(6);
+    arrow_end.x += vx;
+    arrow_end.y += vy;
+    arrow_end.z += vz;
     linear_v_marker_.points.emplace_back(arrow_end);
 
     angular_v_marker_.action = visualization_msgs::msg::Marker::ADD;
     angular_v_marker_.points.clear();
     angular_v_marker_.points.emplace_back(position_marker_.pose.position);
     arrow_end = position_marker_.pose.position;
-    arrow_end.z += state(7) / M_PI;
+    arrow_end.z += target_msg.v_yaw / M_PI;
     angular_v_marker_.points.emplace_back(arrow_end);
 
     armors_marker_.action = visualization_msgs::msg::Marker::ADD;

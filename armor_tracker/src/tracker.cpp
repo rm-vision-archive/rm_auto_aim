@@ -44,6 +44,7 @@ void Tracker::init(const Armors::SharedPtr & armors_msg)
   }
 
   initEKF(tracked_armor);
+  RCLCPP_DEBUG(rclcpp::get_logger("armor_tracker"), "Init EKF!");
 
   tracked_id = tracked_armor.number;
   tracker_state = DETECTING;
@@ -167,24 +168,23 @@ void Tracker::initEKF(const Armor & a)
   double xc = xa + r * cos(yaw);
   double yc = ya + r * sin(yaw);
   dz = 0, another_r = r;
-  target_state << xc, yc, za, yaw, 0, 0, 0, 0, r;
+  target_state << xc, 0, yc, 0, za, 0, yaw, 0, r;
 
   ekf.setState(target_state);
-  RCLCPP_DEBUG(rclcpp::get_logger("armor_tracker"), "Init EKF!");
 }
 
 void Tracker::handleArmorJump(const Armor & current_armor)
 {
-  double last_yaw = target_state(3);
+  double last_yaw = target_state(6);
   double yaw = orientationToYaw(current_armor.pose.orientation);
 
   if (abs(yaw - last_yaw) > 0.4) {
     // Armor angle also jumped, take this case as target spinning
-    target_state(3) = yaw;
+    target_state(6) = yaw;
     // Only 4 armors has 2 radius and height
     if (tracked_armors_num == ArmorsNum::NORMAL_4) {
-      dz = target_state(2) - current_armor.pose.position.z;
-      target_state(2) = current_armor.pose.position.z;
+      dz = target_state(4) - current_armor.pose.position.z;
+      target_state(4) = current_armor.pose.position.z;
       std::swap(target_state(8), another_r);
     }
     RCLCPP_WARN(rclcpp::get_logger("armor_tracker"), "Armor jump!");
@@ -198,11 +198,11 @@ void Tracker::handleArmorJump(const Armor & current_armor)
     // If the distance between the current armor and the inferred armor is too large,
     // the state is wrong, reset center position and velocity in the state
     double r = target_state(8);
-    target_state(0) = p.x + r * cos(yaw);
-    target_state(1) = p.y + r * sin(yaw);
-    target_state(4) = 0;
-    target_state(5) = 0;
-    target_state(6) = 0;
+    target_state(0) = p.x + r * cos(yaw);  // xc
+    target_state(1) = 0;                   // vxc
+    target_state(2) = p.y + r * sin(yaw);  // yc
+    target_state(3) = 0;                   // vyc
+    target_state(5) = 0;                   // vza
     RCLCPP_ERROR(rclcpp::get_logger("armor_tracker"), "State wrong!");
   }
 
@@ -225,8 +225,8 @@ double Tracker::orientationToYaw(const geometry_msgs::msg::Quaternion & q)
 Eigen::Vector3d Tracker::getArmorPositionFromState(const Eigen::VectorXd & x)
 {
   // Calculate predicted position of the current armor
-  double xc = x(0), yc = x(1), za = x(2);
-  double yaw = x(3), r = x(8);
+  double xc = x(0), yc = x(2), za = x(4);
+  double yaw = x(6), r = x(8);
   double xa = xc - r * cos(yaw);
   double ya = yc - r * sin(yaw);
   return Eigen::Vector3d(xa, ya, za);

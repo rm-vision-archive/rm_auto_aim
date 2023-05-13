@@ -5,17 +5,16 @@
 namespace rm_auto_aim
 {
 ExtendedKalmanFilter::ExtendedKalmanFilter(
-  const NonlinearFunc & f, const NonlinearFunc & h, const JacobianFunc & Jf,
-  const JacobianFunc & Jh, const Eigen::MatrixXd & Q, const Eigen::MatrixXd & R,
-  const Eigen::MatrixXd & P0)
+  const VecVecFunc & f, const VecVecFunc & h, const VecMatFunc & j_f, const VecMatFunc & j_h,
+  const VoidMatFunc & u_q, const VecMatFunc & u_r, const Eigen::MatrixXd & P0)
 : f(f),
   h(h),
-  Jf(Jf),
-  Jh(Jh),
-  Q(Q),
-  R(R),
+  jacobian_f(j_f),
+  jacobian_h(j_h),
+  update_Q(u_q),
+  update_R(u_r),
   P_post(P0),
-  n(Q.rows()),
+  n(P0.rows()),
   I(Eigen::MatrixXd::Identity(n, n)),
   x_pri(n),
   x_post(n)
@@ -26,8 +25,9 @@ void ExtendedKalmanFilter::setState(const Eigen::VectorXd & x0) { x_post = x0; }
 
 Eigen::MatrixXd ExtendedKalmanFilter::predict()
 {
+  F = jacobian_f(x_post), Q = update_Q();
+
   x_pri = f(x_post);
-  F = Jf(x_post);
   P_pri = F * P_post * F.transpose() + Q;
 
   // handle the case when there will be no measurement before the next predict
@@ -39,7 +39,8 @@ Eigen::MatrixXd ExtendedKalmanFilter::predict()
 
 Eigen::MatrixXd ExtendedKalmanFilter::update(const Eigen::VectorXd & z)
 {
-  H = Jh(x_pri);
+  H = jacobian_h(x_pri), R = update_R(z);
+
   K = P_pri * H.transpose() * (H * P_pri * H.transpose() + R).inverse();
   x_post = x_pri + K * (z - h(x_pri));
   P_post = (I - K * H) * P_pri;

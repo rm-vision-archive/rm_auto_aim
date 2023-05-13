@@ -41,6 +41,8 @@ private:
   double dt_;
 
   // Armor tracker
+  double s2qxyz_, s2qyaw_, s2qr_;
+  double r_xyz_factor, r_yaw;
   std::unique_ptr<Tracker> tracker_;
 
   // Subscriber with tf2 message_filter
