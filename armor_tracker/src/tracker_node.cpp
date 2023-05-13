@@ -153,11 +153,22 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
     }
   }
 
+  // Filter abnormal armors
+  armors_msg->armors.erase(
+    std::remove_if(
+      armors_msg->armors.begin(), armors_msg->armors.end(),
+      [](const auto_aim_interfaces::msg::Armor & armor) {
+        return abs(armor.pose.position.z) > 1.2;
+      }),
+    armors_msg->armors.end());
+
+  // Init target message
   auto_aim_interfaces::msg::Target target_msg;
   rclcpp::Time time = armors_msg->header.stamp;
   target_msg.header.stamp = time;
   target_msg.header.frame_id = target_frame_;
 
+  // Update tracker
   if (tracker_->tracker_state == Tracker::LOST) {
     tracker_->init(armors_msg);
     target_msg.tracking = false;
@@ -171,24 +182,26 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
       tracker_->tracker_state == Tracker::TRACKING ||
       tracker_->tracker_state == Tracker::TEMP_LOST) {
       target_msg.tracking = true;
+      // Fill target message
+      const auto & state = tracker_->target_state;
       target_msg.id = tracker_->tracked_id;
+      target_msg.armors_num = static_cast<int>(tracker_->tracked_armors_num);
+      target_msg.position.x = state(0);
+      target_msg.position.y = state(1);
+      target_msg.position.z = state(2);
+      target_msg.yaw = state(3);
+      target_msg.velocity.x = state(4);
+      target_msg.velocity.y = state(5);
+      target_msg.velocity.z = state(6);
+      target_msg.v_yaw = state(7);
+      target_msg.radius_1 = state(8);
+      target_msg.radius_2 = tracker_->another_r;
+      target_msg.dz = tracker_->dz;
     }
   }
 
   last_time_ = time;
 
-  const auto state = tracker_->target_state;
-  target_msg.position.x = state(0);
-  target_msg.position.y = state(1);
-  target_msg.position.z = state(2);
-  target_msg.yaw = state(3);
-  target_msg.velocity.x = state(4);
-  target_msg.velocity.y = state(5);
-  target_msg.velocity.z = state(6);
-  target_msg.v_yaw = state(7);
-  target_msg.radius_1 = state(8);
-  target_msg.radius_2 = tracker_->last_r;
-  target_msg.z_2 = tracker_->last_z;
   target_pub_->publish(target_msg);
 
   publishMarkers(target_msg);
@@ -204,12 +217,12 @@ void ArmorTrackerNode::publishMarkers(const auto_aim_interfaces::msg::Target & t
   if (target_msg.tracking) {
     auto state = tracker_->target_state;
     double yaw = target_msg.yaw, r1 = target_msg.radius_1, r2 = target_msg.radius_2;
-    double xc = target_msg.position.x, yc = target_msg.position.y, zc = target_msg.position.z;
-    double z2 = target_msg.z_2;
+    double xc = target_msg.position.x, yc = target_msg.position.y, za = target_msg.position.z;
+    double dz = target_msg.dz;
     position_marker_.action = visualization_msgs::msg::Marker::ADD;
     position_marker_.pose.position.x = xc;
     position_marker_.pose.position.y = yc;
-    position_marker_.pose.position.z = (zc + z2) / 2;
+    position_marker_.pose.position.z = za + dz / 2;
 
     linear_v_marker_.action = visualization_msgs::msg::Marker::ADD;
     linear_v_marker_.points.clear();
@@ -229,16 +242,25 @@ void ArmorTrackerNode::publishMarkers(const auto_aim_interfaces::msg::Target & t
 
     armors_marker_.action = visualization_msgs::msg::Marker::ADD;
     armors_marker_.points.clear();
+    // Draw armors
+    bool is_current_pair = true;
+    size_t a_n = target_msg.armors_num;
     geometry_msgs::msg::Point p_a;
-    bool use_1 = true;
-    for (size_t i = 0; i < 4; i++) {
-      double tmp_yaw = yaw + i * M_PI_2;
-      double r = use_1 ? r1 : r2;
+    double r = 0;
+    for (size_t i = 0; i < a_n; i++) {
+      double tmp_yaw = yaw + i * (2 * M_PI / a_n);
+      // Only 4 armors has 2 radius and height
+      if (a_n == 4) {
+        r = is_current_pair ? r1 : r2;
+        p_a.z = za + (is_current_pair ? dz : 0);
+        is_current_pair = !is_current_pair;
+      } else {
+        r = r1;
+        p_a.z = za;
+      }
       p_a.x = xc - r * cos(tmp_yaw);
       p_a.y = yc - r * sin(tmp_yaw);
-      p_a.z = use_1 ? zc : z2;
       armors_marker_.points.emplace_back(p_a);
-      use_1 = !use_1;
     }
   } else {
     position_marker_.action = visualization_msgs::msg::Marker::DELETE;

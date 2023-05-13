@@ -47,6 +47,16 @@ void Tracker::init(const Armors::SharedPtr & armors_msg)
 
   tracked_id = tracked_armor.number;
   tracker_state = DETECTING;
+
+  if (
+    tracked_armor.type == "large" &&
+    (tracked_id == "3" || tracked_id == "4" || tracked_id == "5")) {
+    tracked_armors_num = ArmorsNum::BALANCE_2;
+  } else if (tracked_id == "outpost") {
+    tracked_armors_num = ArmorsNum::OUTPOST_3;
+  } else {
+    tracked_armors_num = ArmorsNum::NORMAL_4;
+  }
 }
 
 void Tracker::update(const Armors::SharedPtr & armors_msg)
@@ -63,16 +73,23 @@ void Tracker::update(const Armors::SharedPtr & armors_msg)
     double min_position_diff = DBL_MAX;
     auto predicted_position = getArmorPositionFromState(ekf_prediction);
     for (const auto & armor : armors_msg->armors) {
+      // Skip different id armors
+      if (armor.number != tracked_id) {
+        continue;
+      }
+
+      // Calculate the difference between the predicted position and the current armor position
       auto p = armor.pose.position;
       Eigen::Vector3d position_vec(p.x, p.y, p.z);
-      // Difference of the current armor position and tracked armor's predicted position
       double position_diff = (predicted_position - position_vec).norm();
       if (position_diff < min_position_diff) {
+        // Find the closest armor
         min_position_diff = position_diff;
         tracked_armor = armor;
       }
     }
 
+    // Check if the closest armor is close enough
     if (min_position_diff < max_match_distance_) {
       // Matching armor found
       matched = true;
@@ -97,8 +114,8 @@ void Tracker::update(const Armors::SharedPtr & armors_msg)
   }
 
   // Prevent radius from spreading
-  if (target_state(8) < 0.2) {
-    target_state(8) = 0.2;
+  if (target_state(8) < 0.12) {
+    target_state(8) = 0.12;
     ekf.setState(target_state);
   } else if (target_state(8) > 0.4) {
     target_state(8) = 0.4;
@@ -146,35 +163,40 @@ void Tracker::initEKF(const Armor & a)
 
   // Set initial position at 0.2m behind the target
   target_state = Eigen::VectorXd::Zero(9);
-  double r = 0.2;
+  double r = 0.26;
   double xc = xa + r * cos(yaw);
   double yc = ya + r * sin(yaw);
-  double zc = za;
-  last_z = zc, last_r = r;
-  target_state << xc, yc, zc, yaw, 0, 0, 0, 0, r;
+  dz = 0, another_r = r;
+  target_state << xc, yc, za, yaw, 0, 0, 0, 0, r;
 
   ekf.setState(target_state);
   RCLCPP_DEBUG(rclcpp::get_logger("armor_tracker"), "Init EKF!");
 }
 
-void Tracker::handleArmorJump(const Armor & a)
+void Tracker::handleArmorJump(const Armor & current_armor)
 {
   double last_yaw = target_state(3);
-  double yaw = orientationToYaw(a.pose.orientation);
+  double yaw = orientationToYaw(current_armor.pose.orientation);
 
   if (abs(yaw - last_yaw) > 0.4) {
-    last_z = target_state(2);
-    target_state(2) = a.pose.position.z;
+    // Armor angle also jumped, take this case as target spinning
     target_state(3) = yaw;
-    std::swap(target_state(8), last_r);
+    // Only 4 armors has 2 radius and height
+    if (tracked_armors_num == ArmorsNum::NORMAL_4) {
+      dz = target_state(2) - current_armor.pose.position.z;
+      target_state(2) = current_armor.pose.position.z;
+      std::swap(target_state(8), another_r);
+    }
     RCLCPP_WARN(rclcpp::get_logger("armor_tracker"), "Armor jump!");
   }
 
-  auto p = a.pose.position;
+  auto p = current_armor.pose.position;
   Eigen::Vector3d current_p(p.x, p.y, p.z);
   Eigen::Vector3d infer_p = getArmorPositionFromState(target_state);
 
   if ((current_p - infer_p).norm() > max_match_distance_) {
+    // If the distance between the current armor and the inferred armor is too large,
+    // the state is wrong, reset center position and velocity in the state
     double r = target_state(8);
     target_state(0) = p.x + r * cos(yaw);
     target_state(1) = p.y + r * sin(yaw);
@@ -194,7 +216,7 @@ double Tracker::orientationToYaw(const geometry_msgs::msg::Quaternion & q)
   tf2::fromMsg(q, tf_q);
   double roll, pitch, yaw;
   tf2::Matrix3x3(tf_q).getRPY(roll, pitch, yaw);
-  // Make yaw change continuous
+  // Make yaw change continuous (-pi~pi to -inf~inf)
   yaw = last_yaw_ + angles::shortest_angular_distance(last_yaw_, yaw);
   last_yaw_ = yaw;
   return yaw;
@@ -203,11 +225,11 @@ double Tracker::orientationToYaw(const geometry_msgs::msg::Quaternion & q)
 Eigen::Vector3d Tracker::getArmorPositionFromState(const Eigen::VectorXd & x)
 {
   // Calculate predicted position of the current armor
-  double xc = x(0), yc = x(1), zc = x(2);
+  double xc = x(0), yc = x(1), za = x(2);
   double yaw = x(3), r = x(8);
   double xa = xc - r * cos(yaw);
   double ya = yc - r * sin(yaw);
-  return Eigen::Vector3d(xa, ya, zc);
+  return Eigen::Vector3d(xa, ya, za);
 }
 
 }  // namespace rm_auto_aim
