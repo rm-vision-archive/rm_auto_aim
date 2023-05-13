@@ -158,7 +158,7 @@ std::unique_ptr<Detector> ArmorDetectorNode::initDetector()
   param_desc.integer_range[0].step = 1;
   param_desc.integer_range[0].from_value = 0;
   param_desc.integer_range[0].to_value = 255;
-  int min_lightness = declare_parameter("min_lightness", 160, param_desc);
+  int binary_thres = declare_parameter("binary_thres", 160, param_desc);
 
   param_desc.description = "0-RED, 1-BLUE";
   param_desc.integer_range[0].from_value = 0;
@@ -166,19 +166,19 @@ std::unique_ptr<Detector> ArmorDetectorNode::initDetector()
   auto detect_color = declare_parameter("detect_color", RED, param_desc);
 
   Detector::LightParams l_params = {
-    .min_ratio = declare_parameter("light.min_ratio", 0.1),
-    .max_ratio = declare_parameter("light.max_ratio", 0.55),
+    .min_ratio = declare_parameter("light.min_ratio", 0.08),
+    .max_ratio = declare_parameter("light.max_ratio", 0.4),
     .max_angle = declare_parameter("light.max_angle", 40.0)};
 
   Detector::ArmorParams a_params = {
     .min_light_ratio = declare_parameter("armor.min_light_ratio", 0.6),
     .min_small_center_distance = declare_parameter("armor.min_small_center_distance", 0.8),
-    .max_small_center_distance = declare_parameter("armor.max_small_center_distance", 2.8),
+    .max_small_center_distance = declare_parameter("armor.max_small_center_distance", 3.2),
     .min_large_center_distance = declare_parameter("armor.min_large_center_distance", 3.2),
-    .max_large_center_distance = declare_parameter("armor.max_large_center_distance", 4.3),
+    .max_large_center_distance = declare_parameter("armor.max_large_center_distance", 5.0),
     .max_angle = declare_parameter("armor.max_angle", 35.0)};
 
-  auto detector = std::make_unique<Detector>(min_lightness, detect_color, l_params, a_params);
+  auto detector = std::make_unique<Detector>(binary_thres, detect_color, l_params, a_params);
 
   // Init classifier
   auto pkg_path = ament_index_cpp::get_package_share_directory("armor_detector");
@@ -200,7 +200,7 @@ std::vector<Armor> ArmorDetectorNode::detectArmors(
   auto img = cv_bridge::toCvShare(img_msg, "rgb8")->image;
 
   // Update params
-  detector_->min_lightness = get_parameter("min_lightness").as_int();
+  detector_->binary_thres = get_parameter("binary_thres").as_int();
   detector_->detect_color = get_parameter("detect_color").as_int();
   detector_->classifier->threshold = get_parameter("classifier_threshold").as_double();
 

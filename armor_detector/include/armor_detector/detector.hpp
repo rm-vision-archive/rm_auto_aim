@@ -31,6 +31,7 @@ public:
     // vertical angle
     double max_angle;
   };
+
   struct ArmorParams
   {
     double min_light_ratio;
@@ -46,7 +47,7 @@ public:
     const int & init_min_l, const int & init_color, const LightParams & init_l,
     const ArmorParams & init_a);
 
-  int min_lightness;
+  int binary_thres;
   int detect_color;
   LightParams l;
   ArmorParams a;

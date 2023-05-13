@@ -22,7 +22,7 @@ namespace rm_auto_aim
 Detector::Detector(
   const int & init_min_l, const int & init_color, const LightParams & init_l,
   const ArmorParams & init_a)
-: min_lightness(init_min_l), detect_color(init_color), l(init_l), a(init_a)
+: binary_thres(init_min_l), detect_color(init_color), l(init_l), a(init_a)
 {
 }
 
@@ -86,7 +86,7 @@ cv::Mat Detector::preprocessImage(const cv::Mat & rgb_img)
   cv::cvtColor(rgb_img, gray_img, cv::COLOR_RGB2GRAY);
 
   cv::Mat binary_img;
-  cv::threshold(gray_img, binary_img, min_lightness, 255, cv::THRESH_BINARY);
+  cv::threshold(gray_img, binary_img, binary_thres, 255, cv::THRESH_BINARY);
 
   return binary_img;
 }

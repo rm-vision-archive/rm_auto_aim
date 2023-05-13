@@ -35,7 +35,7 @@
 动态参数：
 - 是否发布 debug 信息 `debug`
 - 识别目标颜色 `detect_color`
-- 二值化的最小阈值 `min_lightness`
+- 二值化的最小阈值 `binary_thres`
 - 数字分类器 `classifier`
   - 置信度阈值 `threshold`
 
