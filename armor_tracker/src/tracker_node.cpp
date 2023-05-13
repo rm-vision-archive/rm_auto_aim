@@ -8,15 +8,15 @@
 namespace rm_auto_aim
 {
 ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
-: Node("armor_tracker", options), last_time_(0), dt_(0.0)
+: Node("armor_tracker", options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting TrackerNode!");
 
   // Tracker
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.2);
-  int tracking_threshold = this->declare_parameter("tracker.tracking_threshold", 5);
-  int lost_threshold = this->declare_parameter("tracker.lost_threshold", 5);
-  tracker_ = std::make_unique<Tracker>(max_match_distance, tracking_threshold, lost_threshold);
+  tracker_ = std::make_unique<Tracker>(max_match_distance);
+  tracker_->tracking_thres = this->declare_parameter("tracker.tracking_thres", 5);
+  lost_time_thres_ = this->declare_parameter("tracker.lost_time_thres", 0.3);
 
   // EKF
   // xa = x_armor, xc = x_robot_center
@@ -100,11 +100,9 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
   auto u_r = [this](const Eigen::VectorXd & z) {
     Eigen::DiagonalMatrix<double, 4> r;
     double x = r_xyz_factor;
-    // clang-format off
-    r.diagonal() << abs(x*z[0]), abs(x*z[1]), abs(x*z[2]), r_yaw;
+    r.diagonal() << abs(x * z[0]), abs(x * z[1]), abs(x * z[2]), r_yaw;
     return r;
   };
-
   // P - error estimate covariance matrix
   Eigen::DiagonalMatrix<double, 9> p0;
   p0.setIdentity();
@@ -197,6 +195,7 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
     target_msg.tracking = false;
   } else {
     dt_ = (time - last_time_).seconds();
+    tracker_->lost_thres = static_cast<int>(lost_time_thres_ / dt_);
     tracker_->update(armors_msg);
 
     if (tracker_->tracker_state == Tracker::DETECTING) {

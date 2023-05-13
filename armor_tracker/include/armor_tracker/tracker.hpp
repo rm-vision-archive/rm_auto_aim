@@ -27,7 +27,7 @@ enum class ArmorsNum { NORMAL_4 = 4, BALANCE_2 = 2, OUTPOST_3 = 3 };
 class Tracker
 {
 public:
-  Tracker(double max_match_distance, int tracking_threshold, int lost_threshold);
+  Tracker(double max_match_distance);
 
   using Armors = auto_aim_interfaces::msg::Armors;
   using Armor = auto_aim_interfaces::msg::Armor;
@@ -44,6 +44,9 @@ public:
   } tracker_state;
 
   ExtendedKalmanFilter ekf;
+
+  int tracking_thres;  // frame
+  double lost_thres;   // second
 
   Armor tracked_armor;
   std::string tracked_id;
@@ -63,9 +66,6 @@ private:
   Eigen::Vector3d getArmorPositionFromState(const Eigen::VectorXd & x);
 
   double max_match_distance_;
-
-  int tracking_threshold_;
-  int lost_threshold_;
 
   int detect_count_;
   int lost_count_;

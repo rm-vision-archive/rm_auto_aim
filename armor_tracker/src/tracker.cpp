@@ -17,13 +17,11 @@
 
 namespace rm_auto_aim
 {
-Tracker::Tracker(double max_match_distance, int tracking_threshold, int lost_threshold)
+Tracker::Tracker(double max_match_distance)
 : tracker_state(LOST),
   tracked_id(std::string("")),
   target_state(Eigen::VectorXd::Zero(9)),
-  max_match_distance_(max_match_distance),
-  tracking_threshold_(tracking_threshold),
-  lost_threshold_(lost_threshold)
+  max_match_distance_(max_match_distance)
 {
 }
 
@@ -127,7 +125,7 @@ void Tracker::update(const Armors::SharedPtr & armors_msg)
   if (tracker_state == DETECTING) {
     if (matched) {
       detect_count_++;
-      if (detect_count_ > tracking_threshold_) {
+      if (detect_count_ > tracking_thres) {
         detect_count_ = 0;
         tracker_state = TRACKING;
       }
@@ -143,7 +141,7 @@ void Tracker::update(const Armors::SharedPtr & armors_msg)
   } else if (tracker_state == TEMP_LOST) {
     if (!matched) {
       lost_count_++;
-      if (lost_count_ > lost_threshold_) {
+      if (lost_count_ > lost_thres) {
         lost_count_ = 0;
         tracker_state = LOST;
       }
