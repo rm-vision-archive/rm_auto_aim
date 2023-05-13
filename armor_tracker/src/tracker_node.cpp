@@ -71,9 +71,9 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
     return h;
   };
   // update_Q - process noise covariance matrix
-  s2qxyz_ = declare_parameter("ekf.sigma2_q_xyz", 1e-2);
-  s2qyaw_ = declare_parameter("ekf.sigma2_q_yaw", 1e-2);
-  s2qr_ = declare_parameter("ekf.sigma2_q_r", 2e-2);
+  s2qxyz_ = declare_parameter("ekf.sigma2_q_xyz", 20.0);
+  s2qyaw_ = declare_parameter("ekf.sigma2_q_yaw", 100.0);
+  s2qr_ = declare_parameter("ekf.sigma2_q_r", 800.0);
   auto u_q = [this]() {
     Eigen::MatrixXd q(9, 9);
     double t = dt_, x = s2qxyz_, y = s2qyaw_, r = s2qr_;
@@ -96,7 +96,7 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
   };
   // update_R - measurement noise covariance matrix
   r_xyz_factor = declare_parameter("ekf.r_xyz_factor", 0.05);
-  r_yaw = declare_parameter("ekf.r_yaw", 0.01);
+  r_yaw = declare_parameter("ekf.r_yaw", 0.02);
   auto u_r = [this](const Eigen::VectorXd & z) {
     Eigen::DiagonalMatrix<double, 4> r;
     double x = r_xyz_factor;
