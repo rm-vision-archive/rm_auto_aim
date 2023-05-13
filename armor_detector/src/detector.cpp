@@ -20,9 +20,8 @@
 namespace rm_auto_aim
 {
 Detector::Detector(
-  const int & init_min_l, const int & init_color, const LightParams & init_l,
-  const ArmorParams & init_a)
-: binary_thres(init_min_l), detect_color(init_color), l(init_l), a(init_a)
+  const int & bin_thres, const int & color, const LightParams & l, const ArmorParams & a)
+: binary_thres(bin_thres), detect_color(color), l(l), a(a)
 {
 }
 
@@ -38,46 +37,6 @@ std::vector<Armor> Detector::detect(const cv::Mat & input)
   }
 
   return armors_;
-}
-
-cv::Mat Detector::getAllNumbersImage()
-{
-  if (armors_.empty()) {
-    return cv::Mat(cv::Size(20, 28), CV_8UC1);
-  } else {
-    std::vector<cv::Mat> number_imgs;
-    number_imgs.reserve(armors_.size());
-    for (auto & armor : armors_) {
-      number_imgs.emplace_back(armor.number_img);
-    }
-    cv::Mat all_num_img;
-    cv::vconcat(number_imgs, all_num_img);
-    return all_num_img;
-  }
-}
-
-void Detector::drawResults(cv::Mat & img)
-{
-  // Draw Lights
-  for (const auto & light : lights_) {
-    cv::circle(img, light.top, 3, cv::Scalar(255, 255, 255), 1);
-    cv::circle(img, light.bottom, 3, cv::Scalar(255, 255, 255), 1);
-    auto line_color = light.color == RED ? cv::Scalar(255, 255, 0) : cv::Scalar(255, 0, 255);
-    cv::line(img, light.top, light.bottom, line_color, 1);
-  }
-
-  // Draw armors
-  for (const auto & armor : armors_) {
-    cv::line(img, armor.left_light.top, armor.right_light.bottom, cv::Scalar(0, 255, 0), 2);
-    cv::line(img, armor.left_light.bottom, armor.right_light.top, cv::Scalar(0, 255, 0), 2);
-  }
-
-  // Show numbers and confidence
-  for (const auto & armor : armors_) {
-    cv::putText(
-      img, armor.classfication_result, armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 0.8,
-      cv::Scalar(0, 255, 255), 2);
-  }
 }
 
 cv::Mat Detector::preprocessImage(const cv::Mat & rgb_img)
@@ -102,7 +61,7 @@ std::vector<Light> Detector::findLights(const cv::Mat & rbg_img, const cv::Mat &
   this->debug_lights.data.clear();
 
   for (const auto & contour : contours) {
-    if (contour.size() < 5) continue;
+    if (contour.size() < 10) continue;
 
     auto r_rect = cv::minAreaRect(contour);
     auto light = Light(r_rect);
@@ -168,8 +127,11 @@ std::vector<Armor> Detector::matchLights(const std::vector<Light> & lights)
       if (containLight(*light_1, *light_2, lights)) {
         continue;
       }
-      auto armor = Armor(*light_1, *light_2);
-      if (isArmor(armor)) {
+
+      auto type = isArmor(*light_1, *light_2);
+      if (type != ArmorType::INVALID) {
+        auto armor = Armor(*light_1, *light_2);
+        armor.type = type;
         armors.emplace_back(armor);
       }
     }
@@ -198,10 +160,8 @@ bool Detector::containLight(
   return false;
 }
 
-bool Detector::isArmor(Armor & armor)
+ArmorType Detector::isArmor(const Light & light_1, const Light & light_2)
 {
-  Light light_1 = armor.left_light;
-  Light light_2 = armor.right_light;
   // Ratio of the length of 2 lights (short side / long side)
   float light_length_ratio = light_1.length < light_2.length ? light_1.length / light_2.length
                                                              : light_2.length / light_1.length;
@@ -210,9 +170,9 @@ bool Detector::isArmor(Armor & armor)
   // Distance between the center of 2 lights (unit : light length)
   float avg_light_length = (light_1.length + light_2.length) / 2;
   float center_distance = cv::norm(light_1.center - light_2.center) / avg_light_length;
-  bool center_distance_ok = (a.min_small_center_distance < center_distance &&
+  bool center_distance_ok = (a.min_small_center_distance <= center_distance &&
                              center_distance < a.max_small_center_distance) ||
-                            (a.min_large_center_distance < center_distance &&
+                            (a.min_large_center_distance <= center_distance &&
                              center_distance < a.max_large_center_distance);
 
   // Angle of light center connection
@@ -221,18 +181,65 @@ bool Detector::isArmor(Armor & armor)
   bool angle_ok = angle < a.max_angle;
 
   bool is_armor = light_ratio_ok && center_distance_ok && angle_ok;
-  armor.armor_type = center_distance > a.min_large_center_distance ? LARGE : SMALL;
+
+  // Judge armor type
+  ArmorType type;
+  if (is_armor) {
+    type = center_distance > a.min_large_center_distance ? ArmorType::LARGE : ArmorType::SMALL;
+  } else {
+    type = ArmorType::INVALID;
+  }
+
   // Fill in debug information
   auto_aim_interfaces::msg::DebugArmor armor_data;
+  armor_data.type = ARMOR_TYPE_STR[static_cast<int>(type)];
   armor_data.center_x = (light_1.center.x + light_2.center.x) / 2;
   armor_data.light_ratio = light_length_ratio;
   armor_data.center_distance = center_distance;
   armor_data.angle = angle;
-  armor_data.is_armor = is_armor;
-  armor_data.armor_type = armor.armor_type == LARGE ? "large" : "small";
   this->debug_armors.data.emplace_back(armor_data);
 
-  return is_armor;
+  return type;
+}
+
+cv::Mat Detector::getAllNumbersImage()
+{
+  if (armors_.empty()) {
+    return cv::Mat(cv::Size(20, 28), CV_8UC1);
+  } else {
+    std::vector<cv::Mat> number_imgs;
+    number_imgs.reserve(armors_.size());
+    for (auto & armor : armors_) {
+      number_imgs.emplace_back(armor.number_img);
+    }
+    cv::Mat all_num_img;
+    cv::vconcat(number_imgs, all_num_img);
+    return all_num_img;
+  }
+}
+
+void Detector::drawResults(cv::Mat & img)
+{
+  // Draw Lights
+  for (const auto & light : lights_) {
+    cv::circle(img, light.top, 3, cv::Scalar(255, 255, 255), 1);
+    cv::circle(img, light.bottom, 3, cv::Scalar(255, 255, 255), 1);
+    auto line_color = light.color == RED ? cv::Scalar(255, 255, 0) : cv::Scalar(255, 0, 255);
+    cv::line(img, light.top, light.bottom, line_color, 1);
+  }
+
+  // Draw armors
+  for (const auto & armor : armors_) {
+    cv::line(img, armor.left_light.top, armor.right_light.bottom, cv::Scalar(0, 255, 0), 2);
+    cv::line(img, armor.left_light.bottom, armor.right_light.top, cv::Scalar(0, 255, 0), 2);
+  }
+
+  // Show numbers and confidence
+  for (const auto & armor : armors_) {
+    cv::putText(
+      img, armor.classfication_result, armor.left_light.top, cv::FONT_HERSHEY_SIMPLEX, 0.8,
+      cv::Scalar(0, 255, 255), 2);
+  }
 }
 
 }  // namespace rm_auto_aim

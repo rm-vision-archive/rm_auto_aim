@@ -105,8 +105,11 @@ void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstShared
       cv::Mat rvec, tvec;
       bool success = pnp_solver_->solvePnP(armor, rvec, tvec);
       if (success) {
+        // Fill basic info
+        armor_msg.type = ARMOR_TYPE_STR[static_cast<int>(armor.type)];
         armor_msg.number = armor.number;
-        // Fill armor_msg with pose
+
+        // Fill pose
         armor_msg.pose.position.x = tvec.at<double>(0);
         armor_msg.pose.position.y = tvec.at<double>(1);
         armor_msg.pose.position.z = tvec.at<double>(2);
@@ -126,8 +129,10 @@ void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstShared
         armor_msg.pose.orientation.y = tf2_quaternion.y();
         armor_msg.pose.orientation.z = tf2_quaternion.z();
         armor_msg.pose.orientation.w = tf2_quaternion.w();
+
         // Fill the distance to image center
         armor_msg.distance_to_image_center = pnp_solver_->calculateDistanceToCenter(armor.center);
+
         // Fill the markers
         armor_marker_.id++;
         armor_marker_.pose = armor_msg.pose;

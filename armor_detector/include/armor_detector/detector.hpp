@@ -35,6 +35,7 @@ public:
   struct ArmorParams
   {
     double min_light_ratio;
+    // light pairs distance
     double min_small_center_distance;
     double max_small_center_distance;
     double min_large_center_distance;
@@ -43,9 +44,17 @@ public:
     double max_angle;
   };
 
-  Detector(
-    const int & init_min_l, const int & init_color, const LightParams & init_l,
-    const ArmorParams & init_a);
+  Detector(const int & bin_thres, const int & color, const LightParams & l, const ArmorParams & a);
+
+  std::vector<Armor> detect(const cv::Mat & input);
+
+  cv::Mat preprocessImage(const cv::Mat & input);
+  std::vector<Light> findLights(const cv::Mat & rbg_img, const cv::Mat & binary_img);
+  std::vector<Armor> matchLights(const std::vector<Light> & lights);
+
+  // For debug usage
+  cv::Mat getAllNumbersImage();
+  void drawResults(cv::Mat & img);
 
   int binary_thres;
   int detect_color;
@@ -59,22 +68,14 @@ public:
   auto_aim_interfaces::msg::DebugLights debug_lights;
   auto_aim_interfaces::msg::DebugArmors debug_armors;
 
-  std::vector<Armor> detect(const cv::Mat & input);
-  void drawResults(cv::Mat & img);
-  cv::Mat getAllNumbersImage();
-
-  cv::Mat preprocessImage(const cv::Mat & input);
-  std::vector<Light> findLights(const cv::Mat & rbg_img, const cv::Mat & binary_img);
-  std::vector<Armor> matchLights(const std::vector<Light> & lights);
-
 private:
-  std::vector<Light> lights_;
-  std::vector<Armor> armors_;
-
-  bool isLight(const Light & light);
+  bool isLight(const Light & possible_light);
   bool containLight(
     const Light & light_1, const Light & light_2, const std::vector<Light> & lights);
-  bool isArmor(Armor & armor);
+  ArmorType isArmor(const Light & light_1, const Light & light_2);
+
+  std::vector<Light> lights_;
+  std::vector<Armor> armors_;
 };
 
 }  // namespace rm_auto_aim

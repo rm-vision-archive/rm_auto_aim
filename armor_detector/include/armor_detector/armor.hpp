@@ -15,7 +15,8 @@ namespace rm_auto_aim
 const int RED = 0;
 const int BLUE = 1;
 
-enum ArmorType { SMALL = 0, LARGE = 1 };
+enum class ArmorType { SMALL, LARGE, INVALID };
+const std::string ARMOR_TYPE_STR[3] = {"small", "large", "invalid"};
 
 struct Light : public cv::RotatedRect
 {
@@ -55,15 +56,16 @@ struct Armor
     center = (left_light.center + right_light.center) / 2;
   }
 
+  // Light pairs part
   Light left_light, right_light;
   cv::Point2f center;
+  ArmorType type;
 
+  // Number part
   cv::Mat number_img;
-
   std::string number;
   float confidence;
   std::string classfication_result;
-  ArmorType armor_type;
 };
 
 }  // namespace rm_auto_aim
