@@ -191,7 +191,7 @@ std::unique_ptr<Detector> ArmorDetectorNode::initDetector()
   auto label_path = pkg_path + "/model/label.txt";
   double threshold = this->declare_parameter("classifier_threshold", 0.7);
   std::vector<std::string> ignore_classes =
-    this->declare_parameter("ignore_classes", std::vector<std::string>{"Negative"});
+    this->declare_parameter("ignore_classes", std::vector<std::string>{"negative"});
   detector->classifier =
     std::make_unique<NumberClassifier>(model_path, label_path, threshold, ignore_classes);
 
