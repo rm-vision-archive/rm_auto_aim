@@ -274,7 +274,7 @@ void ArmorTrackerNode::publishMarkers(const auto_aim_interfaces::msg::Target & t
       // Only 4 armors has 2 radius and height
       if (a_n == 4) {
         r = is_current_pair ? r1 : r2;
-        p_a.z = za + (is_current_pair ? dz : 0);
+        p_a.z = za + (is_current_pair ? 0 : dz);
         is_current_pair = !is_current_pair;
       } else {
         r = r1;
