@@ -20,6 +20,7 @@ namespace rm_auto_aim
 Tracker::Tracker(double max_match_distance)
 : tracker_state(LOST),
   tracked_id(std::string("")),
+  measurement(Eigen::VectorXd::Zero(4)),
   target_state(Eigen::VectorXd::Zero(9)),
   max_match_distance_(max_match_distance)
 {
@@ -95,8 +96,8 @@ void Tracker::update(const Armors::SharedPtr & armors_msg)
       auto p = tracked_armor.pose.position;
       // Update EKF
       double measured_yaw = orientationToYaw(tracked_armor.pose.orientation);
-      Eigen::Vector4d z(p.x, p.y, p.z, measured_yaw);
-      target_state = ekf.update(z);
+      measurement = Eigen::Vector4d(p.x, p.y, p.z, measured_yaw);
+      target_state = ekf.update(measurement);
       RCLCPP_DEBUG(rclcpp::get_logger("armor_tracker"), "EKF update");
     } else {
       // Check if there is same id armor in current frame

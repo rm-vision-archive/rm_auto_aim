@@ -51,6 +51,7 @@ public:
   Armor tracked_armor;
   std::string tracked_id;
   ArmorsNum tracked_armors_num;
+  Eigen::VectorXd measurement;
   Eigen::VectorXd target_state;
 
   // To store another pair of armors message

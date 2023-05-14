@@ -126,6 +126,10 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
   // Register a callback with tf2_ros::MessageFilter to be called when transforms are available
   tf2_filter_->registerCallback(&ArmorTrackerNode::armorsCallback, this);
 
+  // Measurement publisher (for debug usage)
+  measure_pub_ =
+    this->create_publisher<auto_aim_interfaces::msg::Measurement>("/tracker/measurement", 10);
+
   // Publisher
   target_pub_ = this->create_publisher<auto_aim_interfaces::msg::Target>(
     "/tracker/target", rclcpp::SensorDataQoS());
@@ -183,7 +187,8 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
       }),
     armors_msg->armors.end());
 
-  // Init target message
+  // Init message
+  auto_aim_interfaces::msg::Measurement measure_msg;
   auto_aim_interfaces::msg::Target target_msg;
   rclcpp::Time time = armors_msg->header.stamp;
   target_msg.header.stamp = time;
@@ -197,6 +202,13 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
     dt_ = (time - last_time_).seconds();
     tracker_->lost_thres = static_cast<int>(lost_time_thres_ / dt_);
     tracker_->update(armors_msg);
+
+    // Publish measurement
+    measure_msg.x = tracker_->measurement(0);
+    measure_msg.y = tracker_->measurement(1);
+    measure_msg.z = tracker_->measurement(2);
+    measure_msg.yaw = tracker_->measurement(3);
+    measure_pub_->publish(measure_msg);
 
     if (tracker_->tracker_state == Tracker::DETECTING) {
       target_msg.tracking = false;
