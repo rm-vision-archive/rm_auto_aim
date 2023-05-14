@@ -61,7 +61,7 @@ std::vector<Light> Detector::findLights(const cv::Mat & rbg_img, const cv::Mat &
   this->debug_lights.data.clear();
 
   for (const auto & contour : contours) {
-    if (contour.size() < 10) continue;
+    if (contour.size() < 5) continue;
 
     auto r_rect = cv::minAreaRect(contour);
     auto light = Light(r_rect);
