@@ -135,9 +135,9 @@ void NumberClassifier::classify(std::vector<Armor> & armors)
         bool mismatch_armor_type = false;
         if (armor.type == ArmorType::LARGE) {
           mismatch_armor_type =
-            armor.number == "Outpost" || armor.number == "2" || armor.number == "Guard";
+            armor.number == "outpost" || armor.number == "2" || armor.number == "guard";
         } else if (armor.type == ArmorType::SMALL) {
-          mismatch_armor_type = armor.number == "1" || armor.number == "Base";
+          mismatch_armor_type = armor.number == "1" || armor.number == "base";
         }
         return mismatch_armor_type;
       }),
