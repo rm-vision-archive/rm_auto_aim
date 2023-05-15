@@ -4,6 +4,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <rmw/qos_profiles.h>
 #include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/convert.h>
 
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <image_transport/image_transport.hpp>
@@ -11,6 +12,7 @@
 #include <opencv2/imgproc.hpp>
 #include <rclcpp/duration.hpp>
 #include <rclcpp/qos.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 // STD
 #include <algorithm>
@@ -41,11 +43,11 @@ ArmorDetectorNode::ArmorDetectorNode(const rclcpp::NodeOptions & options)
   armor_marker_.ns = "armors";
   armor_marker_.action = visualization_msgs::msg::Marker::ADD;
   armor_marker_.type = visualization_msgs::msg::Marker::CUBE;
-  armor_marker_.scale.x = 0.03;
-  armor_marker_.scale.y = 0.15;
-  armor_marker_.scale.z = 0.12;
+  armor_marker_.scale.x = 0.05;
+  armor_marker_.scale.z = 0.125;
   armor_marker_.color.a = 1.0;
-  armor_marker_.color.r = 1.0;
+  armor_marker_.color.g = 0.5;
+  armor_marker_.color.b = 1.0;
   armor_marker_.lifetime = rclcpp::Duration::from_seconds(0.1);
 
   text_marker_.ns = "classification";
@@ -123,18 +125,16 @@ void ArmorDetectorNode::imageCallback(const sensor_msgs::msg::Image::ConstShared
           rotation_matrix.at<double>(1, 1), rotation_matrix.at<double>(1, 2),
           rotation_matrix.at<double>(2, 0), rotation_matrix.at<double>(2, 1),
           rotation_matrix.at<double>(2, 2));
-        tf2::Quaternion tf2_quaternion;
-        tf2_rotation_matrix.getRotation(tf2_quaternion);
-        armor_msg.pose.orientation.x = tf2_quaternion.x();
-        armor_msg.pose.orientation.y = tf2_quaternion.y();
-        armor_msg.pose.orientation.z = tf2_quaternion.z();
-        armor_msg.pose.orientation.w = tf2_quaternion.w();
+        tf2::Quaternion tf2_q;
+        tf2_rotation_matrix.getRotation(tf2_q);
+        armor_msg.pose.orientation = tf2::toMsg(tf2_q);
 
         // Fill the distance to image center
         armor_msg.distance_to_image_center = pnp_solver_->calculateDistanceToCenter(armor.center);
 
         // Fill the markers
         armor_marker_.id++;
+        armor_marker_.scale.y = armor.type == ArmorType::SMALL ? 0.135 : 0.23;
         armor_marker_.pose = armor_msg.pose;
         text_marker_.id++;
         text_marker_.pose.position = armor_msg.pose.position;
@@ -171,12 +171,12 @@ std::unique_ptr<Detector> ArmorDetectorNode::initDetector()
   auto detect_color = declare_parameter("detect_color", RED, param_desc);
 
   Detector::LightParams l_params = {
-    .min_ratio = declare_parameter("light.min_ratio", 0.08),
+    .min_ratio = declare_parameter("light.min_ratio", 0.1),
     .max_ratio = declare_parameter("light.max_ratio", 0.4),
     .max_angle = declare_parameter("light.max_angle", 40.0)};
 
   Detector::ArmorParams a_params = {
-    .min_light_ratio = declare_parameter("armor.min_light_ratio", 0.6),
+    .min_light_ratio = declare_parameter("armor.min_light_ratio", 0.7),
     .min_small_center_distance = declare_parameter("armor.min_small_center_distance", 0.8),
     .max_small_center_distance = declare_parameter("armor.max_small_center_distance", 3.2),
     .min_large_center_distance = declare_parameter("armor.min_large_center_distance", 3.2),

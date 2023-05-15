@@ -64,7 +64,7 @@ private:
   visualization_msgs::msg::Marker position_marker_;
   visualization_msgs::msg::Marker linear_v_marker_;
   visualization_msgs::msg::Marker angular_v_marker_;
-  visualization_msgs::msg::Marker armors_marker_;
+  visualization_msgs::msg::Marker armor_marker_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 };
 
