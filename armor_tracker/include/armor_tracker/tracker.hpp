@@ -36,6 +36,11 @@ public:
 
   void update(const Armors::SharedPtr & armors_msg);
 
+  ExtendedKalmanFilter ekf;
+
+  int tracking_thres;
+  int lost_thres;
+
   enum State {
     LOST,
     DETECTING,
@@ -43,15 +48,13 @@ public:
     TEMP_LOST,
   } tracker_state;
 
-  ExtendedKalmanFilter ekf;
-
-  int tracking_thres;
-  int lost_thres;
-
-  Armor tracked_armor;
   std::string tracked_id;
+  Armor tracked_armor;
   ArmorsNum tracked_armors_num;
+
+  double min_position_diff;
   Eigen::VectorXd measurement;
+
   Eigen::VectorXd target_state;
 
   // To store another pair of armors message
@@ -59,6 +62,8 @@ public:
 
 private:
   void initEKF(const Armor & a);
+
+  void updateArmorsNum(const Armor & a);
 
   void handleArmorJump(const Armor & a);
 

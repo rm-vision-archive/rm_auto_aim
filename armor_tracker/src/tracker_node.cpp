@@ -127,8 +127,7 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
   tf2_filter_->registerCallback(&ArmorTrackerNode::armorsCallback, this);
 
   // Measurement publisher (for debug usage)
-  measure_pub_ =
-    this->create_publisher<auto_aim_interfaces::msg::Measurement>("/tracker/measurement", 10);
+  info_pub_ = this->create_publisher<auto_aim_interfaces::msg::TrackerInfo>("/tracker/info", 10);
 
   // Publisher
   target_pub_ = this->create_publisher<auto_aim_interfaces::msg::Target>(
@@ -189,7 +188,7 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
     armors_msg->armors.end());
 
   // Init message
-  auto_aim_interfaces::msg::Measurement measure_msg;
+  auto_aim_interfaces::msg::TrackerInfo info_msg;
   auto_aim_interfaces::msg::Target target_msg;
   rclcpp::Time time = armors_msg->header.stamp;
   target_msg.header.stamp = time;
@@ -204,12 +203,13 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
     tracker_->lost_thres = static_cast<int>(lost_time_thres_ / dt_);
     tracker_->update(armors_msg);
 
-    // Publish measurement
-    measure_msg.x = tracker_->measurement(0);
-    measure_msg.y = tracker_->measurement(1);
-    measure_msg.z = tracker_->measurement(2);
-    measure_msg.yaw = tracker_->measurement(3);
-    measure_pub_->publish(measure_msg);
+    // Publish Info
+    info_msg.position_diff = tracker_->min_position_diff;
+    info_msg.position.x = tracker_->measurement(0);
+    info_msg.position.y = tracker_->measurement(1);
+    info_msg.position.z = tracker_->measurement(2);
+    info_msg.yaw = tracker_->measurement(3);
+    info_pub_->publish(info_msg);
 
     if (tracker_->tracker_state == Tracker::DETECTING) {
       target_msg.tracking = false;

@@ -21,8 +21,8 @@
 
 #include "armor_tracker/tracker.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
-#include "auto_aim_interfaces/msg/measurement.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
+#include "auto_aim_interfaces/msg/tracker_info.hpp"
 
 namespace rm_auto_aim
 {
@@ -54,8 +54,8 @@ private:
   message_filters::Subscriber<auto_aim_interfaces::msg::Armors> armors_sub_;
   std::shared_ptr<tf2_filter> tf2_filter_;
 
-  // Measurement publisher
-  rclcpp::Publisher<auto_aim_interfaces::msg::Measurement>::SharedPtr measure_pub_;
+  // Tracker info publisher
+  rclcpp::Publisher<auto_aim_interfaces::msg::TrackerInfo>::SharedPtr info_pub_;
 
   // Publisher
   rclcpp::Publisher<auto_aim_interfaces::msg::Target>::SharedPtr target_pub_;
