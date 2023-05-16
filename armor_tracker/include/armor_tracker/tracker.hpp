@@ -27,7 +27,7 @@ enum class ArmorsNum { NORMAL_4 = 4, BALANCE_2 = 2, OUTPOST_3 = 3 };
 class Tracker
 {
 public:
-  Tracker(double max_match_distance);
+  Tracker(double max_match_distance, double outlier_thres);
 
   using Armors = auto_aim_interfaces::msg::Armors;
   using Armor = auto_aim_interfaces::msg::Armor;
@@ -72,6 +72,7 @@ private:
   Eigen::Vector3d getArmorPositionFromState(const Eigen::VectorXd & x);
 
   double max_match_distance_;
+  double outlier_thres_;
 
   int detect_count_;
   int lost_count_;

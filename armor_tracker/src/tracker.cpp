@@ -17,12 +17,13 @@
 
 namespace rm_auto_aim
 {
-Tracker::Tracker(double max_match_distance)
+Tracker::Tracker(double max_match_distance, double outlier_thres)
 : tracker_state(LOST),
   tracked_id(std::string("")),
   measurement(Eigen::VectorXd::Zero(4)),
   target_state(Eigen::VectorXd::Zero(9)),
-  max_match_distance_(max_match_distance)
+  max_match_distance_(max_match_distance),
+  outlier_thres_(outlier_thres)
 {
 }
 
@@ -195,17 +196,25 @@ void Tracker::handleArmorJump(const Armor & current_armor)
   Eigen::Vector3d current_p(p.x, p.y, p.z);
   Eigen::Vector3d infer_p = getArmorPositionFromState(target_state);
 
-  if ((current_p - infer_p).norm() > max_match_distance_) {
-    // If the distance between the current armor and the inferred armor is too large,
-    // the state is wrong, reset center position and velocity in the state
-    double r = target_state(8);
-    target_state(0) = p.x + r * cos(yaw);  // xc
-    target_state(1) = 0;                   // vxc
-    target_state(2) = p.y + r * sin(yaw);  // yc
-    target_state(3) = 0;                   // vyc
-    target_state(4) = p.z;                 // za
-    target_state(5) = 0;                   // vza
-    RCLCPP_ERROR(rclcpp::get_logger("armor_tracker"), "Reset State!");
+  double position_diff = (current_p - infer_p).norm();
+  if (position_diff > max_match_distance_) {
+    if (position_diff < outlier_thres_) {
+      // If position difference is larger than max_match_distance_,
+      // but smaller than outlier_thres_,
+      // take this case as the ekf diverged, reset the state
+      double r = target_state(8);
+      target_state(0) = p.x + r * cos(yaw);  // xc
+      target_state(1) = 0;                   // vxc
+      target_state(2) = p.y + r * sin(yaw);  // yc
+      target_state(3) = 0;                   // vyc
+      target_state(4) = p.z;                 // za
+      target_state(5) = 0;                   // vza
+      RCLCPP_ERROR(rclcpp::get_logger("armor_tracker"), "Reset State!");
+    } else {
+      // If position difference is larger than outlier_thres_,
+      // the current armor is an outlier, ignore it
+      RCLCPP_WARN(rclcpp::get_logger("armor_tracker"), "Ignore outlier!");
+    }
   }
 
   ekf.setState(target_state);
