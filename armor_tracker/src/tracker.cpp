@@ -101,13 +101,13 @@ void Tracker::update(const Armors::SharedPtr & armors_msg)
       measurement = Eigen::Vector4d(p.x, p.y, p.z, measured_yaw);
       target_state = ekf.update(measurement);
       RCLCPP_DEBUG(rclcpp::get_logger("armor_tracker"), "EKF update");
-    } else if (same_id_armors_count == 1) {
-      // Matched armor not found, but there is only one armor with the same id,
-      // take this case as the target is spinning and armor jumped
+    } else if (same_id_armors_count == 1 && yaw_diff > max_match_yaw_diff_) {
+      // Matched armor not found, but there is only one armor with the same id
+      // and yaw has jumped, take this case as the target is spinning and armor jumped
       handleArmorJump(same_id_armor);
     } else {
       // No matched armor found
-      RCLCPP_DEBUG(rclcpp::get_logger("armor_tracker"), "No matched armor found!");
+      RCLCPP_WARN(rclcpp::get_logger("armor_tracker"), "No matched armor found!");
     }
   }
 
