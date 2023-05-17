@@ -210,7 +210,8 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
     tracker_->update(armors_msg);
 
     // Publish Info
-    info_msg.position_diff = tracker_->min_position_diff;
+    info_msg.position_diff = tracker_->info_position_diff;
+    info_msg.yaw_diff = tracker_->info_yaw_diff;
     info_msg.position.x = tracker_->measurement(0);
     info_msg.position.y = tracker_->measurement(1);
     info_msg.position.z = tracker_->measurement(2);
