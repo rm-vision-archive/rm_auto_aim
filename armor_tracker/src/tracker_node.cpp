@@ -12,6 +12,9 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
 {
   RCLCPP_INFO(this->get_logger(), "Starting TrackerNode!");
 
+  // Maximum allowable armor distance in the XOY plane
+  max_armor_distance_ = this->declare_parameter("max_armor_distance", 10.0);
+
   // Tracker
   double max_match_distance = this->declare_parameter("tracker.max_match_distance", 0.15);
   double outlier_thres = this->declare_parameter("tracker.outlier_thres", 0.5);
@@ -183,8 +186,10 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
   armors_msg->armors.erase(
     std::remove_if(
       armors_msg->armors.begin(), armors_msg->armors.end(),
-      [](const auto_aim_interfaces::msg::Armor & armor) {
-        return abs(armor.pose.position.z) > 1.2;
+      [this](const auto_aim_interfaces::msg::Armor & armor) {
+        return abs(armor.pose.position.z) > 1.2 ||
+               Eigen::Vector2d(armor.pose.position.x, armor.pose.position.y).norm() >
+                 max_armor_distance_;
       }),
     armors_msg->armors.end());
 

@@ -37,6 +37,9 @@ private:
 
   void publishMarkers(const auto_aim_interfaces::msg::Target & target_msg);
 
+  // Maximum allowable armor distance in the XOY plane
+  double max_armor_distance_;
+
   // The time when the last message was received
   rclcpp::Time last_time_;
   double dt_;
