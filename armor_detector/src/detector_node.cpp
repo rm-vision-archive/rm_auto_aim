@@ -180,7 +180,7 @@ std::unique_ptr<Detector> ArmorDetectorNode::initDetector()
     .min_small_center_distance = declare_parameter("armor.min_small_center_distance", 0.8),
     .max_small_center_distance = declare_parameter("armor.max_small_center_distance", 3.2),
     .min_large_center_distance = declare_parameter("armor.min_large_center_distance", 3.2),
-    .max_large_center_distance = declare_parameter("armor.max_large_center_distance", 5.0),
+    .max_large_center_distance = declare_parameter("armor.max_large_center_distance", 5.5),
     .max_angle = declare_parameter("armor.max_angle", 35.0)};
 
   auto detector = std::make_unique<Detector>(binary_thres, detect_color, l_params, a_params);
