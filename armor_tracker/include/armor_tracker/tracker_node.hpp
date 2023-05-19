@@ -11,6 +11,7 @@
 #include <tf2_ros/transform_listener.h>
 
 #include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
@@ -49,6 +50,9 @@ private:
   double r_xyz_factor, r_yaw;
   double lost_time_thres_;
   std::unique_ptr<Tracker> tracker_;
+
+  // Reset tracker service
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_tracker_srv_;
 
   // Subscriber with tf2 message_filter
   std::string target_frame_;

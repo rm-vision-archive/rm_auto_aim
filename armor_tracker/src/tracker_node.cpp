@@ -112,6 +112,20 @@ ArmorTrackerNode::ArmorTrackerNode(const rclcpp::NodeOptions & options)
   p0.setIdentity();
   tracker_->ekf = ExtendedKalmanFilter{f, h, j_f, j_h, u_q, u_r, p0};
 
+  // Reset tracker service
+  using std::placeholders::_1;
+  using std::placeholders::_2;
+  using std::placeholders::_3;
+  reset_tracker_srv_ = this->create_service<std_srvs::srv::Trigger>(
+    "/tracker/reset", [this](
+                        const std_srvs::srv::Trigger::Request::SharedPtr,
+                        std_srvs::srv::Trigger::Response::SharedPtr response) {
+      tracker_->tracker_state = Tracker::LOST;
+      response->success = true;
+      RCLCPP_INFO(this->get_logger(), "Tracker reset!");
+      return;
+    });
+
   // Subscriber with tf2 message_filter
   // tf2 relevant
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
